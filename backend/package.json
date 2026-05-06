@@ -1,0 +1,40 @@
+{
+    "name": "smart-greenhouse-server",
+    "version": "1.0.0",
+    "description": "Node.js TypeScript GraphQL server for real-time ESP32 sensor data",
+    "main": "dist/index.js",
+    "scripts": {
+        "dev": "ts-node src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "watch": "tsc -w"
+    },
+    "keywords": [
+        "graphql",
+        "express",
+        "typescript",
+        "esp32",
+        "websocket"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@graphql-tools/schema": "^10.0.0",
+        "apollo-server-express": "^3.13.0",
+        "express": "^4.18.2",
+        "graphql": "^16.8.0",
+        "graphql-subscriptions": "^2.0.0",
+        "graphql-tag": "^2.12.6",
+        "graphql-ws": "^5.14.0",
+        "uuid": "^9.0.0",
+        "ws": "^8.14.2"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.20",
+        "@types/node": "^20.8.0",
+        "@types/uuid": "^10.0.0",
+        "@types/ws": "^8.5.8",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.2.2"
+    }
+}

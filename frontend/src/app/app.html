@@ -1,0 +1,53 @@
+<main class="main">
+  <div class="content">
+    <div class="left-side">
+      <h2>Controls</h2>
+      <div class="status">
+        <p><strong>Auto-refresh:</strong> Every 10 seconds</p>
+        <p><strong>Status:</strong> {{ loading() ? 'Loading...' : 'Active' }}</p>
+      </div>
+    </div>
+    <div class="divider" role="separator" aria-label="Divider"></div>
+    <div class="right-side">
+      <h2>Sensor Data</h2>
+
+      @if (error()) {
+      <div class="error">{{ error() }}</div>
+      }
+
+      @if (latestData()) {
+      <div class="latest-data">
+        <h3>Latest Reading</h3>
+        <div class="sensor-card">
+          <p><strong>Temperature:</strong> {{ latestData()!.temperature }}°C</p>
+          <p><strong>Humidity:</strong> {{ latestData()!.humidity }}%</p>
+          <p><strong>Soil Moisture:</strong> {{ latestData()!.soilMoisture }}%</p>
+          <p><strong>Light Level:</strong> {{ latestData()!.lightLevel }} lux</p>
+          <p><strong>Timestamp:</strong> {{ latestData()!.timestamp }}</p>
+        </div>
+      </div>
+      }
+
+      <div class="data-history">
+        <h3>Data History</h3>
+        @if (sensorData().length === 0 && !loading()) {
+        <p>No sensor data available</p>
+        } @else {
+        <div class="sensor-list">
+          @for (data of sensorData(); track data.id) {
+          <div class="sensor-card">
+            <p><strong>Temperature:</strong> {{ data.temperature }}°C</p>
+            <p><strong>Humidity:</strong> {{ data.humidity }}%</p>
+            <p><strong>Soil Moisture:</strong> {{ data.soilMoisture }}%</p>
+            <p><strong>Light Level:</strong> {{ data.lightLevel }} lux</p>
+            <p><strong>Timestamp:</strong> {{ data.timestamp }}</p>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+</main>
+
+<router-outlet />
