@@ -129,25 +129,27 @@ export const resolvers = {
                 name: d.name,
                 type: d.type,
                 plantedDate: d.plantedDate.toISOString(),
+                count: d.count ?? 1,
             }));
         },
     },
 
     Mutation: {
-        addPlant: async (_: any, { name, type, plantedDate }: { name: string; type: PlantType; plantedDate: string }) => {
-            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate) });
+        addPlant: async (_: any, { name, type, plantedDate, count }: { name: string; type: PlantType; plantedDate: string; count: number }) => {
+            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count });
             await refreshPrimaryPlant();
             return {
                 id: doc._id.toString(),
                 name: doc.name,
                 type: doc.type,
                 plantedDate: doc.plantedDate.toISOString(),
+                count: doc.count,
             };
         },
-        updatePlant: async (_: any, { id, name, type, plantedDate }: { id: string; name: string; type: PlantType; plantedDate: string }) => {
+        updatePlant: async (_: any, { id, name, type, plantedDate, count }: { id: string; name: string; type: PlantType; plantedDate: string; count: number }) => {
             const doc = await Plant.findByIdAndUpdate(
                 id,
-                { name, type, plantedDate: new Date(plantedDate) },
+                { name, type, plantedDate: new Date(plantedDate), count },
                 { new: true }
             );
             if (!doc) throw new Error('Plant not found');
@@ -157,6 +159,7 @@ export const resolvers = {
                 name: doc.name,
                 type: doc.type,
                 plantedDate: doc.plantedDate.toISOString(),
+                count: doc.count,
             };
         },
         removePlant: async (_: any, { id }: { id: string }) => {

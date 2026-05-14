@@ -42,26 +42,27 @@ export interface Plant {
   name: string;
   type: PlantType;
   plantedDate: Date;
+  count: number;
 }
 
 const PLANTS_QUERY = gql`
   query GetPlants {
-    plants { id name type plantedDate }
+    plants { id name type plantedDate count }
   }
 `;
 
 const ADD_PLANT = gql`
-  mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!) {
-    addPlant(name: $name, type: $type, plantedDate: $plantedDate) {
-      id name type plantedDate
+  mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!) {
+    addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count) {
+      id name type plantedDate count
     }
   }
 `;
 
 const UPDATE_PLANT = gql`
-  mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!) {
-    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate) {
-      id name type plantedDate
+  mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!) {
+    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count) {
+      id name type plantedDate count
     }
   }
 `;
@@ -84,7 +85,7 @@ export class PlantService {
 
   private loadPlants() {
     this.client
-      .query<{ plants: { id: string; name: string; type: string; plantedDate: string }[] }>({
+      .query<{ plants: { id: string; name: string; type: string; plantedDate: string; count: number }[] }>({
         query: PLANTS_QUERY,
         fetchPolicy: 'network-only',
       })
@@ -94,16 +95,16 @@ export class PlantService {
       .catch(err => console.error('Failed to load plants:', err));
   }
 
-  private mapPlants(raw: { id: string; name: string; type: string; plantedDate: string }[]): Plant[] {
-    return raw.map(p => ({ ...p, type: p.type as PlantType, plantedDate: new Date(p.plantedDate) }));
+  private mapPlants(raw: { id: string; name: string; type: string; plantedDate: string; count: number }[]): Plant[] {
+    return raw.map(p => ({ ...p, type: p.type as PlantType, plantedDate: new Date(p.plantedDate), count: p.count ?? 1 }));
   }
 
-  add(name: string, type: PlantType, plantedDate: Date): Observable<Plant> {
+  add(name: string, type: PlantType, plantedDate: Date, count: number): Observable<Plant> {
     return new Observable(observer => {
       this.client
-        .mutate<{ addPlant: { id: string; name: string; type: string; plantedDate: string } }>({
+        .mutate<{ addPlant: { id: string; name: string; type: string; plantedDate: string; count: number } }>({
           mutation: ADD_PLANT,
-          variables: { name: name.trim(), type: type.trim(), plantedDate: plantedDate.toISOString() },
+          variables: { name: name.trim(), type: type.trim(), plantedDate: plantedDate.toISOString(), count },
         })
         .then(result => {
           const plant = result.data!.addPlant;
@@ -116,12 +117,12 @@ export class PlantService {
     });
   }
 
-  update(id: string, name: string, type: PlantType, plantedDate: Date): Observable<Plant> {
+  update(id: string, name: string, type: PlantType, plantedDate: Date, count: number): Observable<Plant> {
     return new Observable(observer => {
       this.client
-        .mutate<{ updatePlant: { id: string; name: string; type: string; plantedDate: string } }>({
+        .mutate<{ updatePlant: { id: string; name: string; type: string; plantedDate: string; count: number } }>({
           mutation: UPDATE_PLANT,
-          variables: { id, name: name.trim(), type, plantedDate: plantedDate.toISOString() },
+          variables: { id, name: name.trim(), type, plantedDate: plantedDate.toISOString(), count },
         })
         .then(result => {
           const plant = result.data!.updatePlant;
