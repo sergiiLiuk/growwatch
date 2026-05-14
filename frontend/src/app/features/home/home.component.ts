@@ -23,61 +23,71 @@ interface Metric {
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
-      <!-- Weather card -->
-      <div class="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-3 mb-6">
+      <!-- Weather strip — blue family -->
+      <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 mb-4">
         @if (weather()) {
-          <span class="text-3xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
+          <span class="text-2xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
           <div class="flex-1 min-w-0">
-            <div class="text-lg font-semibold text-gray-900 leading-tight">{{ weather()!.temperature }}°C</div>
-            <div class="text-xs text-gray-400 truncate">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
+            <div class="text-[18px] font-medium text-gw-blue-dark leading-tight">{{ weather()!.temperature }}°C</div>
+            <div class="text-[11px] text-gray-400 truncate">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
           </div>
-          <div class="flex items-center gap-2.5 shrink-0 text-xs text-gray-500">
+          <div class="flex items-center gap-3 shrink-0 text-[11px] text-gw-blue-dark">
             <span>💧 {{ weather()!.humidity }}%</span>
             <span>🌬️ {{ weather()!.windSpeed }}m/s</span>
           </div>
-          <span class="text-gray-300 text-sm ml-0.5">›</span>
+          <span class="text-gray-300 text-xs ml-1">›</span>
         } @else {
-          <span class="flex-1 text-sm text-gray-300">
+          <span class="flex-1 text-[13px] text-gray-300">
             {{ weatherService.loading() ? 'Loading weather…' : 'Weather unavailable' }}
           </span>
         }
-        <div class="w-1.5 h-1.5 rounded-full shrink-0 ml-1" [class]="sensorOnline() ? 'bg-green-400' : 'bg-red-400'"></div>
+        <div class="w-1.5 h-1.5 rounded-full shrink-0 ml-1"
+             [class]="sensorOnline() ? 'bg-gw-green' : 'bg-gw-red'"></div>
       </div>
 
       <!-- Mood ring — only when plants are registered -->
       @if (plants().length > 0) {
-        <div class="flex flex-col items-center mb-6">
-          <div class="w-20 h-20 rounded-full flex items-center justify-center mb-3 transition-colors"
+        <div class="flex flex-col items-center mb-4">
+          <div class="w-20 h-20 rounded-full flex items-center justify-center mb-3"
                [class]="moodBg()">
-            <span class="text-3xl">{{ moodEmoji() }}</span>
+            <svg class="w-9 h-9" [class]="moodIconColor()" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3c0 0-6 4-6 9a6 6 0 0012 0c0-5-6-9-6-9z"/>
+              <line x1="12" y1="12" x2="12" y2="21"/>
+            </svg>
           </div>
-          <div class="text-base font-medium text-gray-800">{{ mood().label }}</div>
-          <div class="text-xs text-gray-400 mt-0.5">{{ mood().description }}</div>
+          <div class="text-[14px] font-medium text-gray-800">{{ mood().label }}</div>
+          <div class="text-[11px] text-gray-400 mt-0.5">{{ mood().description }}</div>
         </div>
 
-        <!-- Alert bubble — only when action is needed -->
+        <!-- Voice bubble — only when action is needed -->
         @if (showAlert()) {
-          <div class="rounded-2xl p-4 mb-6 transition-colors" [class]="voiceBubbleBg()">
-            <p class="text-sm leading-relaxed" [class]="voiceTextColor()">{{ voiceMessage() }}</p>
+          <div class="p-4 mb-4 rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-[2px]"
+               [class]="bubbleBg()">
+            <p class="text-[13px] leading-relaxed" [class]="bubbleTextColor()">{{ voiceMessage() }}</p>
           </div>
         }
       }
 
       <!-- Onboarding card — only when no plants registered -->
       @if (plants().length === 0) {
-        <div class="bg-green-50 border border-green-100 rounded-2xl p-5 mb-5">
+        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-5 mb-4">
           <div class="flex items-start gap-4">
-            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0 text-xl">
-              🌱
+            <div class="w-10 h-10 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3c0 0-6 4-6 9a6 6 0 0012 0c0-5-6-9-6-9z"/>
+                <line x1="12" y1="12" x2="12" y2="21"/>
+              </svg>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-800 mb-1">Add your first plant</p>
-              <p class="text-xs text-gray-500 leading-relaxed">
+              <p class="text-[14px] font-medium text-gray-800 mb-1">Add your first plant</p>
+              <p class="text-[13px] text-gray-500 leading-relaxed">
                 Tell GrowWatch what you're growing and you'll get personalised light advice,
                 a mood ring, and alerts tailored to your plant's needs.
               </p>
               <a routerLink="/plants"
-                 class="inline-block mt-3 text-xs font-medium bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors">
+                 class="inline-block mt-3 text-[13px] font-medium bg-gw-green text-white px-3 py-1.5 rounded-lg hover:bg-gw-green-dark transition-colors">
                 + Add a plant
               </a>
             </div>
@@ -85,38 +95,38 @@ interface Metric {
         </div>
       }
 
-      <!-- Metrics grid -->
+      <!-- Sensor metrics -->
       <div class="flex flex-col gap-2">
         @for (metric of metrics(); track metric.key) {
-          <div class="bg-white rounded-xl p-3.5 border border-gray-100">
+          <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200">
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
                 <span class="text-base">{{ metric.icon }}</span>
-                <span class="text-sm text-gray-500">{{ metric.label }}</span>
+                <span class="text-[13px] text-gray-500">{{ metric.label }}</span>
               </div>
               @if (metric.status !== 'missing') {
-                <span class="text-sm font-medium text-gray-800">
-                  {{ metric.value }}<span class="text-xs text-gray-400 ml-0.5">{{ metric.unit }}</span>
+                <span class="text-[14px] font-medium text-gray-800">
+                  {{ metric.value }}<span class="text-[11px] text-gray-400 ml-0.5">{{ metric.unit }}</span>
                 </span>
               } @else {
-                <span class="text-xs text-gray-300 italic">coming soon</span>
+                <span class="text-[11px] text-gray-300 italic">coming soon</span>
               }
             </div>
             @if (metric.status !== 'missing') {
-              <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-0.5 bg-gray-100 rounded-full overflow-hidden">
                 <div class="h-full rounded-full transition-all duration-500"
-                     [class]="metric.status === 'warn' ? 'bg-amber-400' : 'bg-green-400'"
+                     [class]="metric.status === 'warn' ? 'bg-gw-amber' : 'bg-gw-green'"
                      [style.width.%]="metric.percent">
                 </div>
               </div>
               @if (metric.tip) {
-                <p class="text-xs text-amber-600 mt-1.5">{{ metric.tip }}</p>
+                <p class="text-[11px] text-gw-amber-dark mt-1.5">{{ metric.tip }}</p>
               }
               @if (metric.sublabel) {
-                <p class="text-xs text-gray-400 mt-1.5">{{ metric.sublabel }}</p>
+                <p class="text-[11px] text-gray-400 mt-1.5">{{ metric.sublabel }}</p>
               }
             } @else {
-              <div class="h-1.5 bg-gray-50 rounded-full"></div>
+              <div class="h-0.5 bg-gray-50 rounded-full"></div>
             }
           </div>
         }
@@ -169,36 +179,28 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   moodBg = computed(() => {
     const m = this.mood().mood;
-    if (m === 'thriving') return 'bg-green-100';
-    if (m === 'good') return 'bg-emerald-100';
-    if (m === 'stressed') return 'bg-amber-100';
-    if (m === 'critical') return 'bg-red-100';
+    if (m === 'thriving' || m === 'good') return 'bg-gw-green-light';
+    if (m === 'stressed') return 'bg-gw-amber-light';
+    if (m === 'critical') return 'bg-gw-red-light';
     return 'bg-gray-100';
   });
 
-  moodEmoji = computed(() => {
+  moodIconColor = computed(() => {
     const m = this.mood().mood;
-    if (m === 'thriving') return '🌿';
-    if (m === 'good') return '🌱';
-    if (m === 'stressed') return '🍂';
-    if (m === 'critical') return '🥀';
-    return '💤';
+    if (m === 'thriving' || m === 'good') return 'text-gw-green-dark';
+    if (m === 'stressed') return 'text-gw-amber-dark';
+    if (m === 'critical') return 'text-gw-red-dark';
+    return 'text-gray-400';
   });
 
-  voiceBubbleBg = computed(() => {
+  bubbleBg = computed(() => {
     const m = this.mood().mood;
-    if (m === 'thriving' || m === 'good') return 'bg-green-50';
-    if (m === 'stressed') return 'bg-amber-50';
-    if (m === 'critical') return 'bg-red-50';
-    return 'bg-gray-50';
+    return (m === 'stressed' || m === 'critical') ? 'bg-gw-amber-light' : 'bg-gw-green-light';
   });
 
-  voiceTextColor = computed(() => {
+  bubbleTextColor = computed(() => {
     const m = this.mood().mood;
-    if (m === 'thriving' || m === 'good') return 'text-green-800';
-    if (m === 'stressed') return 'text-amber-800';
-    if (m === 'critical') return 'text-red-800';
-    return 'text-gray-500';
+    return (m === 'stressed' || m === 'critical') ? 'text-gw-amber-dark' : 'text-gw-green-dark';
   });
 
   voiceMessage = computed(() => {
@@ -212,12 +214,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     const status = d.lightStatus?.status;
 
     if (status === 'TOO_LOW') {
-      if (this.isNight()) {
-        return `Low light at night is expected. No action needed.`;
-      }
+      if (this.isNight()) return `Low light at night is expected. No action needed.`;
       if (this.isDawnOrDusk()) {
-        const h = this.hour();
-        return h < 12
+        return this.hour() < 12
           ? `Light is low for early morning. Check again later in the day.`
           : `Light is dropping as expected for this time of day.`;
       }

@@ -1,5 +1,27 @@
 @import 'tailwindcss';
 
+@theme {
+  /* Green — health / ok / primary action */
+  --color-gw-green:       #1D9E75;
+  --color-gw-green-light: #E1F5EE;
+  --color-gw-green-dark:  #085041;
+
+  /* Amber — warning / attention */
+  --color-gw-amber:       #BA7517;
+  --color-gw-amber-light: #FAEEDA;
+  --color-gw-amber-dark:  #633806;
+
+  /* Red — critical / alerts only */
+  --color-gw-red:         #E24B4A;
+  --color-gw-red-light:   #FCEBEB;
+  --color-gw-red-dark:    #791F1F;
+
+  /* Blue — weather only */
+  --color-gw-blue:        #378ADD;
+  --color-gw-blue-light:  #E6F1FB;
+  --color-gw-blue-dark:   #0C447C;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }

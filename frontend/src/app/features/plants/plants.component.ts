@@ -34,15 +34,15 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-medium text-gray-800">My plants</h1>
-          <p class="text-xs text-gray-400 mt-0.5">
+          <h1 class="text-[18px] font-medium text-gray-800">My plants</h1>
+          <p class="text-[11px] text-gray-400 mt-0.5">
             {{ plants().length }} plant{{ plants().length !== 1 ? 's' : '' }}
             @if (plants().length > 0) { · all monitored }
           </p>
         </div>
         <button (click)="showForm.set(true)"
                 [disabled]="showForm()"
-                class="text-sm bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                class="text-[13px] bg-white border-[0.5px] border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
           + Add plant
         </button>
       </div>
@@ -51,49 +51,49 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
       @if (plants().length === 0) {
         <div class="text-center py-16">
           <div class="text-4xl mb-3">🌱</div>
-          <p class="text-gray-500 text-sm">No plants yet.</p>
-          <p class="text-gray-400 text-xs mt-1">Add your first plant to personalise the greenhouse voice.</p>
+          <p class="text-[13px] text-gray-500">No plants yet.</p>
+          <p class="text-[11px] text-gray-400 mt-1">Add your first plant to personalise the greenhouse voice.</p>
         </div>
       }
 
       <!-- Plant list -->
       <div class="flex flex-col gap-2">
         @for (plant of plants(); track plant.id) {
-          <div class="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-gray-200 transition-colors"
+          <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:border-gray-300 transition-colors"
                [routerLink]="['/plants', plant.id]">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-2xl"
+            <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-xl"
                  [class]="getStyle(plant.type).bg">
               {{ getStyle(plant.type).emoji }}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="font-semibold text-sm text-gray-900 truncate">{{ plant.name }}</div>
-              <div class="text-xs text-gray-400 mt-0.5">
-                {{ getTypeLabel(plant.type) }} · planted {{ formatDate(plant.plantedDate) }} · {{ plantService.getAgeLabel(plant) }}
+              <div class="font-medium text-[14px] text-gray-900 truncate">{{ plant.name }}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">
+                {{ getTypeLabel(plant.type) }} · {{ plantService.getAgeLabel(plant) }}
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <span class="text-xs px-2.5 py-1 rounded-full bg-green-50 text-green-700 font-medium">Monitored</span>
-              <span class="text-gray-300 text-base">›</span>
+              <span class="text-[11px] px-2.5 py-1 rounded-full bg-gw-green-light text-gw-green-dark font-medium">Monitored</span>
+              <span class="text-gray-300 text-sm">›</span>
             </div>
           </div>
         }
       </div>
 
-      <!-- Add another plant — bottom CTA -->
+      <!-- Add another — bottom CTA -->
       @if (plants().length > 0) {
         <button (click)="showForm.set(true)"
                 [disabled]="showForm()"
-                class="w-full mt-3 py-4 text-sm text-gray-400 hover:text-gray-600 border-t border-dashed border-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                class="w-full mt-3 py-4 text-[13px] text-gray-400 hover:text-gray-600 border-t border-dashed border-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           + Add another plant
         </button>
       }
     </div>
 
-    <!-- Backdrop + bottom-sheet (mobile) / modal (desktop) -->
+    <!-- Backdrop + bottom-sheet / modal -->
     @if (showForm()) {
       <div class="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center"
            (click)="cancelForm()">
-        <div class="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl"
+        <div class="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl border-[0.5px] border-gray-200"
              (click)="$event.stopPropagation()">
 
           <!-- Drag handle — mobile only -->
@@ -102,20 +102,20 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
           </div>
 
           <div class="p-6">
-            <h2 class="text-base font-medium text-gray-800 mb-1">Add a plant</h2>
-            <p class="text-sm text-gray-400 mb-5">Tell me what you're growing.</p>
+            <h2 class="text-[14px] font-medium text-gray-800 mb-1">Add a plant</h2>
+            <p class="text-[13px] text-gray-400 mb-5">Tell me what you're growing.</p>
 
             <div class="flex flex-col gap-4">
               <div>
-                <label class="block text-xs text-gray-400 mb-1.5">Plant name</label>
+                <label class="block text-[11px] text-gray-400 mb-1.5">Plant name</label>
                 <input [ngModel]="formName()" (ngModelChange)="formName.set($event)"
                        type="text" placeholder="e.g. Big Basil"
-                       class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-green-400 transition-colors" />
+                       class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
               </div>
               <div>
-                <label class="block text-xs text-gray-400 mb-1.5">Plant type</label>
+                <label class="block text-[11px] text-gray-400 mb-1.5">Plant type</label>
                 <select [ngModel]="formType()" (ngModelChange)="formType.set($event)"
-                        class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-green-400 transition-colors bg-white">
+                        class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors bg-white">
                   <option value="">Select a plant type…</option>
                   @for (group of typeGroups; track group.name) {
                     <optgroup [label]="group.name">
@@ -127,20 +127,20 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
                 </select>
               </div>
               <div>
-                <label class="block text-xs text-gray-400 mb-1.5">Planting date</label>
+                <label class="block text-[11px] text-gray-400 mb-1.5">Planting date</label>
                 <input [ngModel]="formDate()" (ngModelChange)="formDate.set($event)"
                        type="date"
-                       class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-green-400 transition-colors" />
+                       class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
               </div>
 
               <div class="flex gap-2 pt-1 pb-4">
                 <button (click)="addPlant()"
                         [disabled]="!canSubmit() || saving()"
-                        class="flex-1 bg-green-600 text-white text-sm py-3 rounded-xl font-medium hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                        class="flex-1 bg-gw-green text-white text-[13px] py-3 rounded-xl font-medium hover:bg-gw-green-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                   {{ saving() ? 'Adding…' : 'Add to my greenhouse' }}
                 </button>
                 <button (click)="cancelForm()"
-                        class="px-4 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                        class="px-4 text-[13px] text-gray-400 hover:text-gray-600 transition-colors">
                   Cancel
                 </button>
               </div>
@@ -205,5 +205,4 @@ export class PlantsComponent {
     this.saving.set(false);
     this.showForm.set(false);
   }
-
 }

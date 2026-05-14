@@ -14,9 +14,9 @@ import { PlantService } from '../../core/services/plant.service';
       </button>
 
       @if (plant()) {
-        <h1 class="text-2xl font-semibold text-gray-900">{{ plant()!.name }}</h1>
+        <h1 class="text-[18px] font-medium text-gray-900">{{ plant()!.name }}</h1>
       } @else {
-        <p class="text-sm text-gray-400">Plant not found.</p>
+        <p class="text-[13px] text-gray-400">Plant not found.</p>
       }
 
     </div>
