@@ -88,6 +88,7 @@ export class DigestComponent implements OnInit {
   loading = signal(true);
   hourlyData = signal<HourlySensorData[]>([]);
   plants = this.plantService.plants;
+  private monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
 
   digestItems = computed<DigestItem[]>(() => {
     const data = this.hourlyData();
@@ -155,7 +156,7 @@ export class DigestComponent implements OnInit {
 
   summaryMessage = computed(() => {
     const items = this.digestItems();
-    const plants = this.plants();
+    const plants = this.monitoredPlants();
     const plantNames = plants.length > 0 ? plants.map(p => p.name).join(' and ') : 'your plants';
     const warnings = items.filter(i => i.status === 'warn').length;
 

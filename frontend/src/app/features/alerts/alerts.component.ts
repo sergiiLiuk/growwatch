@@ -86,6 +86,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   alerts = signal<Alert[]>(this.loadAlerts());
   plants = this.plantService.plants;
+  private monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
 
   todayAlerts = computed(() => {
     const today = new Date().toDateString();
@@ -131,7 +132,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
   }
 
   private checkConditions(data: SensorData) {
-    const plants = this.plants();
+    const plants = this.monitoredPlants();
     const plantNames = plants.length > 0 ? plants.map(p => p.name).join(', ') : 'your plants';
 
     // Light alerts

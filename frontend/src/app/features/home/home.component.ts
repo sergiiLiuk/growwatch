@@ -142,6 +142,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   latestData = signal<SensorData | null>(null);
   plants = this.plantService.plants;
+  monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
   weather = this.weatherService.weather;
 
   private hour(): number { return new Date().getHours(); }
@@ -150,7 +151,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   showAlert = computed(() => {
     const d = this.latestData();
-    if (!d || this.plants().length === 0) return false;
+    if (!d || this.monitoredPlants().length === 0) return false;
     if (this.isNight() || this.isDawnOrDusk()) return false;
     const status = d.lightStatus?.status;
     return status === 'TOO_LOW' || status === 'TOO_HIGH';
@@ -203,7 +204,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   voiceMessage = computed(() => {
     const d = this.latestData();
-    const plants = this.plants();
+    const plants = this.monitoredPlants();
     const w = this.weather();
     const plantNames = plants.map(p => p.name).join(', ');
 
@@ -249,7 +250,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   metrics = computed<Metric[]>(() => {
     const d = this.latestData();
-    const hasPlants = this.plants().length > 0;
+    const hasPlants = this.monitoredPlants().length > 0;
 
     const lightPct = d
       ? hasPlants
