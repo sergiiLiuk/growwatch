@@ -70,7 +70,7 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-[14px] text-gray-900 truncate">{{ plant.name }}</div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                  {{ getTypeLabel(plant.type) }} · {{ plantService.getAgeLabel(plant) }}@if (plant.count > 1) { · ×{{ plant.count }}}
+                  {{ getTypeLabel(plant.type) }} · {{ plantService.getAgeLabel(plant) }} · ×{{ plant.count }}
                 </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
