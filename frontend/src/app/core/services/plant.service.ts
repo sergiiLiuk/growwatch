@@ -43,18 +43,27 @@ export interface Plant {
   type: PlantType;
   plantedDate: Date;
   count: number;
+  monitored: boolean;
 }
 
 const PLANTS_QUERY = gql`
   query GetPlants {
-    plants { id name type plantedDate count }
+    plants { id name type plantedDate count monitored }
+  }
+`;
+
+const SET_MONITORED = gql`
+  mutation SetPlantMonitored($id: String!, $monitored: Boolean!) {
+    setPlantMonitored(id: $id, monitored: $monitored) {
+      id name type plantedDate count monitored
+    }
   }
 `;
 
 const ADD_PLANT = gql`
   mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!) {
     addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count) {
-      id name type plantedDate count
+      id name type plantedDate count monitored
     }
   }
 `;
@@ -62,7 +71,7 @@ const ADD_PLANT = gql`
 const UPDATE_PLANT = gql`
   mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!) {
     updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count) {
-      id name type plantedDate count
+      id name type plantedDate count monitored
     }
   }
 `;
@@ -72,6 +81,8 @@ const REMOVE_PLANT = gql`
     removePlant(id: $id)
   }
 `;
+
+interface RawPlant { id: string; name: string; type: string; plantedDate: string; count: number; monitored: boolean; }
 
 @Injectable({ providedIn: 'root' })
 export class PlantService {
@@ -85,30 +96,24 @@ export class PlantService {
 
   private loadPlants() {
     this.client
-      .query<{ plants: { id: string; name: string; type: string; plantedDate: string; count: number }[] }>({
-        query: PLANTS_QUERY,
-        fetchPolicy: 'network-only',
-      })
-      .then(result => {
-        this.plants.set(this.mapPlants(result.data?.plants ?? []));
-      })
+      .query<{ plants: RawPlant[] }>({ query: PLANTS_QUERY, fetchPolicy: 'network-only' })
+      .then(result => this.plants.set(this.mapPlants(result.data?.plants ?? [])))
       .catch(err => console.error('Failed to load plants:', err));
   }
 
-  private mapPlants(raw: { id: string; name: string; type: string; plantedDate: string; count: number }[]): Plant[] {
-    return raw.map(p => ({ ...p, type: p.type as PlantType, plantedDate: new Date(p.plantedDate), count: p.count ?? 1 }));
+  private mapPlants(raw: RawPlant[]): Plant[] {
+    return raw.map(p => ({ ...p, type: p.type as PlantType, plantedDate: new Date(p.plantedDate), count: p.count ?? 1, monitored: p.monitored ?? true }));
   }
 
   add(name: string, type: PlantType, plantedDate: Date, count: number): Observable<Plant> {
     return new Observable(observer => {
       this.client
-        .mutate<{ addPlant: { id: string; name: string; type: string; plantedDate: string; count: number } }>({
+        .mutate<{ addPlant: RawPlant }>({
           mutation: ADD_PLANT,
           variables: { name: name.trim(), type: type.trim(), plantedDate: plantedDate.toISOString(), count },
         })
         .then(result => {
-          const plant = result.data!.addPlant;
-          const mapped: Plant = { ...plant, type: plant.type as PlantType, plantedDate: new Date(plant.plantedDate) };
+          const mapped = this.mapPlants([result.data!.addPlant])[0];
           this.plants.update(ps => [...ps, mapped]);
           observer.next(mapped);
           observer.complete();
@@ -120,13 +125,12 @@ export class PlantService {
   update(id: string, name: string, type: PlantType, plantedDate: Date, count: number): Observable<Plant> {
     return new Observable(observer => {
       this.client
-        .mutate<{ updatePlant: { id: string; name: string; type: string; plantedDate: string; count: number } }>({
+        .mutate<{ updatePlant: RawPlant }>({
           mutation: UPDATE_PLANT,
           variables: { id, name: name.trim(), type, plantedDate: plantedDate.toISOString(), count },
         })
         .then(result => {
-          const plant = result.data!.updatePlant;
-          const mapped: Plant = { ...plant, type: plant.type as PlantType, plantedDate: new Date(plant.plantedDate) };
+          const mapped = this.mapPlants([result.data!.updatePlant])[0];
           this.plants.update(ps => ps.map(p => p.id === id ? mapped : p));
           observer.next(mapped);
           observer.complete();
@@ -145,6 +149,23 @@ export class PlantService {
         .then(() => {
           this.plants.update(ps => ps.filter(p => p.id !== id));
           observer.next(true);
+          observer.complete();
+        })
+        .catch(err => observer.error(err));
+    });
+  }
+
+  setMonitored(id: string, monitored: boolean): Observable<Plant> {
+    return new Observable(observer => {
+      this.client
+        .mutate<{ setPlantMonitored: RawPlant }>({
+          mutation: SET_MONITORED,
+          variables: { id, monitored },
+        })
+        .then(result => {
+          const mapped = this.mapPlants([result.data!.setPlantMonitored])[0];
+          this.plants.update(ps => ps.map(p => p.id === id ? mapped : p));
+          observer.next(mapped);
           observer.complete();
         })
         .catch(err => observer.error(err));

@@ -8,6 +8,7 @@ export interface IPlant extends Document {
     type: PlantType;
     plantedDate: Date;
     count: number;
+    monitored: boolean;
 }
 
 const plantSchema = new Schema<IPlant>(
@@ -16,6 +17,7 @@ const plantSchema = new Schema<IPlant>(
         type: { type: String, required: true, enum: PLANT_TYPE_VALUES },
         plantedDate: { type: Date, required: true },
         count: { type: Number, required: true, default: 1 },
+        monitored: { type: Boolean, required: true, default: true },
     },
     { timestamps: true }
 );

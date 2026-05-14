@@ -74,7 +74,10 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
                 </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                <span class="text-[11px] px-2.5 py-1 rounded-full bg-gw-green-light text-gw-green-dark font-medium">Monitored</span>
+                <span class="text-[11px] px-2.5 py-1 rounded-full font-medium"
+                      [class]="plant.monitored ? 'bg-gw-green-light text-gw-green-dark' : 'bg-gray-100 text-gray-400'">
+                  {{ plant.monitored ? 'Monitored' : 'Paused' }}
+                </span>
                 <button (click)="$event.stopPropagation(); toggleMenu(plant.id)"
                         class="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
                   <svg width="3" height="15" viewBox="0 0 3 15" fill="currentColor">
@@ -97,6 +100,17 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                   Edit plant
+                </button>
+                <button (click)="toggleMonitored(plant)"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    @if (plant.monitored) {
+                      <path d="M10 9v6m4-6v6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                    } @else {
+                      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    }
+                  </svg>
+                  {{ plant.monitored ? 'Pause monitoring' : 'Resume monitoring' }}
                 </button>
                 <button (click)="startDelete(plant)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gw-red hover:bg-gw-red-light transition-colors">
@@ -408,6 +422,10 @@ export class PlantsComponent {
     this.editDate.set('');
     this.editCount.set(1);
     this.editSaving.set(false);
+  }
+
+  toggleMonitored(plant: Plant) {
+    this.plantService.setMonitored(plant.id, !plant.monitored).subscribe();
   }
 
   startDelete(plant: Plant) {

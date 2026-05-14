@@ -58,6 +58,18 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string }> = {
                   </svg>
                   Edit plant
                 </button>
+                <button (click)="toggleMonitored($event)"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    @if (plant()!.monitored) {
+                      <path d="M10 9v6m4-6v6"/>
+                    } @else {
+                      <polyline points="12 6 12 12 16 14"/>
+                    }
+                  </svg>
+                  {{ plant()!.monitored ? 'Pause monitoring' : 'Resume monitoring' }}
+                </button>
               </div>
             }
           </div>
@@ -202,6 +214,14 @@ export class PlantDetailComponent {
 
   getPlantedLabel(plant: Plant): string {
     return plant.plantedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
+  toggleMonitored(e: Event) {
+    e.stopPropagation();
+    const p = this.plant();
+    if (!p) return;
+    this.plantService.setMonitored(p.id, !p.monitored).subscribe();
+    this.menuOpen.set(false);
   }
 
   startEdit(e: Event) {

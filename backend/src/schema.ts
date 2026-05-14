@@ -60,6 +60,7 @@ export const typeDefs = gql`
     type: PlantType!
     plantedDate: String!
     count: Int!
+    monitored: Boolean!
   }
 
   type Query {
@@ -73,6 +74,7 @@ export const typeDefs = gql`
     addPlant(name: String!, type: PlantType!, plantedDate: String!, count: Int!): Plant!
     updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!, count: Int!): Plant!
     removePlant(id: String!): Boolean!
+    setPlantMonitored(id: String!, monitored: Boolean!): Plant!
   }
 
   type Subscription {
