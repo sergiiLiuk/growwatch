@@ -1,5 +1,4 @@
 import express, { Express, Request, Response } from 'express';
-import cors from 'cors';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
@@ -21,7 +20,6 @@ async function startServer() {
     const httpServer = createServer(app);
 
     app.use(express.json());
-    app.use(cors({ origin: '*' }));
 
     // ─── ESP32 endpoint ───────────────────────────────────────────────────────
     app.post('/api/sensor-data', (req: Request, res: Response) => {
@@ -66,7 +64,7 @@ async function startServer() {
 
     const apolloServer = new ApolloServer({ schema });
     await apolloServer.start();
-    apolloServer.applyMiddleware({ app: app as any, path: '/graphql', cors: false });
+    apolloServer.applyMiddleware({ app: app as any, path: '/graphql', cors: { origin: true, credentials: true } });
 
     // ─── Start ────────────────────────────────────────────────────────────────
     httpServer.listen(PORT, '0.0.0.0', () => {
