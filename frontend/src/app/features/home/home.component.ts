@@ -41,8 +41,6 @@ interface Metric {
             {{ weatherService.loading() ? 'Loading weather…' : 'Weather unavailable' }}
           </span>
         }
-        <div class="w-1.5 h-1.5 rounded-full shrink-0 ml-1"
-             [class]="sensorOnline() ? 'bg-gw-green' : 'bg-gw-red'"></div>
       </div>
 
       <!-- Mood ring — only when plants are registered -->

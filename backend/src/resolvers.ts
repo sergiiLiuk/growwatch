@@ -144,6 +144,21 @@ export const resolvers = {
                 plantedDate: doc.plantedDate.toISOString(),
             };
         },
+        updatePlant: async (_: any, { id, name, type, plantedDate }: { id: string; name: string; type: PlantType; plantedDate: string }) => {
+            const doc = await Plant.findByIdAndUpdate(
+                id,
+                { name, type, plantedDate: new Date(plantedDate) },
+                { new: true }
+            );
+            if (!doc) throw new Error('Plant not found');
+            await refreshPrimaryPlant();
+            return {
+                id: doc._id.toString(),
+                name: doc.name,
+                type: doc.type,
+                plantedDate: doc.plantedDate.toISOString(),
+            };
+        },
         removePlant: async (_: any, { id }: { id: string }) => {
             const result = await Plant.findByIdAndDelete(id);
             await refreshPrimaryPlant();

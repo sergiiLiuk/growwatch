@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
-import { Observable } from 'rxjs';
+import { Observable, retry, timer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 
 export type LightStatus = 'TOO_LOW' | 'OPTIMAL' | 'TOO_HIGH';
@@ -93,6 +93,7 @@ export class SensorService {
               }
             }
           `,
+          fetchPolicy: 'network-only',
         })
         .then((result: { data?: { latestSensorData: SensorData | null } }) => {
           observer.next(result.data?.latestSensorData || null);
@@ -103,7 +104,7 @@ export class SensorService {
   }
 
   subscribeToSensorData(): Observable<SensorData> {
-    return new Observable(observer => {
+    return new Observable<SensorData>(observer => {
       const sub = this.apolloClient
         .subscribe({
           query: gql`
@@ -120,7 +121,9 @@ export class SensorService {
           error: (err: any) => observer.error(err),
         });
       return () => sub.unsubscribe();
-    });
+    }).pipe(
+      retry({ delay: () => timer(3000) })
+    );
   }
 
   getHourlyData(limit = 168): Observable<HourlySensorData[]> {

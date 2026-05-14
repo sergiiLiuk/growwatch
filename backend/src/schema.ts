@@ -70,6 +70,7 @@ export const typeDefs = gql`
 
   type Mutation {
     addPlant(name: String!, type: PlantType!, plantedDate: String!): Plant!
+    updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!): Plant!
     removePlant(id: String!): Boolean!
   }
 

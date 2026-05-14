@@ -58,6 +58,14 @@ const ADD_PLANT = gql`
   }
 `;
 
+const UPDATE_PLANT = gql`
+  mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!) {
+    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate) {
+      id name type plantedDate
+    }
+  }
+`;
+
 const REMOVE_PLANT = gql`
   mutation RemovePlant($id: String!) {
     removePlant(id: $id)
@@ -101,6 +109,24 @@ export class PlantService {
           const plant = result.data!.addPlant;
           const mapped: Plant = { ...plant, type: plant.type as PlantType, plantedDate: new Date(plant.plantedDate) };
           this.plants.update(ps => [...ps, mapped]);
+          observer.next(mapped);
+          observer.complete();
+        })
+        .catch(err => observer.error(err));
+    });
+  }
+
+  update(id: string, name: string, type: PlantType, plantedDate: Date): Observable<Plant> {
+    return new Observable(observer => {
+      this.client
+        .mutate<{ updatePlant: { id: string; name: string; type: string; plantedDate: string } }>({
+          mutation: UPDATE_PLANT,
+          variables: { id, name: name.trim(), type, plantedDate: plantedDate.toISOString() },
+        })
+        .then(result => {
+          const plant = result.data!.updatePlant;
+          const mapped: Plant = { ...plant, type: plant.type as PlantType, plantedDate: new Date(plant.plantedDate) };
+          this.plants.update(ps => ps.map(p => p.id === id ? mapped : p));
           observer.next(mapped);
           observer.complete();
         })
