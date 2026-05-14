@@ -4,6 +4,7 @@ import { ApolloClient, InMemoryCache, split } from '@apollo/client/core';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class GraphQLClientService {
@@ -11,10 +12,10 @@ export class GraphQLClientService {
 
   constructor(httpLink: HttpLink) {
     const wsLink = new GraphQLWsLink(
-      createClient({ url: 'ws://localhost:4000/graphql' })
+      createClient({ url: environment.backendWsUrl })
     );
 
-    const http = httpLink.create({ uri: 'http://localhost:4000/graphql' });
+    const http = httpLink.create({ uri: environment.backendHttpUrl });
 
     const link = split(
       ({ query }) => {
