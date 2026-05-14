@@ -12,6 +12,7 @@ module.exports = async function handler(req, res) {
     res.status(response.status).json(data);
   } catch (err) {
     console.error('GraphQL proxy error:', err);
-    res.status(502).json({ errors: [{ message: `Proxy error: ${err.message}` }] });
+    const cause = err.cause ? (err.cause.code || err.cause.message || String(err.cause)) : '';
+    res.status(502).json({ errors: [{ message: `Proxy error: ${err.message} | cause: ${cause} | url: ${backendUrl}` }] });
   }
 };
