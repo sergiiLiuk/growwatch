@@ -73,7 +73,7 @@ async function startServer() {
 
     const apolloServer = new ApolloServer({ schema });
     await apolloServer.start();
-    apolloServer.applyMiddleware({ app: app as any, path: '/graphql' });
+    apolloServer.applyMiddleware({ app: app as any, path: '/graphql', cors: false });
 
     // ─── Start ────────────────────────────────────────────────────────────────
     httpServer.listen(PORT, '0.0.0.0', () => {
