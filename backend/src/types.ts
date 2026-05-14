@@ -1,15 +1,17 @@
 export interface SensorData {
     id: string;
-    temperature: number;
-    humidity: number;
-    soilMoisture: number;
     lightLevel: number;
     timestamp: Date;
+    temperature?: number;
+    humidity?: number;
+    co2?: number;
+    pressure?: number;
 }
 
 export interface ESP32Message {
-    temperature: number;
-    humidity: number;
-    soilMoisture: number;
     lightLevel: number;
+    temperature?: number;
+    humidity?: number;
+    co2?: number;
+    pressure?: number;
 }

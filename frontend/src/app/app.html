@@ -3,13 +3,13 @@
     <div class="left-side">
       <h2>Controls</h2>
       <div class="status">
-        <p><strong>Auto-refresh:</strong> Every 10 seconds</p>
-        <p><strong>Status:</strong> {{ loading() ? 'Loading...' : 'Active' }}</p>
+        <p><strong>Real-time updates:</strong> Active</p>
+        <p><strong>Status:</strong> {{ loading() ? 'Loading...' : 'Connected' }}</p>
       </div>
     </div>
     <div class="divider" role="separator" aria-label="Divider"></div>
     <div class="right-side">
-      <h2>Sensor Data</h2>
+      <h2>🌱 Sensor Data</h2>
 
       @if (error()) {
       <div class="error">{{ error() }}</div>
@@ -17,30 +17,108 @@
 
       @if (latestData()) {
       <div class="latest-data">
-        <h3>Latest Reading</h3>
-        <div class="sensor-card">
-          <p><strong>Temperature:</strong> {{ latestData()!.temperature }}°C</p>
-          <p><strong>Humidity:</strong> {{ latestData()!.humidity }}%</p>
-          <p><strong>Soil Moisture:</strong> {{ latestData()!.soilMoisture }}%</p>
-          <p><strong>Light Level:</strong> {{ latestData()!.lightLevel }} lux</p>
-          <p><strong>Timestamp:</strong> {{ latestData()!.timestamp }}</p>
+        <h3>📊 Latest Reading</h3>
+        <div class="sensor-card latest-card">
+          <!-- Light Status Display -->
+          <div class="light-status">
+            <div class="status-icon" [style.color]="getStatusColor(latestData()!.lightStatus.status)">
+              {{ latestData()!.lightStatus.icon }}
+            </div>
+            <div class="status-content">
+              <div class="status-message">{{ latestData()!.lightStatus.message }}</div>
+              <div class="light-details">
+                <span class="light-value">{{ latestData()!.lightLevel | number:'1.0-0' }} lux</span>
+                <span class="percentage">{{ latestData()!.lightStatus.percentageOfOptimal }}% of optimal</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Bar -->
+          <div class="status-bar">
+            <div class="bar-background">
+              <div class="bar-fill" [style.width]="(latestData()!.lightStatus.percentageOfOptimal)+'%'"
+                [style.background-color]="getStatusColor(latestData()!.lightStatus.status)">
+              </div>
+            </div>
+          </div>
+
+          <p class="time">⏰ {{ latestData()!.timestamp | date:'HH:mm:ss' }}</p>
+        </div>
+
+        <!-- Daily Light Progress -->
+        <div class="daily-progress">
+          <h4>☀️ Daily Light Progress</h4>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width]="dailyLightProgress()+'%'">
+              {{ dailyLightProgress() }}%
+            </div>
+          </div>
+          <p class="progress-text">{{ dailyLightProgress() }}% of daily target reached</p>
         </div>
       </div>
       }
 
+      <!-- Historical Data Chart -->
+      <div class="chart-section">
+        <h3>📈 Historical Data</h3>
+        <div class="chart-tabs">
+          <button class="tab-btn" [class.active]="activeTab() === 'day'" (click)="selectTab('day')">
+            📅 Day
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'week'" (click)="selectTab('week')">
+            📊 Week
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'month'" (click)="selectTab('month')">
+            📈 Month
+          </button>
+        </div>
+
+        @if (chartData().labels && chartData().labels!.length > 0) {
+        <div class="chart-container">
+          <canvas baseChart type="line" [data]="chartData()" [options]="{
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top'
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Light Level (lux)'
+                  }
+                }
+              }
+            }">
+          </canvas>
+        </div>
+        } @else {
+        <p>No historical data available yet</p>
+        }
+      </div>
+
       <div class="data-history">
-        <h3>Data History</h3>
+        <h3>📋 Data History (Last 10)</h3>
         @if (sensorData().length === 0 && !loading()) {
         <p>No sensor data available</p>
         } @else {
         <div class="sensor-list">
           @for (data of sensorData(); track data.id) {
-          <div class="sensor-card">
-            <p><strong>Temperature:</strong> {{ data.temperature }}°C</p>
-            <p><strong>Humidity:</strong> {{ data.humidity }}%</p>
-            <p><strong>Soil Moisture:</strong> {{ data.soilMoisture }}%</p>
-            <p><strong>Light Level:</strong> {{ data.lightLevel }} lux</p>
-            <p><strong>Timestamp:</strong> {{ data.timestamp }}</p>
+          <div class="sensor-card history-card">
+            <div class="card-header">
+              <span class="status-badge" [style.background-color]="getStatusColor(data.lightStatus.status)">
+                {{ data.lightStatus.icon }} {{ data.lightStatus.status }}
+              </span>
+              <span class="time">{{ data.timestamp | date:'HH:mm:ss' }}</span>
+            </div>
+            <div class="card-body">
+              <p><strong>Light:</strong> {{ data.lightLevel | number:'1.0-0' }} lux</p>
+              <p class="status-text">{{ data.lightStatus.message }}</p>
+            </div>
           </div>
           }
         </div>
