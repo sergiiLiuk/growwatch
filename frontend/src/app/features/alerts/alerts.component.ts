@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal, inject, computed } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { SensorService, SensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
@@ -14,17 +14,17 @@ export interface Alert {
 
 @Component({
   selector: 'app-alerts',
-  imports: [CommonModule, DatePipe],
+  imports: [DatePipe],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-lg font-medium text-gray-800">Alerts</h1>
-          <p class="text-xs text-gray-400 mt-0.5">{{ todayCount() }} today</p>
+          <h1 class="text-[18px] font-medium text-gray-800">Alerts</h1>
+          <p class="text-[11px] text-gray-400 mt-0.5">{{ todayCount() }} today</p>
         </div>
         @if (alerts().length > 0) {
-          <button (click)="clearAll()" class="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          <button (click)="clearAll()" class="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
             Clear all
           </button>
         }
@@ -33,23 +33,23 @@ export interface Alert {
       @if (alerts().length === 0) {
         <div class="text-center py-16">
           <div class="text-4xl mb-3">🔔</div>
-          <p class="text-sm text-gray-500">No alerts yet.</p>
-          <p class="text-xs text-gray-400 mt-1">You'll be notified when your plants need attention.</p>
+          <p class="text-[13px] text-gray-500">No alerts yet.</p>
+          <p class="text-[11px] text-gray-400 mt-1">You'll be notified when your plants need attention.</p>
         </div>
       } @else {
 
         <!-- Today -->
         @if (todayAlerts().length > 0) {
-          <div class="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">Today</div>
+          <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">Today</div>
           <div class="flex flex-col gap-2 mb-5">
             @for (alert of todayAlerts(); track alert.id) {
-              <div class="bg-white border border-gray-100 rounded-2xl p-4 flex gap-3">
+              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex gap-3">
                 <div class="mt-1 w-2 h-2 rounded-full shrink-0"
                      [class]="dotColor(alert.type)"></div>
                 <div class="flex-1">
-                  <div class="text-sm font-medium text-gray-800">{{ alert.title }}</div>
-                  <div class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ alert.message }}</div>
-                  <div class="text-xs text-gray-300 mt-1.5">{{ alert.timestamp | date:'HH:mm' }}</div>
+                  <div class="text-[14px] font-medium text-gray-800">{{ alert.title }}</div>
+                  <div class="text-[13px] text-gray-500 mt-0.5 leading-relaxed">{{ alert.message }}</div>
+                  <div class="text-[11px] text-gray-300 mt-1.5">{{ alert.timestamp | date:'HH:mm' }}</div>
                 </div>
               </div>
             }
@@ -58,16 +58,16 @@ export interface Alert {
 
         <!-- Earlier -->
         @if (earlierAlerts().length > 0) {
-          <div class="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">Earlier</div>
+          <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">Earlier</div>
           <div class="flex flex-col gap-2">
             @for (alert of earlierAlerts(); track alert.id) {
-              <div class="bg-white border border-gray-100 rounded-2xl p-4 flex gap-3 opacity-70">
+              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex gap-3 opacity-60">
                 <div class="mt-1 w-2 h-2 rounded-full shrink-0"
                      [class]="dotColor(alert.type)"></div>
                 <div class="flex-1">
-                  <div class="text-sm font-medium text-gray-800">{{ alert.title }}</div>
-                  <div class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ alert.message }}</div>
-                  <div class="text-xs text-gray-300 mt-1.5">{{ alert.timestamp | date:'EEE HH:mm' }}</div>
+                  <div class="text-[14px] font-medium text-gray-800">{{ alert.title }}</div>
+                  <div class="text-[13px] text-gray-500 mt-0.5 leading-relaxed">{{ alert.message }}</div>
+                  <div class="text-[11px] text-gray-300 mt-1.5">{{ alert.timestamp | date:'EEE HH:mm' }}</div>
                 </div>
               </div>
             }
@@ -120,9 +120,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
   }
 
   dotColor(type: Alert['type']) {
-    if (type === 'warn') return 'bg-amber-400';
-    if (type === 'danger') return 'bg-red-400';
-    return 'bg-green-400';
+    if (type === 'warn') return 'bg-gw-amber';
+    if (type === 'danger') return 'bg-gw-red';
+    return 'bg-gw-green';
   }
 
   clearAll() {

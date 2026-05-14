@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { SensorService, HourlySensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
 
@@ -13,21 +13,19 @@ interface DigestItem {
 
 @Component({
   selector: 'app-digest',
-  imports: [CommonModule, DatePipe],
+  imports: [DatePipe],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h1 class="text-lg font-medium text-gray-800">Daily digest</h1>
-          <p class="text-xs text-gray-400 mt-0.5">{{ today | date:'EEEE, d MMMM' }}</p>
-        </div>
+      <div class="mb-6">
+        <h1 class="text-[18px] font-medium text-gray-800">Daily digest</h1>
+        <p class="text-[11px] text-gray-400 mt-0.5">{{ today | date:'EEEE, d MMMM' }}</p>
       </div>
 
       @if (loading()) {
         <div class="flex flex-col gap-3">
           @for (i of [1,2,3,4]; track i) {
-            <div class="bg-white rounded-2xl p-4 border border-gray-100 animate-pulse">
+            <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200 animate-pulse">
               <div class="flex gap-3">
                 <div class="w-9 h-9 rounded-full bg-gray-100 shrink-0"></div>
                 <div class="flex-1">
@@ -42,28 +40,28 @@ interface DigestItem {
       } @else if (digestItems().length === 0) {
         <div class="text-center py-16">
           <div class="text-4xl mb-3">📋</div>
-          <p class="text-sm text-gray-500">No data yet for today.</p>
-          <p class="text-xs text-gray-400 mt-1">Check back after your sensors have been running for a few hours.</p>
+          <p class="text-[13px] text-gray-500">No data yet for today.</p>
+          <p class="text-[11px] text-gray-400 mt-1">Check back after your sensors have been running for a few hours.</p>
         </div>
       } @else {
 
         <!-- Summary bubble -->
-        <div class="bg-green-50 rounded-2xl p-4 mb-5">
-          <p class="text-sm text-green-800 leading-relaxed">{{ summaryMessage() }}</p>
+        <div class="bg-gw-green-light p-4 mb-5 rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-[2px]">
+          <p class="text-[13px] text-gw-green-dark leading-relaxed">{{ summaryMessage() }}</p>
         </div>
 
         <!-- Digest items -->
         <div class="flex flex-col gap-3">
           @for (item of digestItems(); track item.label) {
-            <div class="bg-white rounded-2xl p-4 border border-gray-100 flex gap-3">
+            <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200 flex gap-3">
               <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-lg"
-                   [class]="item.status === 'ok' ? 'bg-green-50' : 'bg-amber-50'">
+                   [class]="item.status === 'ok' ? 'bg-gw-green-light' : 'bg-gw-amber-light'">
                 {{ item.icon }}
               </div>
               <div class="flex-1 min-w-0">
-                <div class="text-xs font-medium text-gray-600 mb-0.5">{{ item.label }}</div>
-                <div class="text-sm text-gray-800 leading-relaxed">{{ item.message }}</div>
-                <div class="text-xs text-gray-400 mt-1">{{ item.detail }}</div>
+                <div class="text-[11px] font-medium text-gray-600 mb-0.5">{{ item.label }}</div>
+                <div class="text-[13px] text-gray-800 leading-relaxed">{{ item.message }}</div>
+                <div class="text-[11px] text-gray-400 mt-1">{{ item.detail }}</div>
               </div>
             </div>
           }
@@ -72,10 +70,10 @@ interface DigestItem {
         <!-- Reading quality -->
         @if (readingQuality() !== null) {
           <div class="mt-4 flex items-center gap-2 px-1">
-            <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-              <div class="h-full bg-green-400 rounded-full" [style.width.%]="readingQuality()"></div>
+            <div class="flex-1 h-0.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-gw-green rounded-full" [style.width.%]="readingQuality()"></div>
             </div>
-            <span class="text-xs text-gray-400">{{ readingQuality() }}% signal quality today</span>
+            <span class="text-[11px] text-gray-400">{{ readingQuality() }}% signal quality today</span>
           </div>
         }
       }
@@ -89,7 +87,6 @@ export class DigestComponent implements OnInit {
   today = new Date();
   loading = signal(true);
   hourlyData = signal<HourlySensorData[]>([]);
-
   plants = this.plantService.plants;
 
   digestItems = computed<DigestItem[]>(() => {
@@ -98,7 +95,6 @@ export class DigestComponent implements OnInit {
 
     const items: DigestItem[] = [];
 
-    // Light
     const avgLight = data.reduce((s, d) => s + d.avgLight, 0) / data.length;
     const maxLight = Math.max(...data.map(d => d.maxLight));
     const maxHour = data.find(d => d.maxLight === maxLight);
@@ -115,7 +111,6 @@ export class DigestComponent implements OnInit {
       detail: `avg ${Math.round(avgLight)} lux · peak ${Math.round(maxLight)} lux${maxHour ? ' at ' + new Date(maxHour.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`,
     });
 
-    // Temperature (if available)
     const hasTemp = data.some(d => d.avgTemperature != null);
     if (hasTemp) {
       const avgTemp = data.filter(d => d.avgTemperature != null).reduce((s, d) => s + d.avgTemperature!, 0) / data.length;
@@ -131,7 +126,6 @@ export class DigestComponent implements OnInit {
       });
     }
 
-    // Humidity (if available)
     const hasHumidity = data.some(d => d.avgHumidity != null);
     if (hasHumidity) {
       const avgHum = data.filter(d => d.avgHumidity != null).reduce((s, d) => s + d.avgHumidity!, 0) / data.length;
@@ -146,7 +140,6 @@ export class DigestComponent implements OnInit {
       });
     }
 
-    // Pressure (if available)
     const hasPressure = data.some(d => d.avgPressure != null);
     if (hasPressure) {
       const avgPressure = data.filter(d => d.avgPressure != null).reduce((s, d) => s + d.avgPressure!, 0) / data.length;
@@ -175,16 +168,14 @@ export class DigestComponent implements OnInit {
     const data = this.hourlyData();
     if (data.length === 0) return null;
     const total = data.reduce((s, d) => s + d.readingCount, 0);
-    const expected = data.length * 720; // 720 readings per hour at 5s intervals
+    const expected = data.length * 720;
     return Math.round((total / expected) * 100);
   });
 
   ngOnInit() {
     this.sensorService.getHourlyData(24).subscribe(data => {
-      // Filter to today only
       const todayStr = new Date().toDateString();
-      const todayData = data.filter(d => new Date(d.hour).toDateString() === todayStr);
-      this.hourlyData.set(todayData);
+      this.hourlyData.set(data.filter(d => new Date(d.hour).toDateString() === todayStr));
       this.loading.set(false);
     });
   }
