@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from 'express';
+import cors from 'cors';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
@@ -20,15 +21,7 @@ async function startServer() {
     const httpServer = createServer(app);
 
     app.use(express.json());
-
-    // CORS
-    app.use((req, res, next) => {
-        res.header('Access-Control-Allow-Origin', '*');
-        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-        res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-        if (req.method === 'OPTIONS') return res.sendStatus(200);
-        next();
-    });
+    app.use(cors({ origin: '*' }));
 
     // ─── ESP32 endpoint ───────────────────────────────────────────────────────
     app.post('/api/sensor-data', (req: Request, res: Response) => {
