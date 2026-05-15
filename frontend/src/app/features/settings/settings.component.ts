@@ -1,5 +1,6 @@
 import { Component, signal, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorService, SensorData } from '../../core/services/sensor.service';
 
@@ -82,11 +83,36 @@ import { SensorService, SensorData } from '../../core/services/sensor.service';
         </div>
       </div>
 
+      <!-- Sensor setup guide link -->
+      <div class="mt-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Setup</div>
+        <button (click)="openSensorSetup()"
+                class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+          <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+              <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+              <circle cx="12" cy="20" r="1" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="flex-1 text-left">
+            <div class="text-[14px] font-medium text-gray-800">Sensor setup guide</div>
+            <div class="text-[11px] text-gray-400 mt-0.5">How to connect your ESP32 to WiFi</div>
+          </div>
+          <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+
     </div>
   `,
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   private sensorService = inject(SensorService);
+  private router = inject(Router);
   private sub?: Subscription;
 
   Math = Math;
@@ -121,6 +147,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     });
     setInterval(() => this.updateStatus(this.latestData()), 5000);
   }
+
+  openSensorSetup() { this.router.navigate(['/settings/sensor-setup']); }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
 }
