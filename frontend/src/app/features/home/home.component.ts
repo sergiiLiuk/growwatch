@@ -68,7 +68,7 @@ interface Metric {
       }
 
       <!-- Onboarding card — only when no plants registered -->
-      @if (plants().length === 0) {
+      @if (!plantsLoading() && plants().length === 0) {
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-5 mb-4">
           <div class="flex items-start gap-4">
             <div class="w-10 h-10 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
@@ -142,6 +142,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   latestData = signal<SensorData | null>(null);
   plants = this.plantService.plants;
+  plantsLoading = this.plantService.plantsLoading;
   monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
   weather = this.weatherService.weather;
 

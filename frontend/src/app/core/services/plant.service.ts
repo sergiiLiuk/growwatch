@@ -88,6 +88,7 @@ interface RawPlant { id: string; name: string; type: string; plantedDate: string
 export class PlantService {
   private client: ApolloClient;
   plants = signal<Plant[]>([]);
+  plantsLoading = signal(true);
 
   constructor(gqlClient: GraphQLClientService) {
     this.client = gqlClient.client;
@@ -98,7 +99,8 @@ export class PlantService {
     this.client
       .query<{ plants: RawPlant[] }>({ query: PLANTS_QUERY, fetchPolicy: 'network-only' })
       .then(result => this.plants.set(this.mapPlants(result.data?.plants ?? [])))
-      .catch(err => console.error('Failed to load plants:', err));
+      .catch(err => console.error('Failed to load plants:', err))
+      .finally(() => this.plantsLoading.set(false));
   }
 
   private mapPlants(raw: RawPlant[]): Plant[] {

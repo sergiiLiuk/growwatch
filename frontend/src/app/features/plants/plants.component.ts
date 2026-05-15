@@ -48,7 +48,7 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
       </div>
 
       <!-- Empty state -->
-      @if (plants().length === 0) {
+      @if (!plantsLoading() && plants().length === 0) {
         <div class="text-center py-16">
           <div class="text-4xl mb-3">🌱</div>
           <p class="text-[13px] text-gray-500">No plants yet.</p>
@@ -310,6 +310,7 @@ export class PlantsComponent {
   plantService = inject(PlantService);
   private router = inject(Router);
   plants = this.plantService.plants;
+  plantsLoading = this.plantService.plantsLoading;
 
   // Add form
   showForm = signal(false);
