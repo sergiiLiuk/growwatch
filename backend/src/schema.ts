@@ -67,6 +67,7 @@ export const typeDefs = gql`
     sensorData: [SensorData!]!
     latestSensorData: SensorData
     hourlyData(limit: Int): [HourlySensorData!]!
+    hourlyDataRange(from: String!, to: String!): [HourlySensorData!]!
     plants: [Plant!]!
   }
 

@@ -139,9 +139,33 @@ export class SensorService {
             }
           `,
           variables: { limit },
+          fetchPolicy: 'network-only',
         })
         .then((result: { data?: { hourlyData: HourlySensorData[] } }) => {
           observer.next(result.data?.hourlyData || []);
+          observer.complete();
+        })
+        .catch((err: any) => observer.error(err));
+    });
+  }
+
+  getHourlyDataRange(from: Date, to: Date): Observable<HourlySensorData[]> {
+    return new Observable(observer => {
+      this.apolloClient
+        .query<{ hourlyDataRange: HourlySensorData[] }>({
+          query: gql`
+            query GetHourlyDataRange($from: String!, $to: String!) {
+              hourlyDataRange(from: $from, to: $to) {
+                id hour lightLevel minLight maxLight avgLight readingCount
+                lightStatus { status message icon percentageOfOptimal }
+              }
+            }
+          `,
+          variables: { from: from.toISOString(), to: to.toISOString() },
+          fetchPolicy: 'network-only',
+        })
+        .then((result: { data?: { hourlyDataRange: HourlySensorData[] } }) => {
+          observer.next(result.data?.hourlyDataRange || []);
           observer.complete();
         })
         .catch((err: any) => observer.error(err));

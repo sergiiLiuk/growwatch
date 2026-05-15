@@ -15,6 +15,7 @@ interface Metric {
   status: 'ok' | 'warn' | 'missing';
   tip?: string;
   sublabel?: string;
+  link?: string;
 }
 
 @Component({
@@ -96,7 +97,9 @@ interface Metric {
       <!-- Sensor metrics -->
       <div class="flex flex-col gap-2">
         @for (metric of metrics(); track metric.key) {
-          <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200">
+          <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200 transition-colors"
+               [class]="metric.link ? 'cursor-pointer hover:border-gray-300' : ''"
+               [routerLink]="metric.link ?? null">
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
                 <span class="text-base">{{ metric.icon }}</span>
@@ -270,6 +273,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         status: d ? (lightWarn ? 'warn' : 'ok') : 'missing',
         tip: lightWarn && d && hasPlants ? d.lightStatus.message : undefined,
         sublabel: !hasPlants && d ? this.luxIntensityLabel(d.lightLevel) : undefined,
+        link: '/light',
       },
       {
         key: 'temp', label: 'Temperature', icon: '🌡️',

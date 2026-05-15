@@ -110,7 +110,7 @@ export const resolvers = {
                     .lean();
                 return data.map((doc: any) => ({
                     id: doc._id.toString(),
-                    hour: doc.hour,
+                    hour: doc.hour instanceof Date ? doc.hour.toISOString() : String(doc.hour),
                     lightLevel: doc.lightLevel,
                     minLight: doc.minLight,
                     maxLight: doc.maxLight,
@@ -119,6 +119,25 @@ export const resolvers = {
                 }));
             } catch (error) {
                 console.error('❌ Error fetching hourly data:', error);
+                return [];
+            }
+        },
+        hourlyDataRange: async (_: any, { from, to }: { from: string; to: string }) => {
+            try {
+                const data = await HourlySensorData.find({
+                    hour: { $gte: new Date(from), $lte: new Date(to) },
+                }).sort({ hour: 1 }).lean();
+                return data.map((doc: any) => ({
+                    id: doc._id.toString(),
+                    hour: doc.hour instanceof Date ? doc.hour.toISOString() : String(doc.hour),
+                    lightLevel: doc.lightLevel,
+                    minLight: doc.minLight,
+                    maxLight: doc.maxLight,
+                    avgLight: doc.avgLight,
+                    readingCount: doc.readingCount,
+                }));
+            } catch (error) {
+                console.error('❌ Error fetching hourly data range:', error);
                 return [];
             }
         },

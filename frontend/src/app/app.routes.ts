@@ -19,6 +19,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/plants/plant-detail.component').then(m => m.PlantDetailComponent),
       },
       {
+        path: 'light',
+        loadComponent: () => import('./features/light/light-insights.component').then(m => m.LightInsightsComponent),
+      },
+      {
         path: 'digest',
         loadComponent: () => import('./features/digest/digest.component').then(m => m.DigestComponent),
       },
