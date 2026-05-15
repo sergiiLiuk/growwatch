@@ -256,23 +256,35 @@ export class HomeComponent implements OnInit, OnDestroy {
     const d = this.latestData();
     const hasPlants = this.monitoredPlants().length > 0;
 
-    const lightPct = d
-      ? hasPlants
-        ? Math.min(d.lightStatus.percentageOfOptimal, 100)
-        : Math.min(Math.round((d.lightLevel / 60000) * 100), 100)
-      : 0;
     const suppressWarn = this.isNight() || this.isDawnOrDusk();
     const lightWarn = hasPlants && d?.lightStatus.status !== 'OPTIMAL' && !suppressWarn;
+    const nightlyLow = suppressWarn && d?.lightStatus.status === 'TOO_LOW';
+
+    const lightIcon = this.isNight() ? '🌙' : this.isDawnOrDusk() ? '🌅' : '☀️';
+
+    // At night with low light show a modest fixed bar (sensor active, low is expected)
+    // rather than a near-zero bar that looks like a fault
+    const lightPct = d
+      ? nightlyLow && hasPlants
+        ? 25
+        : hasPlants
+          ? Math.min(d.lightStatus.percentageOfOptimal, 100)
+          : Math.min(Math.round((d.lightLevel / 60000) * 100), 100)
+      : 0;
+
+    const lightSublabel = nightlyLow && hasPlants
+      ? (this.isNight() ? 'Sensor active · nighttime' : 'Sensor active · low light period')
+      : (!hasPlants && d ? this.luxIntensityLabel(d.lightLevel) : undefined);
 
     return [
       {
-        key: 'light', label: 'Light', icon: '☀️',
+        key: 'light', label: 'Light', icon: lightIcon,
         value: d ? Math.round(d.lightLevel).toString() : '—',
         unit: 'lux',
         percent: lightPct,
         status: d ? (lightWarn ? 'warn' : 'ok') : 'missing',
         tip: lightWarn && d && hasPlants ? d.lightStatus.message : undefined,
-        sublabel: !hasPlants && d ? this.luxIntensityLabel(d.lightLevel) : undefined,
+        sublabel: lightSublabel,
         link: '/light',
       },
       {
