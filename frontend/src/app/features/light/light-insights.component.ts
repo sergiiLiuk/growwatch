@@ -140,13 +140,11 @@ interface DayBar {
                 <div class="absolute inset-x-0 top-0 border-t border-gray-100"></div>
                 <div class="absolute inset-x-0 top-1/2 border-t border-gray-100"></div>
                 <div class="absolute inset-x-0 bottom-0 border-t border-gray-100"></div>
-                <!-- Optimal reference line -->
-                @if (optimalLineY() !== null) {
-                  <div class="absolute inset-x-0 z-10 flex items-center" [style.bottom.px]="optimalLineY()">
+                <!-- Optimal reference lines (one per monitored plant type) -->
+                @for (line of thresholdLines(); track line.label) {
+                  <div class="absolute inset-x-0 z-10 flex items-center" [style.bottom.px]="line.lineY">
                     <div class="flex-1 border-t border-dashed border-gw-green/70"></div>
-                    @if (optimalLabel()) {
-                      <span class="text-[8px] text-gw-green-dark pl-1 leading-none shrink-0">{{ optimalLabel() }}</span>
-                    }
+                    <span class="text-[8px] text-gw-green-dark pl-1 leading-none shrink-0">{{ line.label }}</span>
                   </div>
                 }
                 <!-- Bars -->
@@ -262,31 +260,36 @@ export class LightInsightsComponent implements OnDestroy {
 
   private weekMaxLuxH = computed(() => this.rawDayData().reduce((m, r) => Math.max(m, r.totalLuxHours), 0));
 
-  optimalDailyLuxH = computed(() => {
-    const plant = this.plantService.plants().find(p => p.monitored);
-    if (!plant) return null;
-    const range = PLANT_LIGHT_RANGES[plant.type];
-    return range ? range.min * 12 : null;
+  optimalThresholds = computed(() => {
+    const seen = new Set<number>();
+    const result: { luxH: number; label: string }[] = [];
+    for (const p of this.plantService.plants().filter(p => p.monitored)) {
+      const range = PLANT_LIGHT_RANGES[p.type];
+      if (!range) continue;
+      const luxH = range.min * 12;
+      if (seen.has(luxH)) continue;
+      seen.add(luxH);
+      result.push({ luxH, label: `${range.label} min.` });
+    }
+    return result;
   });
 
-  optimalLabel = computed(() => {
-    const plant = this.plantService.plants().find(p => p.monitored);
-    if (!plant) return null;
-    const range = PLANT_LIGHT_RANGES[plant.type];
-    return range ? `${range.label} min.` : null;
+  private effectiveChartMax = computed(() => {
+    const maxThreshold = this.optimalThresholds().reduce((m, t) => Math.max(m, t.luxH), 0);
+    return Math.max(this.weekMaxLuxH(), maxThreshold, 1);
   });
-
-  private effectiveChartMax = computed(() => Math.max(this.weekMaxLuxH(), this.optimalDailyLuxH() ?? 0, 1));
 
   yAxisLabels = computed(() => {
     const max = this.effectiveChartMax();
     return { top: this.formatYTick(max), mid: this.formatYTick(max / 2) };
   });
 
-  optimalLineY = computed(() => {
-    const opt = this.optimalDailyLuxH();
-    if (opt === null) return null;
-    return Math.min(Math.round((opt / this.effectiveChartMax()) * 96), 96);
+  thresholdLines = computed(() => {
+    const eMax = this.effectiveChartMax();
+    return this.optimalThresholds().map(t => ({
+      ...t,
+      lineY: Math.min(Math.round((t.luxH / eMax) * 96), 96),
+    }));
   });
 
   chartBars = computed<DayBar[]>(() => {
