@@ -3,32 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PlantService, Plant, PlantType, PLANT_TYPE_OPTIONS } from '../../core/services/plant.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
-
-const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
-  TOMATO:     { emoji: '🍅', bg: 'bg-orange-50' },
-  PEPPER:     { emoji: '🌶️', bg: 'bg-red-50'    },
-  CUCUMBER:   { emoji: '🥒', bg: 'bg-lime-50'   },
-  ZUCCHINI:   { emoji: '🥬', bg: 'bg-green-50'  },
-  EGGPLANT:   { emoji: '🍆', bg: 'bg-purple-50' },
-  LETTUCE:    { emoji: '🥬', bg: 'bg-green-50'  },
-  SPINACH:    { emoji: '🥬', bg: 'bg-emerald-50'},
-  KALE:       { emoji: '🥬', bg: 'bg-teal-50'   },
-  ARUGULA:    { emoji: '🌿', bg: 'bg-lime-50'   },
-  RADISH:     { emoji: '🌱', bg: 'bg-pink-50'   },
-  BASIL:      { emoji: '🌿', bg: 'bg-teal-50'   },
-  MINT:       { emoji: '🌱', bg: 'bg-emerald-50'},
-  PARSLEY:    { emoji: '🌿', bg: 'bg-green-50'  },
-  CILANTRO:   { emoji: '🌿', bg: 'bg-lime-50'   },
-  CHIVE:      { emoji: '🌱', bg: 'bg-green-50'  },
-  OREGANO:    { emoji: '🌿', bg: 'bg-amber-50'  },
-  THYME:      { emoji: '🌿', bg: 'bg-yellow-50' },
-  ROSEMARY:   { emoji: '🌿', bg: 'bg-sky-50'    },
-  STRAWBERRY: { emoji: '🍓', bg: 'bg-red-50'    },
-};
+import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
+import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
+import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 
 @Component({
   selector: 'app-plants',
-  imports: [FormsModule, PlantEditModalComponent],
+  imports: [FormsModule, PlantEditModalComponent, StatusBadgeComponent, EmptyStateComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -50,11 +31,8 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
 
       <!-- Empty state -->
       @if (!plantsLoading() && plants().length === 0) {
-        <div class="text-center py-16">
-          <div class="text-4xl mb-3">🌱</div>
-          <p class="text-[13px] text-gray-500">No plants yet.</p>
-          <p class="text-[11px] text-gray-400 mt-1">Add your first plant to personalise the greenhouse voice.</p>
-        </div>
+        <app-empty-state emoji="🌱" title="No plants yet."
+                         subtitle="Add your first plant to personalise the greenhouse voice." />
       }
 
       <!-- Plant list -->
@@ -75,10 +53,8 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
                 </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                <span class="text-[11px] px-2.5 py-1 rounded-full font-medium"
-                      [class]="plant.monitored ? 'bg-gw-green-light text-gw-green-dark' : 'bg-gray-100 text-gray-400'">
-                  {{ plant.monitored ? 'Monitored' : 'Paused' }}
-                </span>
+                <app-status-badge [label]="plant.monitored ? 'Monitored' : 'Paused'"
+                                  [variant]="plant.monitored ? 'green' : 'gray'" />
                 <button (click)="$event.stopPropagation(); toggleMenu(plant.id)"
                         class="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
                   <svg width="3" height="15" viewBox="0 0 3 15" fill="currentColor">
@@ -268,13 +244,7 @@ export class PlantsComponent {
   // Edit modal
   editingPlant = signal<Plant | null>(null);
 
-  typeGroups = Array.from(
-    PLANT_TYPE_OPTIONS.reduce((map, opt) => {
-      if (!map.has(opt.group)) map.set(opt.group, []);
-      map.get(opt.group)!.push(opt);
-      return map;
-    }, new Map<string, typeof PLANT_TYPE_OPTIONS>())
-  ).map(([name, options]) => ({ name, options }));
+  typeGroups = this.plantService.typeGroups;
 
   canSubmit = computed(() =>
     this.formName().trim().length > 0 &&

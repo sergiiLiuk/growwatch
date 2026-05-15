@@ -1,9 +1,11 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { ProgressBarComponent } from '../../shared/components/atoms/progress-bar.component';
 import { SensorService, SensorData, MoodInfo } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
+import { isNight, isDawnOrDusk } from '../../core/utils/time';
 
 interface Metric {
   key: string;
@@ -20,7 +22,7 @@ interface Metric {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  imports: [RouterLink, ProgressBarComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -114,12 +116,7 @@ interface Metric {
               }
             </div>
             @if (metric.status !== 'missing') {
-              <div class="h-0.5 bg-gray-100 rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-500"
-                     [class]="metric.status === 'warn' ? 'bg-gw-amber' : 'bg-gw-green'"
-                     [style.width.%]="metric.percent">
-                </div>
-              </div>
+              <app-progress-bar [percent]="metric.percent" [status]="metric.status" />
               @if (metric.tip) {
                 <p class="text-[11px] text-gw-amber-dark mt-1.5">{{ metric.tip }}</p>
               }
@@ -149,24 +146,20 @@ export class HomeComponent implements OnInit, OnDestroy {
   monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
   weather = this.weatherService.weather;
 
-  private hour(): number { return new Date().getHours(); }
-  private isNight(): boolean { const h = this.hour(); return h >= 21 || h < 6; }
-  private isDawnOrDusk(): boolean { const h = this.hour(); return (h >= 6 && h < 9) || (h >= 18 && h < 21); }
-
   showAlert = computed(() => {
     const d = this.latestData();
     if (!d || this.monitoredPlants().length === 0) return false;
-    if (this.isNight() || this.isDawnOrDusk()) return false;
+    if (isNight() || isDawnOrDusk()) return false;
     const status = d.lightStatus?.status;
     return status === 'TOO_LOW' || status === 'TOO_HIGH';
   });
 
   mood = computed<MoodInfo>(() => {
     const base = this.sensorService.getMood(this.latestData());
-    if (base.mood === 'stressed' && this.isNight()) {
+    if (base.mood === 'stressed' && isNight()) {
       return { mood: 'good', label: 'Resting', description: 'Low light is expected at night' };
     }
-    if (base.mood === 'stressed' && this.isDawnOrDusk()) {
+    if (base.mood === 'stressed' && isDawnOrDusk()) {
       return { mood: 'good', label: 'Low light', description: 'Light levels are low for this time of day' };
     }
     return base;
@@ -217,9 +210,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     const status = d.lightStatus?.status;
 
     if (status === 'TOO_LOW') {
-      if (this.isNight()) return `Low light at night is expected. No action needed.`;
-      if (this.isDawnOrDusk()) {
-        return this.hour() < 12
+      if (isNight()) return `Low light at night is expected. No action needed.`;
+      if (isDawnOrDusk()) {
+        return new Date().getHours() < 12
           ? `Light is low for early morning. Check again later in the day.`
           : `Light is dropping as expected for this time of day.`;
       }
@@ -256,11 +249,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     const d = this.latestData();
     const hasPlants = this.monitoredPlants().length > 0;
 
-    const suppressWarn = this.isNight() || this.isDawnOrDusk();
+    const suppressWarn = isNight() || isDawnOrDusk();
     const lightWarn = hasPlants && d?.lightStatus.status !== 'OPTIMAL' && !suppressWarn;
     const nightlyLow = suppressWarn && d?.lightStatus.status === 'TOO_LOW';
 
-    const lightIcon = this.isNight() ? '🌙' : this.isDawnOrDusk() ? '🌅' : '☀️';
+    const lightIcon = isNight() ? '🌙' : isDawnOrDusk() ? '🌅' : '☀️';
 
     // At night with low light show a modest fixed bar (sensor active, low is expected)
     // rather than a near-zero bar that looks like a fault
@@ -273,7 +266,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       : 0;
 
     const lightSublabel = nightlyLow && hasPlants
-      ? (this.isNight() ? 'Sensor active · nighttime' : 'Sensor active · low light period')
+      ? (isNight() ? 'Sensor active · nighttime' : 'Sensor active · low light period')
       : (!hasPlants && d ? this.luxIntensityLabel(d.lightLevel) : undefined);
 
     return [

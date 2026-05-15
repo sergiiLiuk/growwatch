@@ -183,4 +183,21 @@ export class PlantService {
     const months = Math.floor(days / 30);
     return `${months} month${months !== 1 ? 's' : ''} old`;
   }
+
+  getAgeShort(plant: Plant): string {
+    const days = Math.floor((Date.now() - plant.plantedDate.getTime()) / 86400000);
+    if (days < 7) return `${days} day${days !== 1 ? 's' : ''}`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 8) return `${weeks} week${weeks !== 1 ? 's' : ''}`;
+    const months = Math.floor(days / 30);
+    return `${months} month${months !== 1 ? 's' : ''}`;
+  }
+
+  readonly typeGroups = Array.from(
+    PLANT_TYPE_OPTIONS.reduce((map, opt) => {
+      if (!map.has(opt.group)) map.set(opt.group, []);
+      map.get(opt.group)!.push(opt);
+      return map;
+    }, new Map<string, PlantTypeOption[]>())
+  ).map(([name, options]) => ({ name, options }));
 }

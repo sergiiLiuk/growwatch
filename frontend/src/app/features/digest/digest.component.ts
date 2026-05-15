@@ -2,6 +2,8 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { SensorService, HourlySensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
+import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
+import { ProgressBarComponent } from '../../shared/components/atoms/progress-bar.component';
 
 interface DigestItem {
   icon: string;
@@ -13,7 +15,7 @@ interface DigestItem {
 
 @Component({
   selector: 'app-digest',
-  imports: [DatePipe],
+  imports: [DatePipe, EmptyStateComponent, ProgressBarComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -38,11 +40,8 @@ interface DigestItem {
           }
         </div>
       } @else if (digestItems().length === 0) {
-        <div class="text-center py-16">
-          <div class="text-4xl mb-3">📋</div>
-          <p class="text-[13px] text-gray-500">No data yet for today.</p>
-          <p class="text-[11px] text-gray-400 mt-1">Check back after your sensors have been running for a few hours.</p>
-        </div>
+        <app-empty-state emoji="📋" title="No data yet for today."
+                         subtitle="Check back after your sensors have been running for a few hours." />
       } @else {
 
         <!-- Summary bubble -->
@@ -70,8 +69,8 @@ interface DigestItem {
         <!-- Reading quality -->
         @if (readingQuality() !== null) {
           <div class="mt-4 flex items-center gap-2 px-1">
-            <div class="flex-1 h-0.5 bg-gray-100 rounded-full overflow-hidden">
-              <div class="h-full bg-gw-green rounded-full" [style.width.%]="readingQuality()"></div>
+            <div class="flex-1">
+              <app-progress-bar [percent]="readingQuality()!" />
             </div>
             <span class="text-[11px] text-gray-400">{{ readingQuality() }}% signal quality today</span>
           </div>

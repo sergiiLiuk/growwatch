@@ -4,6 +4,9 @@ import { Subscription } from 'rxjs';
 import { SensorService, SensorData, HourlySensorData, PLANT_LIGHT_RANGES } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
+import { ProgressBarComponent } from '../../shared/components/atoms/progress-bar.component';
+import { isNight, isDawnOrDusk, isOffPeak } from '../../core/utils/time';
 
 interface DayBar {
   dateStr: string;
@@ -20,7 +23,7 @@ interface DayBar {
 
 @Component({
   selector: 'app-light-insights',
-  imports: [PageContainerComponent],
+  imports: [PageContainerComponent, StatusBadgeComponent, ProgressBarComponent],
   template: `
     <app-page-container>
 
@@ -50,17 +53,14 @@ interface DayBar {
                 <div class="text-[12px] text-gray-400 mt-1.5">{{ readingSubLabel() }}</div>
               </div>
               @if (!isOffPeak() || latestData()!.lightStatus.status !== 'TOO_LOW') {
-                <span class="text-[11px] font-medium px-2.5 py-1 rounded-full mt-1 shrink-0"
-                      [class]="displayBadgeClass()">
-                  {{ displayBadgeLabel() }}
-                </span>
+                <app-status-badge [label]="displayBadgeLabel()" [variant]="displayBadgeVariant()"
+                                  class="mt-1 shrink-0" />
               }
             </div>
-            <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
-              <div class="h-full rounded-full transition-all duration-500"
-                   [class]="displayBarClass()"
-                   [style.width.%]="Math.min(latestData()!.lightStatus.percentageOfOptimal, 100)">
-              </div>
+            <div class="mb-2">
+              <app-progress-bar [percent]="Math.min(latestData()!.lightStatus.percentageOfOptimal, 100)"
+                                [status]="displayBadgeVariant() === 'green' ? 'ok' : 'warn'"
+                                size="md" />
             </div>
             <div class="text-[11px] text-gray-400">Updated {{ lastSeenLabel() }}</div>
           } @else {
@@ -389,15 +389,13 @@ export class LightInsightsComponent implements OnDestroy {
     return Math.round(v).toString();
   }
 
-  private isNight(): boolean { const h = new Date().getHours(); return h >= 21 || h < 6; }
-  private isDawnOrDusk(): boolean { const h = new Date().getHours(); return (h >= 6 && h < 9) || (h >= 18 && h < 21); }
-  isOffPeak(): boolean { return this.isNight() || this.isDawnOrDusk(); }
+  isOffPeak(): boolean { return isOffPeak(); }
 
   readingSubLabel = computed(() => {
     const d = this.latestData();
     if (!d) return '';
-    if (d.lightStatus.status === 'TOO_LOW' && this.isNight()) return 'Low light is expected at night';
-    if (d.lightStatus.status === 'TOO_LOW' && this.isDawnOrDusk()) return 'Light is low for this time of day';
+    if (d.lightStatus.status === 'TOO_LOW' && isNight()) return 'Low light is expected at night';
+    if (d.lightStatus.status === 'TOO_LOW' && isDawnOrDusk()) return 'Light is low for this time of day';
     return d.lightStatus.message;
   });
 
@@ -405,17 +403,20 @@ export class LightInsightsComponent implements OnDestroy {
     const d = this.latestData();
     if (!d) return '';
     const s = d.lightStatus.status;
-    if (s === 'TOO_LOW' && this.isNight()) return 'Night';
-    if (s === 'TOO_LOW' && this.isDawnOrDusk()) return 'Low light';
+    if (s === 'TOO_LOW' && isNight()) return 'Night';
+    if (s === 'TOO_LOW' && isDawnOrDusk()) return 'Low light';
     return this.statusLabel(s);
   });
 
-  displayBadgeClass = computed(() => {
+  displayBadgeVariant = computed<BadgeVariant>(() => {
     const d = this.latestData();
-    if (!d) return 'bg-gray-100 text-gray-500';
+    if (!d) return 'gray';
     const s = d.lightStatus.status;
-    if (s === 'TOO_LOW' && this.isOffPeak()) return 'bg-gray-100 text-gray-500';
-    return this.statusBadgeClass(s);
+    if (s === 'TOO_LOW' && isOffPeak()) return 'gray';
+    if (s === 'OPTIMAL')  return 'green';
+    if (s === 'TOO_LOW')  return 'amber';
+    if (s === 'TOO_HIGH') return 'red';
+    return 'gray';
   });
 
   displayBarClass = computed(() => {

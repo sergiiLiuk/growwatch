@@ -1,0 +1,23 @@
+import { PlantType } from '../services/plant.service';
+
+export const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> = {
+  TOMATO:     { emoji: '🍅', bg: 'bg-orange-50' },
+  PEPPER:     { emoji: '🌶️', bg: 'bg-red-50'    },
+  CUCUMBER:   { emoji: '🥒', bg: 'bg-lime-50'   },
+  ZUCCHINI:   { emoji: '🥬', bg: 'bg-green-50'  },
+  EGGPLANT:   { emoji: '🍆', bg: 'bg-purple-50' },
+  LETTUCE:    { emoji: '🥬', bg: 'bg-green-50'  },
+  SPINACH:    { emoji: '🥬', bg: 'bg-emerald-50'},
+  KALE:       { emoji: '🥬', bg: 'bg-teal-50'   },
+  ARUGULA:    { emoji: '🌿', bg: 'bg-lime-50'   },
+  RADISH:     { emoji: '🌱', bg: 'bg-pink-50'   },
+  BASIL:      { emoji: '🌿', bg: 'bg-teal-50'   },
+  MINT:       { emoji: '🌱', bg: 'bg-emerald-50'},
+  PARSLEY:    { emoji: '🌿', bg: 'bg-green-50'  },
+  CILANTRO:   { emoji: '🌿', bg: 'bg-lime-50'   },
+  CHIVE:      { emoji: '🌱', bg: 'bg-green-50'  },
+  OREGANO:    { emoji: '🌿', bg: 'bg-amber-50'  },
+  THYME:      { emoji: '🌿', bg: 'bg-yellow-50' },
+  ROSEMARY:   { emoji: '🌿', bg: 'bg-sky-50'    },
+  STRAWBERRY: { emoji: '🍓', bg: 'bg-red-50'    },
+};

@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { SensorService, SensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
+import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 
 export interface Alert {
   id: string;
@@ -14,7 +15,7 @@ export interface Alert {
 
 @Component({
   selector: 'app-alerts',
-  imports: [DatePipe],
+  imports: [DatePipe, EmptyStateComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -31,11 +32,8 @@ export interface Alert {
       </div>
 
       @if (alerts().length === 0) {
-        <div class="text-center py-16">
-          <div class="text-4xl mb-3">🔔</div>
-          <p class="text-[13px] text-gray-500">No alerts yet.</p>
-          <p class="text-[11px] text-gray-400 mt-1">You'll be notified when your plants need attention.</p>
-        </div>
+        <app-empty-state emoji="🔔" title="No alerts yet."
+                         subtitle="You'll be notified when your plants need attention." />
       } @else {
 
         <!-- Today -->

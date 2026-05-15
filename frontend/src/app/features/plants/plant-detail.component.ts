@@ -2,28 +2,7 @@ import { Component, inject, computed, signal, HostListener } from '@angular/core
 import { ActivatedRoute, Router } from '@angular/router';
 import { PlantService, Plant, PlantType, PLANT_TYPE_OPTIONS } from '../../core/services/plant.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
-
-const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string }> = {
-  TOMATO:     { emoji: '🍅' },
-  PEPPER:     { emoji: '🌶️' },
-  CUCUMBER:   { emoji: '🥒' },
-  ZUCCHINI:   { emoji: '🥬' },
-  EGGPLANT:   { emoji: '🍆' },
-  LETTUCE:    { emoji: '🥬' },
-  SPINACH:    { emoji: '🥬' },
-  KALE:       { emoji: '🥬' },
-  ARUGULA:    { emoji: '🌿' },
-  RADISH:     { emoji: '🌱' },
-  BASIL:      { emoji: '🌿' },
-  MINT:       { emoji: '🌱' },
-  PARSLEY:    { emoji: '🌿' },
-  CILANTRO:   { emoji: '🌿' },
-  CHIVE:      { emoji: '🌱' },
-  OREGANO:    { emoji: '🌿' },
-  THYME:      { emoji: '🌿' },
-  ROSEMARY:   { emoji: '🌿' },
-  STRAWBERRY: { emoji: '🍓' },
-};
+import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 
 @Component({
   selector: 'app-plant-detail',
@@ -95,7 +74,7 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string }> = {
           <!-- Stats -->
           <div class="grid grid-cols-3 gap-2">
             <div class="bg-white rounded-xl p-3 text-center">
-              <div class="text-[16px] font-semibold text-gw-green-dark">{{ getAgeShort(p) }}</div>
+              <div class="text-[16px] font-semibold text-gw-green-dark">{{ plantService.getAgeShort(p) }}</div>
               <div class="text-[11px] text-gray-400 mt-0.5">age</div>
             </div>
             <div class="bg-white rounded-xl p-3 text-center">
@@ -122,7 +101,7 @@ const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string }> = {
 export class PlantDetailComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private plantService = inject(PlantService);
+  plantService = inject(PlantService);
 
   plant = computed(() => {
     const id = this.route.snapshot.paramMap.get('id');
@@ -148,15 +127,6 @@ export class PlantDetailComponent {
 
   getTypeLabel(type: PlantType): string {
     return PLANT_TYPE_OPTIONS.find(o => o.value === type)?.label ?? type;
-  }
-
-  getAgeShort(plant: Plant): string {
-    const days = Math.floor((Date.now() - plant.plantedDate.getTime()) / 86400000);
-    if (days < 7) return `${days} day${days !== 1 ? 's' : ''}`;
-    const weeks = Math.floor(days / 7);
-    if (weeks < 8) return `${weeks} week${weeks !== 1 ? 's' : ''}`;
-    const months = Math.floor(days / 30);
-    return `${months} month${months !== 1 ? 's' : ''}`;
   }
 
   getPlantedLabel(plant: Plant): string {
