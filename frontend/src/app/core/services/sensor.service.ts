@@ -3,6 +3,28 @@ import { ApolloClient, gql } from '@apollo/client/core';
 import { Observable, retry, timer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 
+export const PLANT_LIGHT_RANGES: Record<string, { min: number; max: number; label: string }> = {
+  TOMATO:     { min: 20000, max: 50000, label: 'Tomato' },
+  PEPPER:     { min: 22000, max: 45000, label: 'Pepper' },
+  CUCUMBER:   { min: 21000, max: 40000, label: 'Cucumber' },
+  ZUCCHINI:   { min: 20000, max: 40000, label: 'Zucchini' },
+  EGGPLANT:   { min: 20000, max: 40000, label: 'Eggplant' },
+  LETTUCE:    { min: 10000, max: 20000, label: 'Lettuce' },
+  SPINACH:    { min: 10000, max: 20000, label: 'Spinach' },
+  KALE:       { min: 10000, max: 25000, label: 'Kale' },
+  ARUGULA:    { min:  8000, max: 15000, label: 'Arugula' },
+  RADISH:     { min: 10000, max: 20000, label: 'Radish' },
+  BASIL:      { min: 14000, max: 28000, label: 'Basil' },
+  MINT:       { min: 10000, max: 20000, label: 'Mint' },
+  PARSLEY:    { min: 10000, max: 20000, label: 'Parsley' },
+  CILANTRO:   { min: 10000, max: 20000, label: 'Cilantro' },
+  CHIVE:      { min: 10000, max: 20000, label: 'Chive' },
+  OREGANO:    { min: 15000, max: 30000, label: 'Oregano' },
+  THYME:      { min: 15000, max: 30000, label: 'Thyme' },
+  ROSEMARY:   { min: 20000, max: 40000, label: 'Rosemary' },
+  STRAWBERRY: { min: 15000, max: 30000, label: 'Strawberry' },
+};
+
 export type LightStatus = 'TOO_LOW' | 'OPTIMAL' | 'TOO_HIGH';
 
 export interface LightStatusInfo {

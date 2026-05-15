@@ -1,7 +1,8 @@
 import { Component, OnDestroy, signal, computed, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SensorService, SensorData, HourlySensorData } from '../../core/services/sensor.service';
+import { SensorService, SensorData, HourlySensorData, PLANT_LIGHT_RANGES } from '../../core/services/sensor.service';
+import { PlantService } from '../../core/services/plant.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 
 interface DayBar {
@@ -125,25 +126,53 @@ interface DayBar {
               }
             </div>
           } @else if (hasWeekData()) {
-            <!-- Bars -->
-            <div class="flex items-end gap-2" style="height: 96px">
-              @for (day of chartBars(); track day.dateStr) {
-                <div class="flex-1 flex flex-col-reverse" style="height: 96px" [title]="day.tooltip">
-                  <div class="w-full rounded-t-lg transition-all duration-500"
-                       [class]="day.barClass"
-                       [style.height.px]="day.barHeight">
+            <!-- Y-axis + bars -->
+            <div class="flex">
+              <!-- Y-axis labels -->
+              <div class="relative shrink-0 pr-1" style="width: 32px; height: 96px">
+                <span class="absolute top-0 right-0 text-[9px] text-gray-300 leading-none">{{ yAxisLabels().top }}</span>
+                <span class="absolute top-1/2 right-0 -translate-y-1/2 text-[9px] text-gray-300 leading-none">{{ yAxisLabels().mid }}</span>
+                <span class="absolute bottom-0 right-0 text-[9px] text-gray-300 leading-none">0</span>
+              </div>
+              <!-- Chart area -->
+              <div class="flex-1 relative" style="height: 96px">
+                <!-- Grid lines -->
+                <div class="absolute inset-x-0 top-0 border-t border-gray-100"></div>
+                <div class="absolute inset-x-0 top-1/2 border-t border-gray-100"></div>
+                <div class="absolute inset-x-0 bottom-0 border-t border-gray-100"></div>
+                <!-- Optimal reference line -->
+                @if (optimalLineY() !== null) {
+                  <div class="absolute inset-x-0 z-10 flex items-center" [style.bottom.px]="optimalLineY()">
+                    <div class="flex-1 border-t border-dashed border-gw-green/70"></div>
+                    @if (optimalLabel()) {
+                      <span class="text-[8px] text-gw-green-dark pl-1 leading-none shrink-0">{{ optimalLabel() }}</span>
+                    }
                   </div>
+                }
+                <!-- Bars -->
+                <div class="flex items-end gap-2 h-full">
+                  @for (day of chartBars(); track day.dateStr) {
+                    <div class="flex-1 flex flex-col-reverse h-full" [title]="day.tooltip">
+                      <div class="w-full rounded-t-lg transition-all duration-500"
+                           [class]="day.barClass"
+                           [style.height.px]="day.barHeight">
+                      </div>
+                    </div>
+                  }
                 </div>
-              }
+              </div>
             </div>
             <!-- Labels -->
-            <div class="flex gap-2 mt-2.5">
-              @for (day of chartBars(); track day.dateStr) {
-                <div class="flex-1 text-center text-[10px]"
-                     [class]="day.isToday ? 'text-gw-green-dark font-semibold' : 'text-gray-400'">
-                  {{ day.label }}
-                </div>
-              }
+            <div class="flex mt-2.5">
+              <div style="width: 32px" class="shrink-0"></div>
+              <div class="flex-1 flex gap-2">
+                @for (day of chartBars(); track day.dateStr) {
+                  <div class="flex-1 text-center text-[10px]"
+                       [class]="day.isToday ? 'text-gw-green-dark font-semibold' : 'text-gray-400'">
+                    {{ day.label }}
+                  </div>
+                }
+              </div>
             </div>
             <!-- Week total -->
             <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
@@ -167,6 +196,7 @@ interface DayBar {
 })
 export class LightInsightsComponent implements OnDestroy {
   private sensorService = inject(SensorService);
+  private plantService = inject(PlantService);
   private router = inject(Router);
   private weekSub?: Subscription;
   private liveSub?: Subscription;
@@ -211,57 +241,68 @@ export class LightInsightsComponent implements OnDestroy {
     return `${fmt(from)} – ${fmt(to)}`;
   });
 
-  chartBars = computed<DayBar[]>(() => {
-    const offset = this.weekOffset();
-    const now = new Date();
-    const today = new Date(now); today.setHours(0, 0, 0, 0);
-    const { from } = this.weekBounds(offset);
+  private rawDayData = computed(() => {
+    const { from } = this.weekBounds(this.weekOffset());
     const hourly = this.weekHourlyData();
-
-    const raw: Array<{ date: Date; totalLuxHours: number; hasData: boolean; isToday: boolean; isFuture: boolean }> = [];
-    let maxTotal = 0;
-
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(from);
-      day.setDate(from.getDate() + i);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(from); day.setDate(from.getDate() + i);
       const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
+      const dayHours = hourly.filter(h => { const hd = new Date(h.hour); return hd >= dayStart && hd <= dayEnd; });
+      return {
+        day, dayStart,
+        totalLuxHours: dayHours.reduce((s, h) => s + h.avgLight, 0),
+        hasData: dayHours.length > 0,
+        isToday: dayStart.getTime() === today.getTime(),
+        isFuture: dayStart > today,
+      };
+    });
+  });
 
-      const dayHours = hourly.filter(h => {
-        const hd = new Date(h.hour);
-        return hd >= dayStart && hd <= dayEnd;
-      });
+  private weekMaxLuxH = computed(() => this.rawDayData().reduce((m, r) => Math.max(m, r.totalLuxHours), 0));
 
-      const totalLuxHours = dayHours.reduce((s, h) => s + h.avgLight, 0);
-      const hasData = dayHours.length > 0;
-      const isToday = dayStart.getTime() === today.getTime();
-      const isFuture = dayStart > today;
+  optimalDailyLuxH = computed(() => {
+    const plant = this.plantService.plants().find(p => p.monitored);
+    if (!plant) return null;
+    const range = PLANT_LIGHT_RANGES[plant.type];
+    return range ? range.min * 12 : null;
+  });
 
-      if (totalLuxHours > maxTotal) maxTotal = totalLuxHours;
-      raw.push({ date: day, totalLuxHours, hasData, isToday, isFuture });
-    }
+  optimalLabel = computed(() => {
+    const plant = this.plantService.plants().find(p => p.monitored);
+    if (!plant) return null;
+    const range = PLANT_LIGHT_RANGES[plant.type];
+    return range ? `${range.label} min.` : null;
+  });
 
+  private effectiveChartMax = computed(() => Math.max(this.weekMaxLuxH(), this.optimalDailyLuxH() ?? 0, 1));
+
+  yAxisLabels = computed(() => {
+    const max = this.effectiveChartMax();
+    return { top: this.formatYTick(max), mid: this.formatYTick(max / 2) };
+  });
+
+  optimalLineY = computed(() => {
+    const opt = this.optimalDailyLuxH();
+    if (opt === null) return null;
+    return Math.min(Math.round((opt / this.effectiveChartMax()) * 96), 96);
+  });
+
+  chartBars = computed<DayBar[]>(() => {
     const MAX_PX = 96;
-    return raw.map(r => {
-      const barHeight = r.hasData && maxTotal > 0
-        ? Math.max(8, Math.round((r.totalLuxHours / maxTotal) * MAX_PX))
-        : 0;
-
-      const barClass = !r.hasData || r.isFuture
-        ? 'bg-gray-100'
-        : r.isToday
-          ? 'bg-gw-green'
-          : 'bg-gw-green/50';
-
+    const eMax = this.effectiveChartMax();
+    return this.rawDayData().map(r => {
+      const barHeight = r.hasData && eMax > 0 ? Math.max(4, Math.round((r.totalLuxHours / eMax) * MAX_PX)) : 0;
+      const barClass = !r.hasData || r.isFuture ? 'bg-gray-100' : r.isToday ? 'bg-gw-green' : 'bg-gw-green/50';
       const { valueStr, unit } = this.formatLuxH(r.totalLuxHours);
       const tooltip = r.hasData && !r.isFuture
-        ? `${r.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}: ${valueStr} ${unit}`
+        ? `${r.day.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}: ${valueStr} ${unit}`
         : r.isFuture ? 'Upcoming' : 'No data';
-
       return {
-        dateStr: r.date.toISOString().split('T')[0],
-        label: r.date.toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 3),
-        dateLabel: r.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+        dateStr: r.day.toISOString().split('T')[0],
+        label: r.day.toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 3),
+        dateLabel: r.day.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
         totalLuxHours: r.totalLuxHours,
         hasData: r.hasData,
         isToday: r.isToday,
@@ -337,6 +378,12 @@ export class LightInsightsComponent implements OnDestroy {
     if (v === 0) return { valueStr: '—', unit: '' };
     if (v < 1000) return { valueStr: `${Math.round(v)}`, unit: 'lux·h' };
     return { valueStr: `${(v / 1000).toFixed(1)}`, unit: 'klux·h' };
+  }
+
+  private formatYTick(v: number): string {
+    if (v === 0) return '0';
+    if (v >= 1000) return `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k`;
+    return Math.round(v).toString();
   }
 
   private isNight(): boolean { const h = new Date().getHours(); return h >= 21 || h < 6; }
