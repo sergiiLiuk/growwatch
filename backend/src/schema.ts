@@ -61,6 +61,7 @@ export const typeDefs = gql`
     plantedDate: String!
     count: Int!
     monitored: Boolean!
+    dailyLightHours: Int!
   }
 
   type Query {
@@ -72,8 +73,8 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    addPlant(name: String!, type: PlantType!, plantedDate: String!, count: Int!): Plant!
-    updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!, count: Int!): Plant!
+    addPlant(name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!
+    updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!
     removePlant(id: String!): Boolean!
     setPlantMonitored(id: String!, monitored: Boolean!): Plant!
   }

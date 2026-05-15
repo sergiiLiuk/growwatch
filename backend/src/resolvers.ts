@@ -150,27 +150,28 @@ export const resolvers = {
                 plantedDate: d.plantedDate.toISOString(),
                 count: d.count ?? 1,
                 monitored: d.monitored ?? true,
+                dailyLightHours: d.dailyLightHours ?? 12,
             }));
         },
     },
 
     Mutation: {
-        addPlant: async (_: any, { name, type, plantedDate, count }: { name: string; type: PlantType; plantedDate: string; count: number }) => {
-            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true });
+        addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }) => {
+            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours });
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored };
+            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
         },
-        updatePlant: async (_: any, { id, name, type, plantedDate, count }: { id: string; name: string; type: PlantType; plantedDate: string; count: number }) => {
-            const doc = await Plant.findByIdAndUpdate(id, { name, type, plantedDate: new Date(plantedDate), count }, { new: true });
+        updatePlant: async (_: any, { id, name, type, plantedDate, count, dailyLightHours = 12 }: { id: string; name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }) => {
+            const doc = await Plant.findByIdAndUpdate(id, { name, type, plantedDate: new Date(plantedDate), count, dailyLightHours }, { new: true });
             if (!doc) throw new Error('Plant not found');
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored };
+            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
         },
         setPlantMonitored: async (_: any, { id, monitored }: { id: string; monitored: boolean }) => {
             const doc = await Plant.findByIdAndUpdate(id, { monitored }, { new: true });
             if (!doc) throw new Error('Plant not found');
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored };
+            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours ?? 12 };
         },
         removePlant: async (_: any, { id }: { id: string }) => {
             const result = await Plant.findByIdAndDelete(id);

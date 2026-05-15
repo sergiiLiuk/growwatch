@@ -54,6 +54,17 @@ import { PlantService, Plant, PLANT_TYPE_OPTIONS } from '../../core/services/pla
                           class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
                 </div>
               </div>
+              <div>
+                <label class="block text-[11px] text-gray-400 mb-0.5">Daily light target</label>
+                <p class="text-[11px] text-gray-300 mb-1.5">Hours of adequate light this plant needs per day</p>
+                <div class="flex items-center gap-3">
+                  <button (click)="dailyLightHours.update(n => n > 1 ? n - 1 : 1)"
+                          class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">−</button>
+                  <span class="flex-1 text-center text-[15px] font-medium text-gray-800">{{ dailyLightHours() }} h</span>
+                  <button (click)="dailyLightHours.update(n => n < 24 ? n + 1 : 24)"
+                          class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
+                </div>
+              </div>
               <div class="flex gap-2 pt-1 pb-4">
                 <button (click)="save()"
                         [disabled]="!canSave() || saving()"
@@ -82,6 +93,7 @@ export class PlantEditModalComponent {
   name = signal('');
   date = signal('');
   count = signal(1);
+  dailyLightHours = signal(12);
   saving = signal(false);
 
   typeGroups = Array.from(
@@ -101,6 +113,7 @@ export class PlantEditModalComponent {
         this.name.set(p.name);
         this.date.set(p.plantedDate.toISOString().split('T')[0]);
         this.count.set(p.count);
+        this.dailyLightHours.set(p.dailyLightHours ?? 12);
         this.saving.set(false);
       }
     });
@@ -110,7 +123,7 @@ export class PlantEditModalComponent {
     const p = this.plant();
     if (!p || !this.canSave()) return;
     this.saving.set(true);
-    this.plantService.update(p.id, this.name(), p.type, new Date(this.date()), this.count())
+    this.plantService.update(p.id, this.name(), p.type, new Date(this.date()), this.count(), this.dailyLightHours())
       .subscribe({
         next: () => { this.saving.set(false); this.saved.emit(); },
         error: err => { console.error('Failed to update plant:', err); this.saving.set(false); },

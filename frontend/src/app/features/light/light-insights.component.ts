@@ -266,7 +266,7 @@ export class LightInsightsComponent implements OnDestroy {
     for (const p of this.plantService.plants().filter(p => p.monitored)) {
       const range = PLANT_LIGHT_RANGES[p.type];
       if (!range) continue;
-      const luxH = range.min * 12;
+      const luxH = range.min * p.dailyLightHours;
       if (seen.has(luxH)) continue;
       seen.add(luxH);
       result.push({ luxH, label: `${range.label} min.` });

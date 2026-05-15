@@ -44,34 +44,35 @@ export interface Plant {
   plantedDate: Date;
   count: number;
   monitored: boolean;
+  dailyLightHours: number;
 }
 
 const PLANTS_QUERY = gql`
   query GetPlants {
-    plants { id name type plantedDate count monitored }
+    plants { id name type plantedDate count monitored dailyLightHours }
   }
 `;
 
 const SET_MONITORED = gql`
   mutation SetPlantMonitored($id: String!, $monitored: Boolean!) {
     setPlantMonitored(id: $id, monitored: $monitored) {
-      id name type plantedDate count monitored
+      id name type plantedDate count monitored dailyLightHours
     }
   }
 `;
 
 const ADD_PLANT = gql`
-  mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!) {
-    addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count) {
-      id name type plantedDate count monitored
+  mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
+    addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) {
+      id name type plantedDate count monitored dailyLightHours
     }
   }
 `;
 
 const UPDATE_PLANT = gql`
-  mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!) {
-    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count) {
-      id name type plantedDate count monitored
+  mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
+    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) {
+      id name type plantedDate count monitored dailyLightHours
     }
   }
 `;
@@ -82,7 +83,7 @@ const REMOVE_PLANT = gql`
   }
 `;
 
-interface RawPlant { id: string; name: string; type: string; plantedDate: string; count: number; monitored: boolean; }
+interface RawPlant { id: string; name: string; type: string; plantedDate: string; count: number; monitored: boolean; dailyLightHours: number; }
 
 @Injectable({ providedIn: 'root' })
 export class PlantService {
@@ -104,15 +105,15 @@ export class PlantService {
   }
 
   private mapPlants(raw: RawPlant[]): Plant[] {
-    return raw.map(p => ({ ...p, type: p.type as PlantType, plantedDate: new Date(p.plantedDate), count: p.count ?? 1, monitored: p.monitored ?? true }));
+    return raw.map(p => ({ ...p, type: p.type as PlantType, plantedDate: new Date(p.plantedDate), count: p.count ?? 1, monitored: p.monitored ?? true, dailyLightHours: p.dailyLightHours ?? 12 }));
   }
 
-  add(name: string, type: PlantType, plantedDate: Date, count: number): Observable<Plant> {
+  add(name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12): Observable<Plant> {
     return new Observable(observer => {
       this.client
         .mutate<{ addPlant: RawPlant }>({
           mutation: ADD_PLANT,
-          variables: { name: name.trim(), type: type.trim(), plantedDate: plantedDate.toISOString(), count },
+          variables: { name: name.trim(), type: type.trim(), plantedDate: plantedDate.toISOString(), count, dailyLightHours },
         })
         .then(result => {
           const mapped = this.mapPlants([result.data!.addPlant])[0];
@@ -124,12 +125,12 @@ export class PlantService {
     });
   }
 
-  update(id: string, name: string, type: PlantType, plantedDate: Date, count: number): Observable<Plant> {
+  update(id: string, name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12): Observable<Plant> {
     return new Observable(observer => {
       this.client
         .mutate<{ updatePlant: RawPlant }>({
           mutation: UPDATE_PLANT,
-          variables: { id, name: name.trim(), type, plantedDate: plantedDate.toISOString(), count },
+          variables: { id, name: name.trim(), type, plantedDate: plantedDate.toISOString(), count, dailyLightHours },
         })
         .then(result => {
           const mapped = this.mapPlants([result.data!.updatePlant])[0];

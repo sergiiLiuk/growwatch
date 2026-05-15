@@ -9,6 +9,7 @@ export interface IPlant extends Document {
     plantedDate: Date;
     count: number;
     monitored: boolean;
+    dailyLightHours: number;
 }
 
 const plantSchema = new Schema<IPlant>(
@@ -18,6 +19,7 @@ const plantSchema = new Schema<IPlant>(
         plantedDate: { type: Date, required: true },
         count: { type: Number, required: true, default: 1 },
         monitored: { type: Boolean, required: true, default: true },
+        dailyLightHours: { type: Number, required: true, default: 12 },
     },
     { timestamps: true }
 );
