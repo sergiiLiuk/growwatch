@@ -46,16 +46,18 @@ interface DayBar {
                   </span>
                   <span class="text-[14px] text-gray-400">lux</span>
                 </div>
-                <div class="text-[12px] text-gray-400 mt-1.5">{{ luxIntensityLabel(latestData()!.lightLevel) }}</div>
+                <div class="text-[12px] text-gray-400 mt-1.5">{{ readingSubLabel() }}</div>
               </div>
-              <span class="text-[11px] font-medium px-2.5 py-1 rounded-full mt-1 shrink-0"
-                    [class]="statusBadgeClass(latestData()!.lightStatus.status)">
-                {{ statusLabel(latestData()!.lightStatus.status) }}
-              </span>
+              @if (!isOffPeak() || latestData()!.lightStatus.status !== 'TOO_LOW') {
+                <span class="text-[11px] font-medium px-2.5 py-1 rounded-full mt-1 shrink-0"
+                      [class]="displayBadgeClass()">
+                  {{ displayBadgeLabel() }}
+                </span>
+              }
             </div>
             <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
               <div class="h-full rounded-full transition-all duration-500"
-                   [class]="statusBarClass(latestData()!.lightStatus.status)"
+                   [class]="displayBarClass()"
                    [style.width.%]="Math.min(latestData()!.lightStatus.percentageOfOptimal, 100)">
               </div>
             </div>
@@ -337,13 +339,42 @@ export class LightInsightsComponent implements OnDestroy {
     return { valueStr: `${(v / 1000).toFixed(1)}`, unit: 'klux·h' };
   }
 
-  luxIntensityLabel(lux: number): string {
-    if (lux < 1000)  return 'Very dim — indoor conditions';
-    if (lux < 5000)  return 'Dim — shaded outdoor';
-    if (lux < 20000) return 'Moderate — bright indirect light';
-    if (lux < 40000) return 'Bright — partial sun';
-    return 'Intense — full direct sunlight';
-  }
+  private isNight(): boolean { const h = new Date().getHours(); return h >= 21 || h < 6; }
+  private isDawnOrDusk(): boolean { const h = new Date().getHours(); return (h >= 6 && h < 9) || (h >= 18 && h < 21); }
+  isOffPeak(): boolean { return this.isNight() || this.isDawnOrDusk(); }
+
+  readingSubLabel = computed(() => {
+    const d = this.latestData();
+    if (!d) return '';
+    if (d.lightStatus.status === 'TOO_LOW' && this.isNight()) return 'Low light is expected at night';
+    if (d.lightStatus.status === 'TOO_LOW' && this.isDawnOrDusk()) return 'Light is low for this time of day';
+    return d.lightStatus.message;
+  });
+
+  displayBadgeLabel = computed(() => {
+    const d = this.latestData();
+    if (!d) return '';
+    const s = d.lightStatus.status;
+    if (s === 'TOO_LOW' && this.isNight()) return 'Night';
+    if (s === 'TOO_LOW' && this.isDawnOrDusk()) return 'Low light';
+    return this.statusLabel(s);
+  });
+
+  displayBadgeClass = computed(() => {
+    const d = this.latestData();
+    if (!d) return 'bg-gray-100 text-gray-500';
+    const s = d.lightStatus.status;
+    if (s === 'TOO_LOW' && this.isOffPeak()) return 'bg-gray-100 text-gray-500';
+    return this.statusBadgeClass(s);
+  });
+
+  displayBarClass = computed(() => {
+    const d = this.latestData();
+    if (!d) return 'bg-gray-300';
+    const s = d.lightStatus.status;
+    if (s === 'TOO_LOW' && this.isOffPeak()) return 'bg-gray-300';
+    return this.statusBarClass(s);
+  });
 
   statusLabel(status: string): string {
     if (status === 'OPTIMAL')  return 'Optimal';
