@@ -58,7 +58,7 @@ interface DayBar {
               }
             </div>
             <div class="mb-2">
-              <app-progress-bar [percent]="Math.min(latestData()!.lightStatus.percentageOfOptimal, 100)"
+              <app-progress-bar [percent]="isOffPeak() && latestData()!.lightStatus.status === 'TOO_LOW' ? 25 : Math.min(latestData()!.lightStatus.percentageOfOptimal, 100)"
                                 [status]="displayBadgeVariant() === 'amber' || displayBadgeVariant() === 'red' ? 'warn' : 'ok'"
                                 size="md" />
             </div>
