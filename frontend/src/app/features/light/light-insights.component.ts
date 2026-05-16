@@ -59,7 +59,7 @@ interface DayBar {
             </div>
             <div class="mb-2">
               <app-progress-bar [percent]="Math.min(latestData()!.lightStatus.percentageOfOptimal, 100)"
-                                [status]="displayBadgeVariant() === 'green' ? 'ok' : 'warn'"
+                                [status]="displayBadgeVariant() === 'amber' || displayBadgeVariant() === 'red' ? 'warn' : 'ok'"
                                 size="md" />
             </div>
             <div class="text-[11px] text-gray-400">Updated {{ lastSeenLabel() }}</div>
