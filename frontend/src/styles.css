@@ -1,36 +1,52 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Green — health / ok / primary action */
-  --color-gw-green:       #1D9E75;
-  --color-gw-green-light: #E1F5EE;
-  --color-gw-green-dark:  #085041;
+  /* Green — health / ok / primary action (warm botanical forest green) */
+  --color-gw-green: #2a7a52;
+  --color-gw-green-light: #d4e9d9;
+  --color-gw-green-dark: #0e3624;
 
-  /* Amber — warning / attention */
-  --color-gw-amber:       #BA7517;
-  --color-gw-amber-light: #FAEEDA;
-  --color-gw-amber-dark:  #633806;
+  /* Amber — warning / attention (warm honey) */
+  --color-gw-amber: #c07820;
+  --color-gw-amber-light: #faecd8;
+  --color-gw-amber-dark: #5c3600;
 
-  /* Red — critical / alerts only */
-  --color-gw-red:         #E24B4A;
-  --color-gw-red-light:   #FCEBEB;
-  --color-gw-red-dark:    #791F1F;
+  /* Red — critical (earthy terracotta) */
+  --color-gw-red: #c04040;
+  --color-gw-red-light: #fce8e8;
+  --color-gw-red-dark: #6e1a1a;
 
   /* Blue — weather only */
-  --color-gw-blue:        #378ADD;
-  --color-gw-blue-light:  #E6F1FB;
-  --color-gw-blue-dark:   #0C447C;
+  --color-gw-blue: #3380cc;
+  --color-gw-blue-light: #e4f0fa;
+  --color-gw-blue-dark: #0c4278;
+
+  /* Warm surfaces */
+  --color-gw-parchment: #f7f3ec;
+  --color-gw-surface: #fefcf7;
+  --color-gw-border: #e4ddd0;
+
+
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: #f9fafb;
+  background: #f7f3ec;
+  color: #1a1510;
+}
+
+/* Warm golden tint for the active light metric card */
+.gw-light-card {
+  background: linear-gradient(150deg, #fefcf7 0%, #faf5e6 100%);
 }

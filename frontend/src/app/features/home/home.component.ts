@@ -27,52 +27,54 @@ interface Metric {
     <div class="max-w-lg mx-auto px-4 py-6">
 
       <!-- Weather strip — blue family -->
-      <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 mb-4">
+      <div class="bg-gw-surface border border-gw-border rounded-2xl p-4 flex items-center gap-3 mb-5">
         @if (weather()) {
-          <span class="text-2xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
+          <span class="text-3xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
           <div class="flex-1 min-w-0">
-            <div class="text-[18px] font-medium text-gw-blue-dark leading-tight">{{ weather()!.temperature }}°C</div>
-            <div class="text-[11px] text-gray-400 truncate">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
+            <div class="font-data text-[22px] font-medium text-gw-blue-dark leading-none">{{ weather()!.temperature }}°C</div>
+            <div class="text-[11px] text-gray-400 truncate mt-0.5">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
           </div>
-          <div class="flex items-center gap-3 shrink-0 text-[11px] text-gw-blue-dark">
+          <div class="flex flex-col items-end gap-0.5 shrink-0 text-[11px] text-gw-blue-dark">
             <span>💧 {{ weather()!.humidity }}%</span>
-            <span>🌬️ {{ weather()!.windSpeed }}m/s</span>
+            <span>🌬️ {{ weather()!.windSpeed }} m/s</span>
           </div>
-          <span class="text-gray-300 text-xs ml-1">›</span>
         } @else {
-          <span class="flex-1 text-[13px] text-gray-300">
+          <span class="flex-1 text-[13px] text-gray-400">
             {{ weatherService.loading() ? 'Loading weather…' : 'Weather unavailable' }}
           </span>
         }
       </div>
 
-      <!-- Mood ring — only when plants are registered -->
+      <!-- Mood card — only when plants are registered -->
       @if (plants().length > 0) {
-        <div class="flex flex-col items-center mb-4">
-          <div class="w-20 h-20 rounded-full flex items-center justify-center mb-3"
+        <div class="mb-5">
+          <div class="flex items-center gap-4 p-4 rounded-2xl border border-transparent"
                [class]="moodBg()">
-            <svg class="w-9 h-9" [class]="moodIconColor()" fill="none" viewBox="0 0 24 24"
-                 stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3c0 0-6 4-6 9a6 6 0 0012 0c0-5-6-9-6-9z"/>
-              <line x1="12" y1="12" x2="12" y2="21"/>
-            </svg>
+            <div class="w-11 h-11 rounded-full bg-white/60 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" [class]="moodIconColor()" fill="none" viewBox="0 0 24 24"
+                   stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3c0 0-6 4-6 9a6 6 0 0012 0c0-5-6-9-6-9z"/>
+                <line x1="12" y1="12" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-display text-[17px] font-semibold leading-tight" [class]="moodIconColor()">{{ mood().label }}</div>
+              <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
+            </div>
           </div>
-          <div class="text-[14px] font-medium text-gray-800">{{ mood().label }}</div>
-          <div class="text-[11px] text-gray-400 mt-0.5">{{ mood().description }}</div>
-        </div>
 
-        <!-- Voice bubble — only when action is needed -->
-        @if (showAlert()) {
-          <div class="p-4 mb-4 rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-[2px]"
-               [class]="bubbleBg()">
-            <p class="text-[13px] leading-relaxed" [class]="bubbleTextColor()">{{ voiceMessage() }}</p>
-          </div>
-        }
+          <!-- Voice bubble — only when action is needed -->
+          @if (showAlert()) {
+            <div class="mt-2 px-4 py-3 rounded-2xl" [class]="bubbleBg()">
+              <p class="text-[13px] leading-relaxed" [class]="bubbleTextColor()">{{ voiceMessage() }}</p>
+            </div>
+          }
+        </div>
       }
 
       <!-- Onboarding card — only when no plants registered -->
       @if (!plantsLoading() && plants().length === 0) {
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-5 mb-4">
+        <div class="bg-gw-surface border border-gw-border rounded-2xl p-5 mb-5">
           <div class="flex items-start gap-4">
             <div class="w-10 h-10 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
               <svg class="w-5 h-5 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
@@ -82,13 +84,13 @@ interface Metric {
               </svg>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-[14px] font-medium text-gray-800 mb-1">Add your first plant</p>
+              <p class="font-display text-[15px] font-semibold text-gw-green-dark mb-1">Add your first plant</p>
               <p class="text-[13px] text-gray-500 leading-relaxed">
                 Tell GrowWatch what you're growing and you'll get personalised light advice,
                 a mood ring, and alerts tailored to your plant's needs.
               </p>
               <a routerLink="/plants"
-                 class="inline-block mt-3 text-[13px] font-medium bg-gw-green text-white px-3 py-1.5 rounded-lg hover:bg-gw-green-dark transition-colors">
+                 class="inline-block mt-3 text-[13px] font-medium bg-gw-green text-white px-4 py-2 rounded-xl hover:bg-gw-green-dark transition-colors">
                 + Add a plant
               </a>
             </div>
@@ -97,34 +99,35 @@ interface Metric {
       }
 
       <!-- Sensor metrics -->
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-3">
         @for (metric of metrics(); track metric.key) {
-          <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200 transition-colors"
-               [class]="metric.link ? 'cursor-pointer hover:border-gray-300' : ''"
+          <div class="rounded-2xl p-4 border border-gw-border transition-all"
+               [class]="(metric.key === 'light' && metric.status !== 'missing' ? 'gw-light-card' : 'bg-gw-surface') + (metric.link ? ' cursor-pointer hover:border-gray-300' : '')"
                [routerLink]="metric.link ?? null">
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-2">
-                <span class="text-base">{{ metric.icon }}</span>
-                <span class="text-[13px] text-gray-500">{{ metric.label }}</span>
+                <span class="text-[15px] leading-none">{{ metric.icon }}</span>
+                <span class="text-[11px] font-medium text-gray-400 uppercase tracking-widest">{{ metric.label }}</span>
               </div>
               @if (metric.status !== 'missing') {
-                <span class="text-[14px] font-medium text-gray-800">
-                  {{ metric.value }}<span class="text-[11px] text-gray-400 ml-0.5">{{ metric.unit }}</span>
+                <span class="font-data text-[20px] font-medium text-gray-800 leading-none tabular-nums">
+                  {{ metric.value }}<span class="font-data text-[11px] text-gray-400 ml-1">{{ metric.unit }}</span>
                 </span>
               } @else {
-                <span class="text-[11px] text-gray-300 italic">coming soon</span>
+                <span class="text-[11px] text-gray-300 italic tracking-wide">soon</span>
               }
             </div>
             @if (metric.status !== 'missing') {
-              <app-progress-bar [percent]="metric.percent" [status]="metric.status" />
+              <app-progress-bar [percent]="metric.percent" [status]="metric.status"
+                                [size]="metric.key === 'light' ? 'md' : 'sm'" />
               @if (metric.tip) {
-                <p class="text-[11px] text-gw-amber-dark mt-1.5">{{ metric.tip }}</p>
+                <p class="text-[11px] text-gw-amber-dark mt-2">{{ metric.tip }}</p>
               }
               @if (metric.sublabel) {
-                <p class="text-[11px] text-gray-400 mt-1.5">{{ metric.sublabel }}</p>
+                <p class="text-[11px] text-gray-400 mt-2">{{ metric.sublabel }}</p>
               }
             } @else {
-              <div class="h-0.5 bg-gray-50 rounded-full"></div>
+              <div class="h-px bg-gw-border rounded-full opacity-50"></div>
             }
           </div>
         }
