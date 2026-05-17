@@ -1,8 +1,6 @@
-import { Component, signal, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { SensorService, SensorData } from '../../core/services/sensor.service';
 
 @Component({
   selector: 'app-settings',
@@ -15,24 +13,6 @@ import { SensorService, SensorData } from '../../core/services/sensor.service';
         <p class="text-[11px] text-gray-400 mt-0.5">Notifications and sensor</p>
       </div>
 
-      <!-- Sensor status -->
-      <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Sensor</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3">
-          <div class="w-2 h-2 rounded-full shrink-0"
-               [class]="sensorOnline() ? 'bg-gw-green' : 'bg-gw-red'"></div>
-          <div class="flex-1">
-            <div class="text-[14px] font-medium text-gray-800">ESP32 · Greenhouse 1</div>
-            <div class="text-[11px] text-gray-400 mt-0.5">
-              {{ sensorOnline() ? 'Online · ' + lastSeen() : 'Offline · ' + lastSeen() }}
-            </div>
-          </div>
-          <div class="text-[11px] text-gray-400">
-            {{ latestData()?.lightLevel != null ? Math.round(latestData()!.lightLevel) + ' lux' : '—' }}
-          </div>
-        </div>
-      </div>
-
       <!-- Notifications -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Notifications</div>
@@ -43,7 +23,7 @@ import { SensorService, SensorData } from '../../core/services/sensor.service';
                 <div class="text-[14px] font-medium text-gray-800">{{ pref.label }}</div>
                 <div class="text-[11px] text-gray-400 mt-0.5">{{ pref.description }}</div>
               </div>
-              <button (click)="pref.enabled = !pref.enabled"
+              <button (click)="togglePref(pref)"
                       class="w-10 h-6 rounded-full transition-colors relative shrink-0"
                       [class]="pref.enabled ? 'bg-gw-green' : 'bg-gray-200'">
                 <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
@@ -59,7 +39,7 @@ import { SensorService, SensorData } from '../../core/services/sensor.service';
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Daily digest time</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3">
           <div class="text-[13px] text-gray-500 flex-1">Send digest at</div>
-          <input type="time" [(ngModel)]="digestTime"
+          <input type="time" [(ngModel)]="digestTime" (ngModelChange)="saveSettings()"
                  class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors" />
         </div>
       </div>
@@ -110,45 +90,48 @@ import { SensorService, SensorData } from '../../core/services/sensor.service';
     </div>
   `,
 })
-export class SettingsComponent implements OnInit, OnDestroy {
-  private sensorService = inject(SensorService);
+export class SettingsComponent implements OnInit {
   private router = inject(Router);
-  private sub?: Subscription;
+  private readonly STORAGE_KEY = 'growwatch-settings';
 
-  Math = Math;
-  latestData = signal<SensorData | null>(null);
   digestTime = '20:00';
 
   notifPrefs = [
-    { key: 'digest',  label: 'Daily digest',   description: 'Evening summary of your greenhouse', enabled: true },
-    { key: 'alerts',  label: 'Smart alerts',   description: 'When plants need your attention',    enabled: true },
-    { key: 'offline', label: 'Sensor offline', description: 'If ESP32 stops sending data',        enabled: true },
+    { key: 'digest', label: 'Daily digest', description: 'Evening summary of your greenhouse', enabled: true },
+    { key: 'alerts', label: 'Smart alerts', description: 'When plants need your attention',    enabled: true },
   ];
 
-  sensorOnline = signal(false);
-  lastSeen = signal('—');
+  private loadSettings() {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (parsed.digestTime) this.digestTime = parsed.digestTime;
+      if (parsed.notifPrefs) {
+        for (const pref of this.notifPrefs) {
+          if (parsed.notifPrefs[pref.key] !== undefined) pref.enabled = parsed.notifPrefs[pref.key];
+        }
+      }
+    } catch {}
+  }
 
-  private updateStatus(data: SensorData | null) {
-    if (!data) { this.sensorOnline.set(false); return; }
-    const secs = Math.floor((Date.now() - new Date(data.timestamp).getTime()) / 1000);
-    this.sensorOnline.set(secs < 30);
-    if (secs < 10) this.lastSeen.set('just now');
-    else if (secs < 60) this.lastSeen.set(`${secs}s ago`);
-    else this.lastSeen.set(`${Math.floor(secs / 60)}m ago`);
+  saveSettings() {
+    const data = {
+      digestTime: this.digestTime,
+      notifPrefs: Object.fromEntries(this.notifPrefs.map(p => [p.key, p.enabled])),
+    };
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+  }
+
+  togglePref(pref: { key: string; enabled: boolean }) {
+    pref.enabled = !pref.enabled;
+    this.saveSettings();
   }
 
   ngOnInit() {
-    this.sensorService.getLatestSensorData().subscribe(d => {
-      this.latestData.set(d);
-      this.updateStatus(d);
-    });
-    this.sub = this.sensorService.subscribeToSensorData().subscribe(d => {
-      if (d) { this.latestData.set(d); this.updateStatus(d); }
-    });
-    setInterval(() => this.updateStatus(this.latestData()), 5000);
+    this.loadSettings();
   }
 
   openSensorSetup() { this.router.navigate(['/settings/sensor-setup']); }
 
-  ngOnDestroy() { this.sub?.unsubscribe(); }
 }
