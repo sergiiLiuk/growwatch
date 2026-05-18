@@ -160,23 +160,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Check for sensor going offline after 30s of no data
-    let offlineTimer: any;
-    const resetOfflineTimer = () => {
-      clearTimeout(offlineTimer);
-      offlineTimer = setTimeout(() => {
-        this.addAlert('danger', 'Sensor offline', 'No reading received for over 30 seconds. Check your ESP32.');
-      }, 30000);
-    };
-
     this.sub = this.sensorService.subscribeToSensorData().subscribe(data => {
-      if (data) {
-        resetOfflineTimer();
-        this.checkConditions(data);
-      }
+      if (data) this.checkConditions(data);
     });
-
-    resetOfflineTimer();
   }
 
   ngOnDestroy() {
