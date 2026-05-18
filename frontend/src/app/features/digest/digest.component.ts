@@ -3,7 +3,6 @@ import { DatePipe } from '@angular/common';
 import { SensorService, HourlySensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
-import { ProgressBarComponent } from '../../shared/components/atoms/progress-bar.component';
 
 interface DigestItem {
   icon: string;
@@ -15,7 +14,7 @@ interface DigestItem {
 
 @Component({
   selector: 'app-digest',
-  imports: [DatePipe, EmptyStateComponent, ProgressBarComponent],
+  imports: [DatePipe, EmptyStateComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -66,15 +65,6 @@ interface DigestItem {
           }
         </div>
 
-        <!-- Reading quality -->
-        @if (readingQuality() !== null) {
-          <div class="mt-4 flex items-center gap-2 px-1">
-            <div class="flex-1">
-              <app-progress-bar [percent]="readingQuality()!" />
-            </div>
-            <span class="text-[11px] text-gray-400">{{ readingQuality() }}% signal quality today</span>
-          </div>
-        }
       }
     </div>
   `,
@@ -162,14 +152,6 @@ export class DigestComponent implements OnInit {
     if (warnings === 0) return `A good day for ${plantNames}. All conditions were within comfortable range.`;
     if (warnings === 1) return `Mostly a good day, but one thing needs your attention. Check the details below.`;
     return `${warnings} conditions were outside the ideal range today. ${plantNames} would appreciate some adjustments tomorrow.`;
-  });
-
-  readingQuality = computed(() => {
-    const data = this.hourlyData();
-    if (data.length === 0) return null;
-    const total = data.reduce((s, d) => s + d.readingCount, 0);
-    const expected = data.length * 720;
-    return Math.round((total / expected) * 100);
   });
 
   ngOnInit() {
