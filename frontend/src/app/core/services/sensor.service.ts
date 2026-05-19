@@ -89,7 +89,7 @@ export class SensorService {
           query: gql`
             query GetSensorData {
               sensorData {
-                id lightLevel timestamp
+                id lightLevel timestamp temperature humidity pressure co2
                 lightStatus { status message icon percentageOfOptimal }
               }
             }
@@ -110,7 +110,7 @@ export class SensorService {
           query: gql`
             query GetLatestSensorData {
               latestSensorData {
-                id lightLevel timestamp
+                id lightLevel timestamp temperature humidity pressure co2
                 lightStatus { status message icon percentageOfOptimal }
               }
             }
@@ -132,7 +132,7 @@ export class SensorService {
           query: gql`
             subscription OnSensorDataUpdated {
               sensorDataUpdated {
-                id lightLevel timestamp
+                id lightLevel timestamp temperature humidity pressure co2
                 lightStatus { status message icon percentageOfOptimal }
               }
             }
@@ -156,6 +156,9 @@ export class SensorService {
             query GetHourlyData($limit: Int) {
               hourlyData(limit: $limit) {
                 id hour lightLevel minLight maxLight avgLight readingCount
+                avgTemperature minTemperature maxTemperature
+                avgHumidity minHumidity maxHumidity
+                avgPressure avgCo2
                 lightStatus { status message icon percentageOfOptimal }
               }
             }
@@ -179,6 +182,9 @@ export class SensorService {
             query GetHourlyDataRange($from: String!, $to: String!) {
               hourlyDataRange(from: $from, to: $to) {
                 id hour lightLevel minLight maxLight avgLight readingCount
+                avgTemperature minTemperature maxTemperature
+                avgHumidity minHumidity maxHumidity
+                avgPressure avgCo2
                 lightStatus { status message icon percentageOfOptimal }
               }
             }

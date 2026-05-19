@@ -41,6 +41,10 @@ export const typeDefs = gql`
     lightLevel: Float!
     timestamp: String!
     lightStatus: LightStatusInfo!
+    temperature: Float
+    humidity: Float
+    pressure: Float
+    co2: Float
   }
 
   type HourlySensorData {
@@ -52,6 +56,14 @@ export const typeDefs = gql`
     avgLight: Float!
     readingCount: Int!
     lightStatus: LightStatusInfo!
+    avgTemperature: Float
+    minTemperature: Float
+    maxTemperature: Float
+    avgHumidity: Float
+    minHumidity: Float
+    maxHumidity: Float
+    avgPressure: Float
+    avgCo2: Float
   }
 
   type Plant {

@@ -33,6 +33,14 @@ export interface IHourlySensorData extends Document {
     maxLight: number;
     avgLight: number;
     readingCount: number;
+    avgTemperature?: number;
+    minTemperature?: number;
+    maxTemperature?: number;
+    avgHumidity?: number;
+    minHumidity?: number;
+    maxHumidity?: number;
+    avgPressure?: number;
+    avgCo2?: number;
     createdAt: Date;
 }
 
@@ -44,6 +52,14 @@ const hourlySensorDataSchema = new Schema<IHourlySensorData>(
         maxLight: { type: Number, required: true },
         avgLight: { type: Number, required: true },
         readingCount: { type: Number, required: true },
+        avgTemperature: Number,
+        minTemperature: Number,
+        maxTemperature: Number,
+        avgHumidity: Number,
+        minHumidity: Number,
+        maxHumidity: Number,
+        avgPressure: Number,
+        avgCo2: Number,
     },
     { timestamps: true }
 );

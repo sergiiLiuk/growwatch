@@ -4,10 +4,20 @@ import { SensorData } from './types';
 import { HourlySensorData, Plant } from './models';
 import { getLightStatus, PlantType } from './lightUtils';
 
-// In-memory storage for light sensor readings
+// In-memory storage for sensor readings
 let sensorDataStore: SensorData[] = [];
-let currentHourReadings: number[] = [];
 let lastSavedHour: number = -1;
+
+interface HourlyAccumulator {
+    light: number[];
+    temperature: number[];
+    humidity: number[];
+    pressure: number[];
+    co2: number[];
+}
+let hourAccum: HourlyAccumulator = { light: [], temperature: [], humidity: [], pressure: [], co2: [] };
+
+function avg(arr: number[]): number { return arr.reduce((a, b) => a + b, 0) / arr.length; }
 
 // Cached plant type for lightStatus calculations — updated on every plant mutation
 let primaryPlantType: PlantType = 'TOMATO';
@@ -19,7 +29,7 @@ async function refreshPrimaryPlant() {
 
 // Function to save hourly aggregated data to MongoDB
 export async function saveHourlyData() {
-    if (currentHourReadings.length === 0) {
+    if (hourAccum.light.length === 0) {
         console.log('⚠️ No readings to save');
         return;
     }
@@ -28,20 +38,35 @@ export async function saveHourlyData() {
     const hourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0);
 
     try {
-        const minLight = Math.min(...currentHourReadings);
-        const maxLight = Math.max(...currentHourReadings);
-        const avgLight = currentHourReadings.reduce((a, b) => a + b, 0) / currentHourReadings.length;
+        const update: any = {
+            hour: hourStart,
+            lightLevel: hourAccum.light[hourAccum.light.length - 1],
+            minLight: Math.min(...hourAccum.light),
+            maxLight: Math.max(...hourAccum.light),
+            avgLight: avg(hourAccum.light),
+            readingCount: hourAccum.light.length,
+        };
+
+        if (hourAccum.temperature.length > 0) {
+            update.avgTemperature = avg(hourAccum.temperature);
+            update.minTemperature = Math.min(...hourAccum.temperature);
+            update.maxTemperature = Math.max(...hourAccum.temperature);
+        }
+        if (hourAccum.humidity.length > 0) {
+            update.avgHumidity = avg(hourAccum.humidity);
+            update.minHumidity = Math.min(...hourAccum.humidity);
+            update.maxHumidity = Math.max(...hourAccum.humidity);
+        }
+        if (hourAccum.pressure.length > 0) {
+            update.avgPressure = avg(hourAccum.pressure);
+        }
+        if (hourAccum.co2.length > 0) {
+            update.avgCo2 = avg(hourAccum.co2);
+        }
 
         await HourlySensorData.findOneAndUpdate(
             { hour: hourStart },
-            {
-                hour: hourStart,
-                lightLevel: currentHourReadings[currentHourReadings.length - 1],
-                minLight,
-                maxLight,
-                avgLight,
-                readingCount: currentHourReadings.length,
-            },
+            update,
             { upsert: true, new: true }
         );
 
@@ -57,10 +82,18 @@ export function handleSensorData(data: any): SensorData {
         id: uuidv4(),
         lightLevel: data.lightLevel,
         timestamp: new Date(),
+        temperature: data.temperature ?? undefined,
+        humidity: data.humidity ?? undefined,
+        pressure: data.pressure ?? undefined,
+        co2: data.co2 ?? undefined,
     };
 
     sensorDataStore.push(sensorData);
-    currentHourReadings.push(data.lightLevel);
+    hourAccum.light.push(data.lightLevel);
+    if (data.temperature != null) hourAccum.temperature.push(data.temperature);
+    if (data.humidity    != null) hourAccum.humidity.push(data.humidity);
+    if (data.pressure    != null) hourAccum.pressure.push(data.pressure);
+    if (data.co2         != null) hourAccum.co2.push(data.co2);
 
     pubsub.publish(SENSOR_DATA_CHANNEL, {
         sensorDataUpdated: sensorData,
@@ -81,15 +114,35 @@ export async function initPlantCache() {
 export function startHourlyAggregation() {
     setInterval(async () => {
         const now = new Date();
-        const currentHour = now.getHours();
+        const nowHour = now.getHours();
 
         // Save data at the start of each new hour
-        if (lastSavedHour !== currentHour && now.getMinutes() === 0) {
+        if (lastSavedHour !== nowHour && now.getMinutes() === 0) {
             await saveHourlyData();
-            lastSavedHour = currentHour;
-            currentHourReadings = [];
+            lastSavedHour = nowHour;
+            hourAccum = { light: [], temperature: [], humidity: [], pressure: [], co2: [] };
         }
     }, 60000); // Check every minute
+}
+
+function mapHourlyDoc(doc: any) {
+    return {
+        id: doc._id.toString(),
+        hour: doc.hour instanceof Date ? doc.hour.toISOString() : String(doc.hour),
+        lightLevel: doc.lightLevel,
+        minLight: doc.minLight,
+        maxLight: doc.maxLight,
+        avgLight: doc.avgLight,
+        readingCount: doc.readingCount,
+        avgTemperature: doc.avgTemperature ?? null,
+        minTemperature: doc.minTemperature ?? null,
+        maxTemperature: doc.maxTemperature ?? null,
+        avgHumidity: doc.avgHumidity ?? null,
+        minHumidity: doc.minHumidity ?? null,
+        maxHumidity: doc.maxHumidity ?? null,
+        avgPressure: doc.avgPressure ?? null,
+        avgCo2: doc.avgCo2 ?? null,
+    };
 }
 
 export const resolvers = {
@@ -108,15 +161,7 @@ export const resolvers = {
                     .sort({ hour: -1 })
                     .limit(limit)
                     .lean();
-                return data.map((doc: any) => ({
-                    id: doc._id.toString(),
-                    hour: doc.hour instanceof Date ? doc.hour.toISOString() : String(doc.hour),
-                    lightLevel: doc.lightLevel,
-                    minLight: doc.minLight,
-                    maxLight: doc.maxLight,
-                    avgLight: doc.avgLight,
-                    readingCount: doc.readingCount,
-                }));
+                return data.map(mapHourlyDoc);
             } catch (error) {
                 console.error('❌ Error fetching hourly data:', error);
                 return [];
@@ -127,15 +172,7 @@ export const resolvers = {
                 const data = await HourlySensorData.find({
                     hour: { $gte: new Date(from), $lte: new Date(to) },
                 }).sort({ hour: 1 }).lean();
-                return data.map((doc: any) => ({
-                    id: doc._id.toString(),
-                    hour: doc.hour instanceof Date ? doc.hour.toISOString() : String(doc.hour),
-                    lightLevel: doc.lightLevel,
-                    minLight: doc.minLight,
-                    maxLight: doc.maxLight,
-                    avgLight: doc.avgLight,
-                    readingCount: doc.readingCount,
-                }));
+                return data.map(mapHourlyDoc);
             } catch (error) {
                 console.error('❌ Error fetching hourly data range:', error);
                 return [];
