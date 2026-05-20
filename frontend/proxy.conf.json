@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "https://growwatch-production.up.railway.app",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api": "" }
+  }
+}

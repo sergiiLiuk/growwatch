@@ -5,10 +5,13 @@ export interface WeatherData {
   humidity: number;
   windSpeed: number;
   cloudCover: number;
+  pressure: number;
   weatherCode: number;
   conditionLabel: string;
   conditionIcon: string;
   city: string;
+  sunrise: string; // ISO datetime
+  sunset: string;  // ISO datetime
 }
 
 interface StoredLocation {
@@ -89,7 +92,8 @@ export class WeatherService {
 
       const res = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-        `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,cloud_cover&timezone=auto`
+        `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,cloud_cover,surface_pressure` +
+        `&daily=sunrise,sunset&timezone=auto`
       );
       const data = await res.json();
       const c = data.current;
@@ -100,10 +104,13 @@ export class WeatherService {
         humidity: Math.round(c.relative_humidity_2m),
         windSpeed: Math.round(c.wind_speed_10m),
         cloudCover: c.cloud_cover,
+        pressure: Math.round(c.surface_pressure),
         weatherCode: c.weather_code,
         conditionLabel: label,
         conditionIcon: icon,
         city,
+        sunrise: data.daily.sunrise[0],
+        sunset: data.daily.sunset[0],
       });
     } catch (err) {
       console.error('Weather fetch failed:', err);

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorService, SensorData, HourlySensorData, PLANT_LIGHT_RANGES } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
+import { WeatherService } from '../../core/services/weather.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
 import { ProgressBarComponent } from '../../shared/components/atoms/progress-bar.component';
@@ -195,6 +196,7 @@ interface DayBar {
 export class LightInsightsComponent implements OnDestroy {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
+  private weatherService = inject(WeatherService);
   private router = inject(Router);
   private weekSub?: Subscription;
   private liveSub?: Subscription;
@@ -389,13 +391,16 @@ export class LightInsightsComponent implements OnDestroy {
     return Math.round(v).toString();
   }
 
-  isOffPeak(): boolean { return isOffPeak(); }
+  private solar() { const w = this.weatherService.weather(); return { sr: w?.sunrise, ss: w?.sunset }; }
+
+  isOffPeak(): boolean { const { sr, ss } = this.solar(); return isOffPeak(sr, ss); }
 
   readingSubLabel = computed(() => {
     const d = this.latestData();
     if (!d) return '';
-    if (d.lightStatus.status === 'TOO_LOW' && isNight()) return 'Low light is expected at night';
-    if (d.lightStatus.status === 'TOO_LOW' && isDawnOrDusk()) return 'Light is low for this time of day';
+    const { sr, ss } = this.solar();
+    if (d.lightStatus.status === 'TOO_LOW' && isNight(sr, ss)) return 'Low light is expected at night';
+    if (d.lightStatus.status === 'TOO_LOW' && isDawnOrDusk(sr, ss)) return 'Light is low for this time of day';
     return d.lightStatus.message;
   });
 
@@ -403,8 +408,9 @@ export class LightInsightsComponent implements OnDestroy {
     const d = this.latestData();
     if (!d) return '';
     const s = d.lightStatus.status;
-    if (s === 'TOO_LOW' && isNight()) return 'Night';
-    if (s === 'TOO_LOW' && isDawnOrDusk()) return 'Low light';
+    const { sr, ss } = this.solar();
+    if (s === 'TOO_LOW' && isNight(sr, ss)) return 'Night';
+    if (s === 'TOO_LOW' && isDawnOrDusk(sr, ss)) return 'Low light';
     return this.statusLabel(s);
   });
 
@@ -412,7 +418,7 @@ export class LightInsightsComponent implements OnDestroy {
     const d = this.latestData();
     if (!d) return 'gray';
     const s = d.lightStatus.status;
-    if (s === 'TOO_LOW' && isOffPeak()) return 'gray';
+    if (s === 'TOO_LOW' && this.isOffPeak()) return 'gray';
     if (s === 'OPTIMAL')  return 'green';
     if (s === 'TOO_LOW')  return 'amber';
     if (s === 'TOO_HIGH') return 'red';

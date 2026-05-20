@@ -1,5 +1,5 @@
 module.exports = async function handler(req, res) {
-  const backendUrl = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
+  const backendUrl = (process.env.BACKEND_URL || 'https://growwatch-production.up.railway.app').replace(/\/$/, '');
 
   try {
     const response = await fetch(`${backendUrl}/graphql`, {

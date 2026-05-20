@@ -1,78 +1,78 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { ProgressBarComponent } from '../../shared/components/atoms/progress-bar.component';
-import { SensorService, SensorData, MoodInfo } from '../../core/services/sensor.service';
-import { PlantService } from '../../core/services/plant.service';
+import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.component';
+import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
+import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
 
-interface Metric {
-  key: string;
+const PLANT_EMOJI: Record<string, string> = {
+  TOMATO: '🍅', PEPPER: '🌶️', CUCUMBER: '🥒', ZUCCHINI: '🥒', EGGPLANT: '🍆',
+  LETTUCE: '🥬', SPINACH: '🥬', KALE: '🥬', ARUGULA: '🥬', RADISH: '🌱',
+  BASIL: '🌿', MINT: '🌿', PARSLEY: '🌿', CILANTRO: '🌿', CHIVE: '🌿',
+  OREGANO: '🌿', THYME: '🌿', ROSEMARY: '🌿', STRAWBERRY: '🍓',
+};
+
+interface ActivityEvent {
+  time: string;
   label: string;
-  icon: string;
-  value: string;
-  unit: string;
-  percent: number;
-  status: 'ok' | 'warn' | 'missing';
-  tip?: string;
-  sublabel?: string;
-  link?: string;
+  ok: boolean;
 }
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, ProgressBarComponent],
+  imports: [RouterLink, SensorCardComponent],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto px-4 py-6">
 
-      <!-- Weather strip — blue family -->
-      <div class="bg-gw-surface border border-gw-border rounded-2xl p-4 flex items-center gap-3 mb-5">
-        @if (weather()) {
-          <span class="text-3xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
-          <div class="flex-1 min-w-0">
-            <div class="font-data text-[22px] font-medium text-gw-blue-dark leading-none">{{ weather()!.temperature }}°C</div>
-            <div class="text-[11px] text-gray-400 truncate mt-0.5">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
-          </div>
-          <div class="flex flex-col items-end gap-0.5 shrink-0 text-[11px] text-gw-blue-dark">
-            <span>💧 {{ weather()!.humidity }}%</span>
-            <span>🌬️ {{ weather()!.windSpeed }} m/s</span>
-          </div>
-        } @else {
-          <span class="flex-1 text-[13px] text-gray-400">
-            {{ weatherService.loading() ? 'Loading weather…' : 'Weather unavailable' }}
-          </span>
-        }
-      </div>
+      <!-- Hero row: weather + phase -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
 
-      <!-- Mood card — only when plants are registered -->
-      @if (plants().length > 0) {
-        <div class="mb-5">
-          <div class="flex items-center gap-4 p-4 rounded-2xl border border-transparent"
-               [class]="moodBg()">
-            <div class="w-11 h-11 rounded-full bg-white/60 flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5" [class]="moodIconColor()" fill="none" viewBox="0 0 24 24"
-                   stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3c0 0-6 4-6 9a6 6 0 0012 0c0-5-6-9-6-9z"/>
-                <line x1="12" y1="12" x2="12" y2="21"/>
-              </svg>
-            </div>
+        <!-- Weather card -->
+        <div class="bg-gw-surface border border-gw-border rounded-2xl p-4 flex items-center gap-3">
+          @if (weather()) {
+            <span class="text-3xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
             <div class="flex-1 min-w-0">
-              <div class="font-display text-[17px] font-semibold leading-tight" [class]="moodIconColor()">{{ mood().label }}</div>
-              <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
+              <div class="font-data text-[22px] font-medium text-gw-blue-dark leading-none">{{ weather()!.temperature }}°C</div>
+              <div class="text-[11px] text-gray-400 truncate mt-0.5">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
             </div>
-          </div>
-
-          <!-- Voice bubble — only when action is needed -->
-          @if (showAlert()) {
-            <div class="mt-2 px-4 py-3 rounded-2xl" [class]="bubbleBg()">
-              <p class="text-[13px] leading-relaxed" [class]="bubbleTextColor()">{{ voiceMessage() }}</p>
+            <div class="flex flex-col items-end gap-0.5 shrink-0 text-[11px] text-gw-blue-dark">
+              <span>💧 {{ weather()!.humidity }}%</span>
+              <span>🌬️ {{ weather()!.windSpeed }} m/s</span>
+              <span>🔵 {{ weather()!.pressure }} hPa</span>
             </div>
+          } @else {
+            <span class="flex-1 text-[13px] text-gray-400">
+              {{ weatherService.loading() ? 'Loading weather…' : 'Weather unavailable' }}
+            </span>
           }
         </div>
-      }
 
-      <!-- Onboarding card — only when no plants registered -->
+        <!-- Phase / mood card -->
+        <div class="rounded-2xl p-4 border border-transparent flex flex-col" [class]="moodBg()">
+          <div class="flex items-start justify-between gap-2 mb-1">
+            <span class="text-[10px] font-semibold tracking-widest uppercase opacity-50" [class]="moodIconColor()">Current phase</span>
+            @if (co2Status() === 'warn') {
+              <span class="text-[10px] font-medium bg-gw-amber text-white px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">CO₂ elevated</span>
+            }
+          </div>
+          <div class="font-display text-[22px] font-bold leading-tight" [class]="moodIconColor()">{{ mood().label }}</div>
+          @if (phaseCountdown()) {
+            <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ phaseCountdown() }}</div>
+          } @else {
+            <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
+          }
+          @if (showAlert()) {
+            <p class="text-[11px] mt-2 leading-relaxed opacity-80" [class]="moodIconColor()">{{ voiceMessage() }}</p>
+          }
+          <!-- Subtle divider at bottom matching mockup -->
+          <div class="mt-3 h-px opacity-20 rounded-full" [class]="moodIconColor() === 'text-gw-green-dark' ? 'bg-gw-green-dark' : 'bg-gw-amber-dark'"></div>
+        </div>
+
+      </div>
+
+      <!-- Onboarding -->
       @if (!plantsLoading() && plants().length === 0) {
         <div class="bg-gw-surface border border-gw-border rounded-2xl p-5 mb-5">
           <div class="flex items-start gap-4">
@@ -98,39 +98,86 @@ interface Metric {
         </div>
       }
 
-      <!-- Sensor metrics -->
-      <div class="flex flex-col gap-3">
-        @for (metric of metrics(); track metric.key) {
-          <div class="rounded-2xl p-4 border border-gw-border transition-all"
-               [class]="(metric.key === 'light' && metric.status !== 'missing' ? 'gw-light-card' : 'bg-gw-surface') + (metric.link ? ' cursor-pointer hover:border-gray-300' : '')"
-               [routerLink]="metric.link ?? null">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <span class="text-[15px] leading-none">{{ metric.icon }}</span>
-                <span class="text-[11px] font-medium text-gray-400 uppercase tracking-widest">{{ metric.label }}</span>
+      <!-- Sensors section -->
+      <div class="mb-5">
+        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Sensors</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <app-sensor-card
+            label="Temp"
+            [value]="tempValue()"
+            unit="°C"
+            [status]="tempStatus()"
+            [sparkValues]="tempSpark()"
+            [rangeMin]="tempRange().min"
+            [rangeMax]="tempRange().max" />
+          <app-sensor-card
+            label="Humidity"
+            [value]="humidValue()"
+            unit="%"
+            [status]="humidStatus()"
+            [sparkValues]="humidSpark()"
+            [rangeMin]="humidRange().min"
+            [rangeMax]="humidRange().max" />
+          <app-sensor-card
+            label="CO₂"
+            [value]="co2Value()"
+            unit="ppm"
+            [status]="co2Status()"
+            [sparkValues]="co2Spark()"
+            [rangeMin]="co2Range().min"
+            [rangeMax]="co2Range().max" />
+          <app-sensor-card
+            label="Light"
+            [value]="lightValue()"
+            unit="lx"
+            [status]="lightStatus()"
+            [sparkValues]="lightSpark()"
+            [rangeMin]="lightRange().min"
+            [rangeMax]="lightRange().max"
+            link="/light" />
+        </div>
+      </div>
+
+      <!-- Bottom: Plants + Activity -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Plants strip -->
+        <div>
+          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Plants</p>
+          <div class="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1" style="scrollbar-width:none">
+            @for (plant of plants(); track plant.id) {
+              <a [routerLink]="['/plants']"
+                 class="flex-shrink-0 w-20 bg-gw-surface border border-gw-border rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
+                <span class="text-2xl leading-none">{{ plantEmoji(plant) }}</span>
+                <span class="text-[11px] font-medium text-gray-700 truncate w-full text-center">{{ plant.name }}</span>
+                <span class="text-[10px]" [class]="plantStatusClass(plant)">{{ plantStatus(plant) }}</span>
+              </a>
+            }
+            <a routerLink="/plants"
+               class="flex-shrink-0 w-20 bg-gw-surface border border-dashed border-gw-border rounded-2xl p-3 flex flex-col items-center justify-center gap-1 text-center hover:border-gray-400 transition-colors">
+              <span class="text-xl text-gray-300">+</span>
+              <span class="text-[11px] text-gray-400">Add</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Recent activity — desktop only -->
+        <div class="hidden lg:block">
+          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Recent activity</p>
+          <div class="bg-gw-surface border border-gw-border rounded-2xl divide-y divide-gw-border">
+            @if (activityFeed().length === 0) {
+              <p class="text-[12px] text-gray-400 p-4">No events in the last 24 hours.</p>
+            }
+            @for (event of activityFeed(); track event.time + event.label) {
+              <div class="flex items-center gap-3 px-4 py-3">
+                <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="event.ok ? 'bg-gw-green' : 'bg-gw-amber'"></span>
+                <span class="text-[11px] text-gray-400 tabular-nums shrink-0">{{ event.time }}</span>
+                <span class="text-[12px] text-gray-700 flex-1">{{ event.label }}</span>
               </div>
-              @if (metric.status !== 'missing') {
-                <span class="font-data text-[20px] font-medium text-gray-800 leading-none tabular-nums">
-                  {{ metric.value }}<span class="font-data text-[11px] text-gray-400 ml-1">{{ metric.unit }}</span>
-                </span>
-              } @else {
-                <span class="text-[11px] text-gray-300 italic tracking-wide">soon</span>
-              }
-            </div>
-            @if (metric.status !== 'missing') {
-              <app-progress-bar [percent]="metric.percent" [status]="metric.status"
-                                [size]="metric.key === 'light' ? 'md' : 'sm'" />
-              @if (metric.tip) {
-                <p class="text-[11px] text-gw-amber-dark mt-2">{{ metric.tip }}</p>
-              }
-              @if (metric.sublabel) {
-                <p class="text-[11px] text-gray-400 mt-2">{{ metric.sublabel }}</p>
-              }
-            } @else {
-              <div class="h-px bg-gw-border rounded-full opacity-50"></div>
             }
           </div>
-        }
+        </div>
+
       </div>
 
     </div>
@@ -144,36 +191,60 @@ export class HomeComponent implements OnInit, OnDestroy {
   private weatherTimer?: ReturnType<typeof setInterval>;
 
   latestData = signal<SensorData | null>(null);
+  hourlyData = signal<HourlySensorData[]>([]);
   plants = this.plantService.plants;
   plantsLoading = this.plantService.plantsLoading;
   monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
   weather = this.weatherService.weather;
 
+  // ── Phase countdown ──────────────────────────────────────────────────────────
+
+  phaseCountdown = computed<string>(() => {
+    const w = this.weather();
+    if (!w?.sunrise || !w?.sunset) return '';
+    const now = new Date();
+    const sunrise = new Date(w.sunrise);
+    const sunset  = new Date(w.sunset);
+
+    let target: Date;
+    let prefix: string;
+
+    if (now < sunrise) {
+      target = sunrise; prefix = 'Light cycle starts in';
+    } else if (now < sunset) {
+      target = sunset;  prefix = 'Light cycle ends in';
+    } else {
+      // After today's sunset — calculate tomorrow's sunrise by adding 24h as approximation
+      target = new Date(sunrise.getTime() + 24 * 60 * 60 * 1000);
+      prefix = 'Light cycle starts in';
+    }
+
+    const diff = target.getTime() - now.getTime();
+    if (diff <= 0) return '';
+    const h = Math.floor(diff / 3_600_000);
+    const m = Math.floor((diff % 3_600_000) / 60_000);
+    return h > 0 ? `${prefix} ${h}h ${m}m` : `${prefix} ${m}m`;
+  });
+
+  // ── Mood ─────────────────────────────────────────────────────────────────────
+
   showAlert = computed(() => {
     const d = this.latestData();
     if (!d || this.monitoredPlants().length === 0) return false;
-    if (isNight() || isDawnOrDusk()) return false;
-    const status = d.lightStatus?.status;
-    return status === 'TOO_LOW' || status === 'TOO_HIGH';
+    if (isNight(this.weather()?.sunrise, this.weather()?.sunset) || isDawnOrDusk(this.weather()?.sunrise, this.weather()?.sunset)) return false;
+    const s = d.lightStatus?.status;
+    return s === 'TOO_LOW' || s === 'TOO_HIGH';
   });
 
   mood = computed<MoodInfo>(() => {
     const base = this.sensorService.getMood(this.latestData());
-    if (base.mood === 'stressed' && isNight()) {
+    const sr = this.weather()?.sunrise;
+    const ss = this.weather()?.sunset;
+    if (base.mood === 'stressed' && isNight(sr, ss))
       return { mood: 'good', label: 'Resting', description: 'Low light is expected at night' };
-    }
-    if (base.mood === 'stressed' && isDawnOrDusk()) {
+    if (base.mood === 'stressed' && isDawnOrDusk(sr, ss))
       return { mood: 'good', label: 'Low light', description: 'Light levels are low for this time of day' };
-    }
     return base;
-  });
-
-  sensorOnline = computed(() => {
-    const d = this.latestData();
-    if (!d) return false;
-    const ms = Date.now() - new Date(d.timestamp).getTime();
-    if (isNaN(ms)) return true;
-    return ms < 30000;
   });
 
   moodBg = computed(() => {
@@ -192,134 +263,174 @@ export class HomeComponent implements OnInit, OnDestroy {
     return 'text-gray-400';
   });
 
-  bubbleBg = computed(() => {
-    const m = this.mood().mood;
-    return (m === 'stressed' || m === 'critical') ? 'bg-gw-amber-light' : 'bg-gw-green-light';
-  });
-
-  bubbleTextColor = computed(() => {
-    const m = this.mood().mood;
-    return (m === 'stressed' || m === 'critical') ? 'text-gw-amber-dark' : 'text-gw-green-dark';
-  });
-
   voiceMessage = computed(() => {
     const d = this.latestData();
     const plants = this.monitoredPlants();
     const w = this.weather();
-    const plantNames = plants.map(p => p.name).join(', ');
-
-    if (!d) return "Waiting for sensor data. Make sure your ESP32 is connected.";
-
-    const status = d.lightStatus?.status;
-
-    if (status === 'TOO_LOW') {
-      if (isNight()) return `Low light at night is expected. No action needed.`;
-      if (isDawnOrDusk()) {
-        return new Date().getHours() < 12
-          ? `Light is low for early morning. Check again later in the day.`
-          : `Light is dropping as expected for this time of day.`;
-      }
-      if (w && w.cloudCover >= 65) {
-        return `Light is below the optimal range for ${plantNames}. Heavy cloud cover (${w.cloudCover}%) is limiting available light.`;
-      }
-      if (w && w.cloudCover >= 35) {
-        return `Light is below the optimal range for ${plantNames}. Partial cloud cover is reducing available light.`;
-      }
-      return `Light is below the optimal range for ${plantNames}. Consider supplemental lighting.`;
+    const names = plants.map(p => p.name).join(', ');
+    if (!d) return 'Waiting for sensor data.';
+    const s = d.lightStatus?.status;
+    if (s === 'TOO_LOW') {
+      const sr = w?.sunrise; const ss = w?.sunset;
+      if (isNight(sr, ss)) return 'Low light at night is expected.';
+      if (isDawnOrDusk(sr, ss)) return new Date().getHours() < 12 ? 'Light is low for early morning.' : 'Light dropping as expected.';
+      if (w && w.cloudCover >= 65) return `Heavy cloud cover (${w.cloudCover}%) limiting light for ${names}.`;
+      if (w && w.cloudCover >= 35) return `Partial cloud cover reducing light for ${names}.`;
+      return `Light below optimal for ${names}. Consider supplemental lighting.`;
     }
-
-    if (status === 'TOO_HIGH') {
-      return `Light exceeds the optimal range for ${plantNames}. Consider adding shade.`;
+    if (s === 'TOO_HIGH') return `Light exceeds optimal for ${names}. Consider shade.`;
+    if (s === 'OPTIMAL') {
+      const note = d.humidity != null && d.humidity < 50 ? ' Humidity below 50% — consider misting.' : '';
+      return `Light optimal for ${names}.${note}`;
     }
-
-    if (status === 'OPTIMAL') {
-      const humidityNote = d.humidity != null && d.humidity < 50 ? ' Humidity is below 50% — consider misting.' : '';
-      return `Light is within the optimal range for ${plantNames}.${humidityNote}`;
-    }
-
-    return `Monitoring ${plantNames}.`;
+    return `Monitoring ${names}.`;
   });
 
-  private luxIntensityLabel(lux: number): string {
-    if (lux < 1000)  return 'Very dim — like a cloudy indoor day';
-    if (lux < 5000)  return 'Dim — shaded outdoor conditions';
-    if (lux < 20000) return 'Moderate — bright indirect light';
-    if (lux < 40000) return 'Bright — partial sun';
-    return 'Intense — full direct sunlight';
+  // ── Sensor values ─────────────────────────────────────────────────────────────
+
+  lightValue = computed(() => {
+    const d = this.latestData();
+    return d ? Math.round(d.lightLevel).toString() : '—';
+  });
+
+  lightStatus = computed<'ok' | 'warn' | 'missing'>(() => {
+    const d = this.latestData();
+    if (!d) return 'missing';
+    const suppressWarn = isNight(this.weather()?.sunrise, this.weather()?.sunset) || isDawnOrDusk(this.weather()?.sunrise, this.weather()?.sunset);
+    return this.monitoredPlants().length > 0 && d.lightStatus.status !== 'OPTIMAL' && !suppressWarn ? 'warn' : 'ok';
+  });
+
+  tempValue = computed(() => this.latestData()?.temperature?.toFixed(1) ?? '—');
+  tempStatus = computed<'ok' | 'warn' | 'missing'>(() => {
+    const t = this.latestData()?.temperature;
+    if (t == null) return 'missing';
+    return t < 15 || t > 30 ? 'warn' : 'ok';
+  });
+
+  humidValue = computed(() => {
+    const h = this.latestData()?.humidity;
+    return h != null ? Math.round(h).toString() : '—';
+  });
+  humidStatus = computed<'ok' | 'warn' | 'missing'>(() => {
+    const h = this.latestData()?.humidity;
+    if (h == null) return 'missing';
+    return h < 40 || h > 80 ? 'warn' : 'ok';
+  });
+
+  co2Value = computed(() => {
+    const c = this.latestData()?.co2;
+    return c != null ? Math.round(c).toString() : '—';
+  });
+  co2Status = computed<'ok' | 'warn' | 'missing'>(() => {
+    const c = this.latestData()?.co2;
+    if (c == null) return 'missing';
+    return c > 1500 ? 'warn' : 'ok';
+  });
+
+  // ── Sparklines ────────────────────────────────────────────────────────────────
+
+  private chronological = computed(() => [...this.hourlyData()].reverse());
+
+  lightSpark  = computed(() => this.chronological().map(h => h.avgLight).filter((v): v is number => v != null));
+  tempSpark   = computed(() => this.chronological().map(h => h.avgTemperature).filter((v): v is number => v != null));
+  humidSpark  = computed(() => this.chronological().map(h => h.avgHumidity).filter((v): v is number => v != null));
+  co2Spark    = computed(() => this.chronological().map(h => h.avgCo2).filter((v): v is number => v != null));
+
+  // ── Range labels ──────────────────────────────────────────────────────────────
+
+  lightRange = computed(() => this.sparkRange(this.lightSpark(), v => Math.round(v).toString()));
+  tempRange  = computed(() => this.sparkRange(this.tempSpark(),  v => Math.round(v) + '°'));
+  humidRange = computed(() => this.sparkRange(this.humidSpark(), v => Math.round(v) + '%'));
+  co2Range   = computed(() => this.sparkRange(this.co2Spark(),   v => Math.round(v).toString()));
+
+  private sparkRange(vals: number[], fmt: (v: number) => string) {
+    if (vals.length < 2) return { min: '', max: '' };
+    return { min: fmt(Math.min(...vals)), max: fmt(Math.max(...vals)) };
   }
 
-  metrics = computed<Metric[]>(() => {
-    const d = this.latestData();
-    const hasPlants = this.monitoredPlants().length > 0;
+  // ── Activity feed ─────────────────────────────────────────────────────────────
 
-    const suppressWarn = isNight() || isDawnOrDusk();
-    const lightWarn = hasPlants && d?.lightStatus.status !== 'OPTIMAL' && !suppressWarn;
-    const nightlyLow = suppressWarn && d?.lightStatus.status === 'TOO_LOW';
+  activityFeed = computed<ActivityEvent[]>(() => {
+    const data = this.chronological();
+    if (data.length < 2) return [];
 
-    const lightIcon = isNight() ? '🌙' : isDawnOrDusk() ? '🌅' : '☀️';
+    const events: ActivityEvent[] = [];
 
-    // At night with low light show a modest fixed bar (sensor active, low is expected)
-    // rather than a near-zero bar that looks like a fault
-    const lightPct = d
-      ? nightlyLow && hasPlants
-        ? 25
-        : hasPlants
-          ? Math.min(d.lightStatus.percentageOfOptimal, 100)
-          : Math.min(Math.round((d.lightLevel / 60000) * 100), 100)
-      : 0;
+    for (let i = 1; i < data.length; i++) {
+      const prev = data[i - 1];
+      const curr = data[i];
+      const time = this.fmtHour(curr.hour);
 
-    const lightSublabel = nightlyLow && hasPlants
-      ? (isNight() ? 'Sensor active · nighttime' : 'Sensor active · low light period')
-      : (!hasPlants && d ? this.luxIntensityLabel(d.lightLevel) : undefined);
+      // CO₂ threshold crossings
+      if (prev.avgCo2 != null && curr.avgCo2 != null) {
+        if (prev.avgCo2 <= 1500 && curr.avgCo2 > 1500)
+          events.push({ time, label: 'CO₂ rising trend detected', ok: false });
+        else if (prev.avgCo2 > 1500 && curr.avgCo2 <= 1500)
+          events.push({ time, label: 'CO₂ back to normal', ok: true });
+      }
 
-    return [
-      {
-        key: 'light', label: 'Light', icon: lightIcon,
-        value: d ? Math.round(d.lightLevel).toString() : '—',
-        unit: 'lux',
-        percent: lightPct,
-        status: d ? (lightWarn ? 'warn' : 'ok') : 'missing',
-        tip: lightWarn && d && hasPlants ? d.lightStatus.message : undefined,
-        sublabel: lightSublabel,
-        link: '/light',
-      },
-      {
-        key: 'temp', label: 'Temperature', icon: '🌡️',
-        value: d?.temperature != null ? d.temperature.toFixed(1) : '—',
-        unit: '°C',
-        percent: d?.temperature != null ? Math.min(((d.temperature - 10) / 25) * 100, 100) : 0,
-        status: d?.temperature != null ? (d.temperature < 15 || d.temperature > 30 ? 'warn' : 'ok') : 'missing',
-      },
-      {
-        key: 'humidity', label: 'Humidity', icon: '💧',
-        value: d?.humidity != null ? Math.round(d.humidity).toString() : '—',
-        unit: '%',
-        percent: d?.humidity ?? 0,
-        status: d?.humidity != null ? (d.humidity < 40 || d.humidity > 80 ? 'warn' : 'ok') : 'missing',
-        tip: d?.humidity != null && d.humidity < 40 ? 'Below optimal — consider misting' : undefined,
-      },
-      {
-        key: 'co2', label: 'CO₂', icon: '🌬️',
-        value: d?.co2 != null ? Math.round(d.co2).toString() : '—',
-        unit: 'ppm',
-        percent: d?.co2 != null ? Math.min((d.co2 / 2000) * 100, 100) : 0,
-        status: d?.co2 != null ? (d.co2 > 1500 ? 'warn' : 'ok') : 'missing',
-      },
-      {
-        key: 'pressure', label: 'Pressure', icon: '🔵',
-        value: d?.pressure != null ? Math.round(d.pressure).toString() : '—',
-        unit: 'hPa',
-        percent: d?.pressure != null ? Math.min(((d.pressure - 950) / 100) * 100, 100) : 0,
-        status: d?.pressure != null ? 'ok' : 'missing',
-      },
-    ];
+      // Light on/off transitions
+      if (prev.avgLight != null && curr.avgLight != null) {
+        if (prev.avgLight < 50 && curr.avgLight >= 50)
+          events.push({ time, label: 'Light cycle started', ok: true });
+        else if (prev.avgLight >= 50 && curr.avgLight < 50)
+          events.push({ time, label: 'Light cycle ended', ok: true });
+      }
+    }
+
+    // Add a baseline "all sensors" event from earliest hour if no other events
+    if (events.length === 0 && data.length > 0) {
+      const first = data[0];
+      const allOk = (first.avgCo2 == null || first.avgCo2 <= 1500) &&
+                    (first.avgTemperature == null || (first.avgTemperature >= 15 && first.avgTemperature <= 30));
+      events.push({ time: this.fmtHour(first.hour), label: allOk ? 'All sensors in range' : 'Monitoring started', ok: allOk });
+    }
+
+    return events.sort((a, b) => b.time.localeCompare(a.time)).slice(0, 5);
   });
+
+  private fmtHour(hour: string): string {
+    try {
+      const d = new Date(hour);
+      return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  // ── Plants ────────────────────────────────────────────────────────────────────
+
+  plantEmoji(plant: Plant): string {
+    return PLANT_EMOJI[plant.type] ?? '🌱';
+  }
+
+  plantStatus(plant: Plant): string {
+    if (plant.monitored) {
+      const m = this.mood().mood;
+      if (m === 'thriving') return 'Thriving';
+      if (m === 'good') return 'Healthy';
+      if (m === 'stressed') return 'Stressed';
+      if (m === 'critical') return 'Critical';
+    }
+    const days = Math.floor((Date.now() - new Date(plant.plantedDate).getTime()) / 86400000);
+    return `Day ${days}`;
+  }
+
+  plantStatusClass(plant: Plant): string {
+    if (plant.monitored) {
+      const m = this.mood().mood;
+      if (m === 'thriving' || m === 'good') return 'text-gw-green-dark';
+      if (m === 'stressed' || m === 'critical') return 'text-gw-amber-dark';
+    }
+    return 'text-gray-400';
+  }
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
   ngOnInit() {
     this.sensorService.getLatestSensorData().subscribe(d => this.latestData.set(d));
-    this.sub = this.sensorService.subscribeToSensorData().subscribe(d => {
-      if (d) this.latestData.set(d);
-    });
+    this.sub = this.sensorService.subscribeToSensorData().subscribe(d => { if (d) this.latestData.set(d); });
+    this.sensorService.getHourlyData(24).subscribe(d => this.hourlyData.set(d));
     this.weatherService.fetchWeather();
     this.weatherTimer = setInterval(() => this.weatherService.fetchWeather(), 30 * 60 * 1000);
   }
