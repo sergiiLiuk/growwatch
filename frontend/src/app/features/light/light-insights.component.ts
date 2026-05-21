@@ -6,7 +6,6 @@ import { PlantService } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
-import { ProgressBarComponent } from '../../shared/components/atoms/progress-bar.component';
 import { isNight, isDawnOrDusk, isOffPeak } from '../../core/utils/time';
 
 interface DayBar {
@@ -24,7 +23,7 @@ interface DayBar {
 
 @Component({
   selector: 'app-light-insights',
-  imports: [PageContainerComponent, StatusBadgeComponent, ProgressBarComponent],
+  imports: [PageContainerComponent, StatusBadgeComponent],
   template: `
     <app-page-container>
 
@@ -58,12 +57,7 @@ interface DayBar {
                                   class="mt-1 shrink-0" />
               }
             </div>
-            <div class="mb-2">
-              <app-progress-bar [percent]="isOffPeak() && latestData()!.lightStatus.status === 'TOO_LOW' ? 25 : Math.min(latestData()!.lightStatus.percentageOfOptimal, 100)"
-                                [status]="displayBadgeVariant() === 'amber' || displayBadgeVariant() === 'red' ? 'warn' : 'ok'"
-                                size="md" />
-            </div>
-            <div class="text-[11px] text-gray-400">Updated {{ lastSeenLabel() }}</div>
+            <div class="text-[11px] text-gray-400 mt-3">Updated {{ lastSeenLabel() }}</div>
           } @else {
             <div class="flex items-center gap-3 py-2">
               <div class="w-2 h-2 rounded-full bg-gray-300 shrink-0 animate-pulse"></div>
