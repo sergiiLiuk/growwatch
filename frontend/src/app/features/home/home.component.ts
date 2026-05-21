@@ -58,7 +58,9 @@ interface ActivityEvent {
             }
           </div>
           <div class="font-display text-[22px] font-bold leading-tight" [class]="moodIconColor()">{{ mood().label }}</div>
-          @if (phaseCountdown()) {
+          @if (mood().mood === 'offline') {
+            <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
+          } @else if (phaseCountdown()) {
             <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ phaseCountdown() }}</div>
           } @else {
             <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
@@ -236,8 +238,26 @@ export class HomeComponent implements OnInit, OnDestroy {
     return s === 'TOO_LOW' || s === 'TOO_HIGH';
   });
 
+  // If the latest hourly record is older than this, escalate from "waiting" → "offline"
+  private readonly SILENT_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2h
+
   mood = computed<MoodInfo>(() => {
-    const base = this.sensorService.getMood(this.latestData());
+    const live = this.latestData();
+
+    // No live reading — split between "just waiting" and "truly silent for hours"
+    if (!live) {
+      const h = this.hourlyData()[0];
+      if (!h) {
+        return { mood: 'waiting', label: 'Waiting for data', description: 'No live reading yet' };
+      }
+      const ageMs = Date.now() - new Date(h.hour).getTime();
+      if (ageMs > this.SILENT_THRESHOLD_MS) {
+        return { mood: 'offline', label: 'Sensor silent', description: `Last reading ${this.formatAge(ageMs)}` };
+      }
+      return { mood: 'waiting', label: 'Waiting for data', description: 'No live reading yet' };
+    }
+
+    const base = this.sensorService.getMood(live);
     const sr = this.weather()?.sunrise;
     const ss = this.weather()?.sunset;
     if (base.mood === 'stressed' && isNight(sr, ss))
@@ -247,20 +267,29 @@ export class HomeComponent implements OnInit, OnDestroy {
     return base;
   });
 
+  private formatAge(ms: number): string {
+    const minutes = Math.floor(ms / 60_000);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(ms / 3_600_000);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(ms / 86_400_000);
+    return `${days}d ago`;
+  }
+
   moodBg = computed(() => {
     const m = this.mood().mood;
     if (m === 'thriving' || m === 'good') return 'bg-gw-green-light';
     if (m === 'stressed') return 'bg-gw-amber-light';
-    if (m === 'critical') return 'bg-gw-red-light';
-    return 'bg-gray-100';
+    if (m === 'critical' || m === 'offline') return 'bg-gw-red-light';
+    return 'bg-gray-100'; // waiting
   });
 
   moodIconColor = computed(() => {
     const m = this.mood().mood;
     if (m === 'thriving' || m === 'good') return 'text-gw-green-dark';
     if (m === 'stressed') return 'text-gw-amber-dark';
-    if (m === 'critical') return 'text-gw-red-dark';
-    return 'text-gray-400';
+    if (m === 'critical' || m === 'offline') return 'text-gw-red-dark';
+    return 'text-gray-400'; // waiting
   });
 
   voiceMessage = computed(() => {
@@ -288,41 +317,47 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ── Sensor values ─────────────────────────────────────────────────────────────
 
+  // Each value/status falls back to the most recent hourly average when no live reading is available.
+  // The mood card (which depends on latestData being null to detect "waiting"/"silent") is unaffected.
+
   lightValue = computed(() => {
-    const d = this.latestData();
-    return d ? Math.round(d.lightLevel).toString() : '—';
+    const v = this.latestData()?.lightLevel ?? this.hourlyData()[0]?.avgLight;
+    return v != null ? Math.round(v).toString() : '—';
   });
 
   lightStatus = computed<'ok' | 'warn' | 'missing'>(() => {
-    const d = this.latestData();
-    if (!d) return 'missing';
+    const status = this.latestData()?.lightStatus?.status ?? this.hourlyData()[0]?.lightStatus?.status;
+    if (!status) return 'missing';
     const suppressWarn = isNight(this.weather()?.sunrise, this.weather()?.sunset) || isDawnOrDusk(this.weather()?.sunrise, this.weather()?.sunset);
-    return this.monitoredPlants().length > 0 && d.lightStatus.status !== 'OPTIMAL' && !suppressWarn ? 'warn' : 'ok';
+    return this.monitoredPlants().length > 0 && status !== 'OPTIMAL' && !suppressWarn ? 'warn' : 'ok';
   });
 
-  tempValue = computed(() => this.latestData()?.temperature?.toFixed(1) ?? '—');
+  tempValue = computed(() => {
+    const t = this.latestData()?.temperature ?? this.hourlyData()[0]?.avgTemperature;
+    return t != null ? t.toFixed(1) : '—';
+  });
   tempStatus = computed<'ok' | 'warn' | 'missing'>(() => {
-    const t = this.latestData()?.temperature;
+    const t = this.latestData()?.temperature ?? this.hourlyData()[0]?.avgTemperature;
     if (t == null) return 'missing';
     return t < 15 || t > 30 ? 'warn' : 'ok';
   });
 
   humidValue = computed(() => {
-    const h = this.latestData()?.humidity;
+    const h = this.latestData()?.humidity ?? this.hourlyData()[0]?.avgHumidity;
     return h != null ? Math.round(h).toString() : '—';
   });
   humidStatus = computed<'ok' | 'warn' | 'missing'>(() => {
-    const h = this.latestData()?.humidity;
+    const h = this.latestData()?.humidity ?? this.hourlyData()[0]?.avgHumidity;
     if (h == null) return 'missing';
     return h < 40 || h > 80 ? 'warn' : 'ok';
   });
 
   co2Value = computed(() => {
-    const c = this.latestData()?.co2;
+    const c = this.latestData()?.co2 ?? this.hourlyData()[0]?.avgCo2;
     return c != null ? Math.round(c).toString() : '—';
   });
   co2Status = computed<'ok' | 'warn' | 'missing'>(() => {
-    const c = this.latestData()?.co2;
+    const c = this.latestData()?.co2 ?? this.hourlyData()[0]?.avgCo2;
     if (c == null) return 'missing';
     return c > 1500 ? 'warn' : 'ok';
   });

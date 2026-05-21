@@ -66,7 +66,7 @@ export interface HourlySensorData {
   avgPressure?: number;
 }
 
-export type GreenhouseMood = 'thriving' | 'good' | 'stressed' | 'critical' | 'offline';
+export type GreenhouseMood = 'thriving' | 'good' | 'stressed' | 'critical' | 'waiting' | 'offline';
 
 export interface MoodInfo {
   mood: GreenhouseMood;
@@ -201,7 +201,7 @@ export class SensorService {
   }
 
   getMood(data: SensorData | null): MoodInfo {
-    if (!data) return { mood: 'offline', label: 'Offline', description: 'No sensor data received' };
+    if (!data) return { mood: 'waiting', label: 'Waiting for data', description: 'No live reading yet' };
 
     const status = data.lightStatus?.status;
     const humidityOk = data.humidity == null || (data.humidity >= 40 && data.humidity <= 80);
