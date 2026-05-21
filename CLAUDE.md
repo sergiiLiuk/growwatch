@@ -22,7 +22,7 @@ npm start         # ng serve — dev server at localhost:4200
 npm run build     # Production build
 npm test          # vitest
 ```
-Backend URL is hardcoded in [frontend/src/app/core/services/sensor.service.ts](frontend/src/app/core/services/sensor.service.ts) as `localhost:4000`.
+Backend URL is configured per environment in [frontend/src/environments/](frontend/src/environments/): HTTP via the `/api` proxy (see `proxy.conf.json`), WS direct to `ws://localhost:4000/graphql` in dev. Production URLs are generated at build time by `scripts/set-env.js` from the `BACKEND_URL` env var. Apollo Client + split link live in [frontend/src/app/core/services/graphql-client.service.ts](frontend/src/app/core/services/graphql-client.service.ts).
 
 ### Testing the ESP32 endpoint manually
 ```
@@ -48,25 +48,33 @@ ESP32 → POST /api/sensor-data
 
 ### Backend structure
 - [backend/src/index.ts](backend/src/index.ts) — Express + Apollo Server setup, HTTP server, WebSocket server, ESP32 REST endpoint
-- [backend/src/schema.ts](backend/src/schema.ts) — GraphQL type definitions (`SensorData`, `HourlySensorData`, subscription)
-- [backend/src/resolvers.ts](backend/src/resolvers.ts) — in-memory store, `handleSensorData()`, hourly aggregation cron, GraphQL resolvers
+- [backend/src/schema.ts](backend/src/schema.ts) — GraphQL type definitions (`SensorData`, `HourlySensorData`, `Plant`, queries, mutations, subscription)
+- [backend/src/resolvers.ts](backend/src/resolvers.ts) — in-memory store, `handleSensorData()`, hourly aggregation cron, GraphQL resolvers (sensor + plant)
 - [backend/src/lightUtils.ts](backend/src/lightUtils.ts) — plant light range table (`PLANT_LIGHT_RANGES`), `getLightStatus()`, `calculateDailyLightAccumulation()`
-- [backend/src/models.ts](backend/src/models.ts) — Mongoose schema for `HourlySensorData`
+- [backend/src/models.ts](backend/src/models.ts) — Mongoose schemas for `HourlySensorData` and `Plant`
 - [backend/src/db.ts](backend/src/db.ts) — MongoDB connection
 
-**Key constraint**: `lightStatus` is computed on the fly by the `SensorData` and `HourlySensorData` GraphQL resolvers by calling `getLightStatus()`. The plant type is currently hardcoded to `'tomato'` in both resolver field resolvers.
+**Key constraint**: `lightStatus` is computed on the fly by the `SensorData` and `HourlySensorData` GraphQL resolvers by calling `getLightStatus()`. The plant type used comes from a cached `primaryPlantType` (the earliest-created plant in DB), refreshed on every plant mutation via `refreshPrimaryPlant()`.
 
 **In-memory vs. persistent**: Live readings are in-memory only (last 100 kept, last 10 returned by `sensorData` query). Only hourly aggregates go to MongoDB. Restarting the server loses all live readings.
 
 ### Frontend structure
 Angular 21 standalone components, no NgModules. Tailwind CSS v4 for styling.
 
-- [frontend/src/app/app.routes.ts](frontend/src/app/app.routes.ts) — lazy-loaded routes: `/` Home, `/plants`, `/digest`, `/alerts`, `/settings`
-- [frontend/src/app/shared/components/shell/shell.component.ts](frontend/src/app/shared/components/shell/shell.component.ts) — layout shell: desktop sidebar + mobile bottom nav
-- [frontend/src/app/core/services/sensor.service.ts](frontend/src/app/core/services/sensor.service.ts) — Apollo Client setup (HTTP + WS split link), all GraphQL queries/subscription, `getMood()` logic
-- [frontend/src/app/core/services/plant.service.ts](frontend/src/app/core/services/plant.service.ts) — plant list persisted to `localStorage` as `growwatch-plants`, exposed as an Angular signal
+- [frontend/src/app/app.routes.ts](frontend/src/app/app.routes.ts) — lazy-loaded routes: `/login` (outside shell), `/` Home, `/plants`, `/plants/:id`, `/light`, `/digest`, `/alerts`, `/settings`, `/settings/sensor-setup`
+- [frontend/src/app/shared/components/shell/shell.component.ts](frontend/src/app/shared/components/shell/shell.component.ts) — layout shell: desktop sidebar + mobile bottom nav (wraps all non-login routes)
+- [frontend/src/app/core/services/graphql-client.service.ts](frontend/src/app/core/services/graphql-client.service.ts) — Apollo Client setup (HTTP + WS split link), shared by all services
+- [frontend/src/app/core/services/sensor.service.ts](frontend/src/app/core/services/sensor.service.ts) — sensor GraphQL queries/subscription, `getMood()` logic, `PLANT_LIGHT_RANGES`
+- [frontend/src/app/core/services/plant.service.ts](frontend/src/app/core/services/plant.service.ts) — plants loaded from MongoDB via GraphQL on construction, exposed as an Angular signal; mutations (add/update/remove/setMonitored) round-trip through GraphQL
+- [frontend/src/app/core/services/auth.service.ts](frontend/src/app/core/services/auth.service.ts) — stub auth that persists the signed-in email to `localStorage`. No backend mutation, no JWT, no per-user filtering on the API.
 - [frontend/src/app/features/home/home.component.ts](frontend/src/app/features/home/home.component.ts) — main dashboard; uses Angular `signal` + `computed` throughout; subscribes to live sensor data via `SensorService`
 
-**Signal pattern**: Components use `inject()` + `signal()`/`computed()` rather than constructor injection + Observables where possible. `SensorService` returns `Observable`s (wrapping Apollo promises) which `HomeComponent` subscribes to and stores in signals.
+**Signal pattern**: Components use `inject()` + `signal()`/`computed()` rather than constructor injection + Observables where possible. Services return `Observable`s (wrapping Apollo promises) which components subscribe to and store in signals.
 
-**Sensors in schema vs. reality**: The frontend `SensorData` interface has optional `temperature`, `humidity`, `co2`, `pressure` fields, and the home dashboard already renders them as "coming soon" metrics — but the backend `ESP32Message` type and GraphQL schema only define `lightLevel`. These fields will need to be added to the schema and `ESP32Message` when the hardware supports them.
+**`localStorage` usage** (everything else lives in MongoDB):
+- `growwatch-user` — stub auth user (just email)
+- `growwatch-location` — saved weather location
+- `growwatch-alerts-read` — alerts read history
+- `growwatch-settings` — UI preferences
+
+**BME688 sensor fields**: `temperature`, `humidity`, `pressure`, `co2` are all wired end-to-end — ESP32 firmware → `ESP32Message` → in-memory store → GraphQL schema → frontend. All fields are optional and only emitted when the BME688 reports them.
