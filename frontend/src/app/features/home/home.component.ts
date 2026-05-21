@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.component';
-import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
+import { SensorService, SensorData, HourlySensorData, MoodInfo, PLANT_LIGHT_RANGES } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
@@ -111,7 +111,8 @@ interface ActivityEvent {
             [status]="tempStatus()"
             [sparkValues]="tempSpark()"
             [rangeMin]="tempRange().min"
-            [rangeMax]="tempRange().max" />
+            [rangeMax]="tempRange().max"
+            link="/temperature" />
           <app-sensor-card
             label="Humidity"
             [value]="humidValue()"
@@ -371,17 +372,28 @@ export class HomeComponent implements OnInit, OnDestroy {
   humidSpark  = computed(() => this.chronological().map(h => h.avgHumidity).filter((v): v is number => v != null));
   co2Spark    = computed(() => this.chronological().map(h => h.avgCo2).filter((v): v is number => v != null));
 
-  // ── Range labels ──────────────────────────────────────────────────────────────
+  // ── Range labels (calibration cue under sparkline — shows optimal range, not historical) ──
 
-  lightRange = computed(() => this.sparkRange(this.lightSpark(), v => Math.round(v).toString()));
-  tempRange  = computed(() => this.sparkRange(this.tempSpark(),  v => Math.round(v) + '°'));
-  humidRange = computed(() => this.sparkRange(this.humidSpark(), v => Math.round(v) + '%'));
-  co2Range   = computed(() => this.sparkRange(this.co2Spark(),   v => Math.round(v).toString()));
+  tempRange  = computed(() => ({ min: '15°', max: '30°' }));
+  humidRange = computed(() => ({ min: '40%', max: '80%' }));
+  co2Range   = computed(() => ({ min: '0', max: '1500' }));
 
-  private sparkRange(vals: number[], fmt: (v: number) => string) {
-    if (vals.length < 2) return { min: '', max: '' };
-    return { min: fmt(Math.min(...vals)), max: fmt(Math.max(...vals)) };
-  }
+  // Light range depends on which plants are being monitored. With multiple plants,
+  // we show the tightest intersection (highest min, lowest max) so all plants are satisfied.
+  // Falls back to the backend default (TOMATO) when nothing is monitored.
+  lightRange = computed(() => {
+    const ranges = this.monitoredPlants()
+      .map(p => PLANT_LIGHT_RANGES[p.type])
+      .filter((r): r is { min: number; max: number; label: string } => !!r);
+    if (ranges.length === 0) {
+      const def = PLANT_LIGHT_RANGES['TOMATO'];
+      return { min: def.min.toString(), max: def.max.toString() };
+    }
+    return {
+      min: Math.max(...ranges.map(r => r.min)).toString(),
+      max: Math.min(...ranges.map(r => r.max)).toString(),
+    };
+  });
 
   // ── Activity feed ─────────────────────────────────────────────────────────────
 

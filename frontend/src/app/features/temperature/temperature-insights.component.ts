@@ -1,28 +1,39 @@
 import { Component, OnDestroy, signal, computed, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SensorService, SensorData, HourlySensorData, PLANT_LIGHT_RANGES } from '../../core/services/sensor.service';
-import { PlantService } from '../../core/services/plant.service';
-import { WeatherService } from '../../core/services/weather.service';
+import { SensorService, SensorData, HourlySensorData } from '../../core/services/sensor.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
-import { isNight, isDawnOrDusk, isOffPeak } from '../../core/utils/time';
+
+const TEMP_OPTIMAL_MIN = 15;
+const TEMP_OPTIMAL_MAX = 30;
+const CHART_HEIGHT_PX = 96;
+const Y_AXIS_DEFAULT_MAX = 40;
 
 interface DayBar {
   dateStr: string;
   label: string;
   dateLabel: string;
-  totalLuxHours: number;
   hasData: boolean;
   isToday: boolean;
   isFuture: boolean;
-  barHeight: number;
+  min: number | null;
+  max: number | null;
+  avg: number | null;
+  barBottomPx: number;
+  barHeightPx: number;
+  avgY: number;
   barClass: string;
   tooltip: string;
 }
 
+interface OptimalLine {
+  label: string;
+  y: number; // px from bottom
+}
+
 @Component({
-  selector: 'app-light-insights',
+  selector: 'app-temperature-insights',
   imports: [PageContainerComponent, StatusBadgeComponent],
   template: `
     <app-page-container>
@@ -33,29 +44,27 @@ interface DayBar {
       </button>
 
       <div class="mb-6">
-        <h1 class="text-[18px] font-medium text-gray-800">Light insights</h1>
-        <p class="text-[11px] text-gray-400 mt-0.5">Live reading and daily history</p>
+        <h1 class="text-[18px] font-medium text-gray-800">Temperature insights</h1>
+        <p class="text-[11px] text-gray-400 mt-0.5">Live reading and daily/weekly history</p>
       </div>
 
       <!-- Live reading -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Live reading</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
-          @if (latestData()) {
+          @if (liveTemp() != null) {
             <div class="flex items-start justify-between mb-3">
               <div>
                 <div class="flex items-baseline gap-1.5">
                   <span class="text-[32px] font-semibold text-gray-900 leading-none tabular-nums">
-                    {{ Math.round(latestData()!.lightLevel).toLocaleString() }}
+                    {{ liveTemp()!.toFixed(1) }}
                   </span>
-                  <span class="text-[14px] text-gray-400">lux</span>
+                  <span class="text-[14px] text-gray-400">°C</span>
                 </div>
                 <div class="text-[12px] text-gray-400 mt-1.5">{{ readingSubLabel() }}</div>
               </div>
-              @if (!isOffPeak() || latestData()!.lightStatus.status !== 'TOO_LOW') {
-                <app-status-badge [label]="displayBadgeLabel()" [variant]="displayBadgeVariant()"
-                                  class="mt-1 shrink-0" />
-              }
+              <app-status-badge [label]="badgeLabel()" [variant]="badgeVariant()"
+                                class="mt-1 shrink-0" />
             </div>
             <div class="text-[11px] text-gray-400 mt-3">Updated {{ lastSeenLabel() }}</div>
           } @else {
@@ -67,19 +76,20 @@ interface DayBar {
         </div>
       </div>
 
-      <!-- Today's total -->
+      <!-- Today's range -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Today</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
-          @if (todayTotal(); as t) {
+          @if (todayStats(); as t) {
             <div class="flex items-baseline gap-1.5 mb-1">
               <span class="text-[28px] font-semibold text-gray-900 leading-none tabular-nums">
-                {{ t.valueStr }}
+                {{ t.avg.toFixed(1) }}
               </span>
-              <span class="text-[13px] text-gray-400">{{ t.unit }}</span>
+              <span class="text-[13px] text-gray-400">°C avg</span>
             </div>
             <div class="text-[12px] text-gray-400">
-              {{ t.hourCount }} {{ t.hourCount === 1 ? 'hour' : 'hours' }} logged · {{ t.readingCount }} readings
+              Min {{ t.min.toFixed(1) }}°C · Max {{ t.max.toFixed(1) }}°C ·
+              {{ t.hourCount }} {{ t.hourCount === 1 ? 'hour' : 'hours' }} logged
             </div>
           } @else {
             <p class="text-[13px] text-gray-400 py-1">No hourly data yet for today.</p>
@@ -109,7 +119,6 @@ interface DayBar {
 
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
           @if (loading()) {
-            <!-- Skeleton -->
             <div class="flex items-end gap-2" style="height: 96px">
               @for (h of skeletonHeights; track $index) {
                 <div class="flex-1 rounded-t-lg bg-gray-100 animate-pulse" [style.height.px]="h"></div>
@@ -125,9 +134,9 @@ interface DayBar {
             <div class="flex">
               <!-- Y-axis labels -->
               <div class="relative shrink-0 pr-1" style="width: 32px; height: 96px">
-                <span class="absolute top-0 right-0 text-[9px] text-gray-300 leading-none">{{ yAxisLabels().top }}</span>
-                <span class="absolute top-1/2 right-0 -translate-y-1/2 text-[9px] text-gray-300 leading-none">{{ yAxisLabels().mid }}</span>
-                <span class="absolute bottom-0 right-0 text-[9px] text-gray-300 leading-none">0</span>
+                <span class="absolute top-0 right-0 text-[9px] text-gray-300 leading-none">{{ yAxisLabels().top }}°</span>
+                <span class="absolute top-1/2 right-0 -translate-y-1/2 text-[9px] text-gray-300 leading-none">{{ yAxisLabels().mid }}°</span>
+                <span class="absolute bottom-0 right-0 text-[9px] text-gray-300 leading-none">0°</span>
               </div>
               <!-- Chart area -->
               <div class="flex-1 relative" style="height: 96px">
@@ -135,21 +144,30 @@ interface DayBar {
                 <div class="absolute inset-x-0 top-0 border-t border-gray-100"></div>
                 <div class="absolute inset-x-0 top-1/2 border-t border-gray-100"></div>
                 <div class="absolute inset-x-0 bottom-0 border-t border-gray-100"></div>
-                <!-- Optimal reference lines (one per monitored plant type) -->
-                @for (line of thresholdLines(); track line.label) {
-                  <div class="absolute inset-x-0 z-10 flex items-center" [style.bottom.px]="line.lineY">
+                <!-- Optimal range reference lines (15 / 30) -->
+                @for (line of optimalLines(); track line.label) {
+                  <div class="absolute inset-x-0 z-10 flex items-center" [style.bottom.px]="line.y">
                     <div class="flex-1 border-t border-dashed border-gw-green/70"></div>
                     <span class="text-[8px] text-gw-green-dark pl-1 leading-none shrink-0">{{ line.label }}</span>
                   </div>
                 }
-                <!-- Bars -->
-                <div class="flex items-end gap-2 h-full">
+                <!-- Bars (min–max range with avg tick) -->
+                <div class="absolute inset-0 flex gap-2">
                   @for (day of chartBars(); track day.dateStr) {
-                    <div class="flex-1 flex flex-col-reverse h-full" [title]="day.tooltip">
-                      <div class="w-full rounded-t-lg transition-all duration-500"
-                           [class]="day.barClass"
-                           [style.height.px]="day.barHeight">
-                      </div>
+                    <div class="flex-1 relative" [title]="day.tooltip">
+                      @if (day.hasData) {
+                        <!-- Min–max range bar -->
+                        <div class="absolute left-1/2 -translate-x-1/2 w-3 rounded-md transition-all duration-500"
+                             [class]="day.barClass"
+                             [style.bottom.px]="day.barBottomPx"
+                             [style.height.px]="day.barHeightPx">
+                        </div>
+                        <!-- Avg marker (horizontal tick on the bar) -->
+                        <div class="absolute left-1/2 -translate-x-1/2 bg-white rounded-full pointer-events-none"
+                             style="width: 16px; height: 2px;"
+                             [style.bottom.px]="day.avgY - 1">
+                        </div>
+                      }
                     </div>
                   }
                 </div>
@@ -167,14 +185,20 @@ interface DayBar {
                 }
               </div>
             </div>
-            <!-- Week total -->
-            <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-              <span class="text-[11px] text-gray-400">Week total</span>
-              <span class="text-[12px] font-medium text-gray-700">{{ weekTotalStr() }}</span>
+            <!-- Week summary -->
+            <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-y-1">
+              <span class="text-[11px] text-gray-400">Week avg</span>
+              <span class="text-[12px] font-medium text-gray-700">{{ weekAvgStr() }}</span>
             </div>
+            @if (weekExtremes(); as e) {
+              <div class="mt-1 flex items-center justify-between text-[11px] text-gray-400">
+                <span>Coldest {{ e.coldLabel }} · {{ e.coldStr }}</span>
+                <span>Hottest {{ e.hotLabel }} · {{ e.hotStr }}</span>
+              </div>
+            }
           } @else {
             <div class="py-10 text-center">
-              <div class="text-3xl mb-3">☀️</div>
+              <div class="text-3xl mb-3">🌡️</div>
               <p class="text-[13px] text-gray-500 font-medium">No data for this week</p>
               <p class="text-[11px] text-gray-400 mt-1 leading-relaxed">
                 Hourly snapshots accumulate over time.<br>Check back after the sensor has been running.
@@ -187,16 +211,12 @@ interface DayBar {
     </app-page-container>
   `,
 })
-export class LightInsightsComponent implements OnDestroy {
+export class TemperatureInsightsComponent implements OnDestroy {
   private sensorService = inject(SensorService);
-  private plantService = inject(PlantService);
-  private weatherService = inject(WeatherService);
   private router = inject(Router);
   private weekSub?: Subscription;
   private liveSub?: Subscription;
   private tickTimer?: ReturnType<typeof setInterval>;
-
-  Math = Math;
 
   latestData = signal<SensorData | null>(null);
   todayHourlyData = signal<HourlySensorData[]>([]);
@@ -205,21 +225,33 @@ export class LightInsightsComponent implements OnDestroy {
   loading = signal(false);
   private tick = signal(0);
 
-  skeletonHeights = [32, 56, 40, 72, 88, 24, 16];
+  skeletonHeights = [40, 56, 48, 72, 64, 36, 24];
 
-  todayTotal = computed(() => {
-    const now = new Date();
-    const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(now); todayEnd.setHours(23, 59, 59, 999);
-    const hours = this.todayHourlyData().filter(h => {
-      const hd = new Date(h.hour);
-      return hd >= todayStart && hd <= todayEnd;
-    });
-    if (hours.length === 0) return null;
-    const luxHours = hours.reduce((sum, h) => sum + h.avgLight, 0);
-    const readingCount = hours.reduce((sum, h) => sum + h.readingCount, 0);
-    const { valueStr, unit } = this.formatLuxH(luxHours);
-    return { valueStr, unit, hourCount: hours.length, readingCount };
+  // ── Live ─────────────────────────────────────────────────────────────────────
+
+  liveTemp = computed(() => this.latestData()?.temperature ?? null);
+
+  badgeVariant = computed<BadgeVariant>(() => {
+    const t = this.liveTemp();
+    if (t == null) return 'gray';
+    if (t < TEMP_OPTIMAL_MIN || t > TEMP_OPTIMAL_MAX) return 'amber';
+    return 'green';
+  });
+
+  badgeLabel = computed(() => {
+    const t = this.liveTemp();
+    if (t == null) return '';
+    if (t < TEMP_OPTIMAL_MIN) return 'Too cold';
+    if (t > TEMP_OPTIMAL_MAX) return 'Too warm';
+    return 'Optimal';
+  });
+
+  readingSubLabel = computed(() => {
+    const t = this.liveTemp();
+    if (t == null) return '';
+    if (t < TEMP_OPTIMAL_MIN) return `Below ${TEMP_OPTIMAL_MIN}°C optimal floor`;
+    if (t > TEMP_OPTIMAL_MAX) return `Above ${TEMP_OPTIMAL_MAX}°C optimal ceiling`;
+    return `Within ${TEMP_OPTIMAL_MIN}–${TEMP_OPTIMAL_MAX}°C optimal range`;
   });
 
   lastSeenLabel = computed(() => {
@@ -231,6 +263,26 @@ export class LightInsightsComponent implements OnDestroy {
     if (secs < 60) return `${secs}s ago`;
     return `${Math.floor(secs / 60)}m ago`;
   });
+
+  // ── Today's range ────────────────────────────────────────────────────────────
+
+  todayStats = computed(() => {
+    const now = new Date();
+    const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now); todayEnd.setHours(23, 59, 59, 999);
+    const hours = this.todayHourlyData().filter(h => {
+      if (h.avgTemperature == null) return false;
+      const hd = new Date(h.hour);
+      return hd >= todayStart && hd <= todayEnd;
+    });
+    if (hours.length === 0) return null;
+    const avg = hours.reduce((s, h) => s + (h.avgTemperature ?? 0), 0) / hours.length;
+    const min = Math.min(...hours.map(h => h.minTemperature ?? h.avgTemperature ?? Infinity));
+    const max = Math.max(...hours.map(h => h.maxTemperature ?? h.avgTemperature ?? -Infinity));
+    return { avg, min, max, hourCount: hours.length };
+  });
+
+  // ── Week chart ───────────────────────────────────────────────────────────────
 
   weekLabel = computed(() => {
     const { from, to } = this.weekBounds(this.weekOffset());
@@ -246,97 +298,112 @@ export class LightInsightsComponent implements OnDestroy {
       const day = new Date(from); day.setDate(from.getDate() + i);
       const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
-      const dayHours = hourly.filter(h => { const hd = new Date(h.hour); return hd >= dayStart && hd <= dayEnd; });
+      const dayHours = hourly.filter(h => {
+        if (h.avgTemperature == null) return false;
+        const hd = new Date(h.hour);
+        return hd >= dayStart && hd <= dayEnd;
+      });
+      const hasData = dayHours.length > 0;
+      const avg = hasData ? dayHours.reduce((s, h) => s + (h.avgTemperature ?? 0), 0) / dayHours.length : null;
+      const min = hasData ? Math.min(...dayHours.map(h => h.minTemperature ?? h.avgTemperature ?? Infinity)) : null;
+      const max = hasData ? Math.max(...dayHours.map(h => h.maxTemperature ?? h.avgTemperature ?? -Infinity)) : null;
       return {
-        day, dayStart,
-        totalLuxHours: dayHours.reduce((s, h) => s + h.avgLight, 0),
-        hasData: dayHours.length > 0,
+        day, dayStart, hasData, avg, min, max,
         isToday: dayStart.getTime() === today.getTime(),
         isFuture: dayStart > today,
       };
     });
   });
 
-  private weekMaxLuxH = computed(() => this.rawDayData().reduce((m, r) => Math.max(m, r.totalLuxHours), 0));
-
-  optimalThresholds = computed(() => {
-    const seen = new Set<number>();
-    const result: { luxH: number; label: string }[] = [];
-    for (const p of this.plantService.plants().filter(p => p.monitored)) {
-      const range = PLANT_LIGHT_RANGES[p.type];
-      if (!range) continue;
-      const luxH = range.min * p.dailyLightHours;
-      if (seen.has(luxH)) continue;
-      seen.add(luxH);
-      result.push({ luxH, label: `${range.label} min.` });
-    }
-    return result;
-  });
-
-  private effectiveChartMax = computed(() => {
-    const maxThreshold = this.optimalThresholds().reduce((m, t) => Math.max(m, t.luxH), 0);
-    return Math.max(this.weekMaxLuxH(), maxThreshold, 1);
+  private chartYMax = computed(() => {
+    const dataMax = this.rawDayData().reduce((m, r) => Math.max(m, r.max ?? -Infinity), -Infinity);
+    if (!isFinite(dataMax)) return Y_AXIS_DEFAULT_MAX;
+    return Math.max(Y_AXIS_DEFAULT_MAX, Math.ceil((dataMax + 2) / 5) * 5);
   });
 
   yAxisLabels = computed(() => {
-    const max = this.effectiveChartMax();
-    return { top: this.formatYTick(max), mid: this.formatYTick(max / 2) };
+    const max = this.chartYMax();
+    return { top: max.toString(), mid: Math.round(max / 2).toString() };
   });
 
-  thresholdLines = computed(() => {
-    const eMax = this.effectiveChartMax();
-    return this.optimalThresholds().map(t => ({
-      ...t,
-      lineY: Math.min(Math.round((t.luxH / eMax) * 96), 96),
+  optimalLines = computed<OptimalLine[]>(() => {
+    const yMax = this.chartYMax();
+    return [TEMP_OPTIMAL_MIN, TEMP_OPTIMAL_MAX].map(v => ({
+      label: `${v}°`,
+      y: Math.round((v / yMax) * CHART_HEIGHT_PX),
     }));
   });
 
   chartBars = computed<DayBar[]>(() => {
-    const MAX_PX = 96;
-    const eMax = this.effectiveChartMax();
+    const yMax = this.chartYMax();
     return this.rawDayData().map(r => {
-      const barHeight = r.hasData && eMax > 0 ? Math.max(4, Math.round((r.totalLuxHours / eMax) * MAX_PX)) : 0;
-      const barClass = !r.hasData || r.isFuture ? 'bg-gray-100' : r.isToday ? 'bg-gw-green' : 'bg-gw-green/50';
-      const { valueStr, unit } = this.formatLuxH(r.totalLuxHours);
-      const tooltip = r.hasData && !r.isFuture
-        ? `${r.day.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}: ${valueStr} ${unit}`
+      const valToY = (v: number) => (v / yMax) * CHART_HEIGHT_PX;
+      let barBottomPx = 0, barHeightPx = 0, avgY = 0;
+      let barClass = 'bg-gray-100';
+
+      if (r.hasData && r.min != null && r.max != null && r.avg != null) {
+        barBottomPx = Math.max(0, valToY(r.min));
+        barHeightPx = Math.max(4, valToY(r.max) - valToY(r.min)); // 4px floor for visibility
+        avgY = valToY(r.avg);
+
+        const withinOptimal = r.min >= TEMP_OPTIMAL_MIN && r.max <= TEMP_OPTIMAL_MAX;
+        const avgOutsideOptimal = r.avg < TEMP_OPTIMAL_MIN || r.avg > TEMP_OPTIMAL_MAX;
+        const isFaded = !r.isToday;
+        if (avgOutsideOptimal) barClass = isFaded ? 'bg-gw-red/50' : 'bg-gw-red';
+        else if (!withinOptimal) barClass = isFaded ? 'bg-gw-amber/50' : 'bg-gw-amber';
+        else barClass = isFaded ? 'bg-gw-green/50' : 'bg-gw-green';
+      }
+
+      const tooltip = r.hasData && !r.isFuture && r.min != null && r.max != null && r.avg != null
+        ? `${r.day.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}: avg ${r.avg.toFixed(1)}°C, range ${r.min.toFixed(1)}–${r.max.toFixed(1)}°C`
         : r.isFuture ? 'Upcoming' : 'No data';
+
       return {
         dateStr: r.day.toISOString().split('T')[0],
         label: r.day.toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 3),
         dateLabel: r.day.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-        totalLuxHours: r.totalLuxHours,
         hasData: r.hasData,
         isToday: r.isToday,
         isFuture: r.isFuture,
-        barHeight,
-        barClass,
-        tooltip,
+        min: r.min, max: r.max, avg: r.avg,
+        barBottomPx, barHeightPx, avgY, barClass, tooltip,
       };
     });
   });
 
   hasWeekData = computed(() => this.chartBars().some(d => d.hasData && !d.isFuture));
 
-  weekTotalStr = computed(() => {
-    const total = this.chartBars().reduce((s, d) => s + d.totalLuxHours, 0);
-    const { valueStr, unit } = this.formatLuxH(total);
-    return `${valueStr} ${unit}`;
+  weekAvgStr = computed(() => {
+    const days = this.chartBars().filter(d => d.hasData && d.avg != null && !d.isFuture);
+    if (days.length === 0) return '—';
+    const avg = days.reduce((s, d) => s + (d.avg ?? 0), 0) / days.length;
+    return `${avg.toFixed(1)} °C`;
   });
 
+  weekExtremes = computed(() => {
+    const days = this.chartBars().filter(d => d.hasData && !d.isFuture && d.min != null && d.max != null);
+    if (days.length === 0) return null;
+    const coldest = days.reduce((min, d) => (d.min! < min.min! ? d : min));
+    const hottest = days.reduce((max, d) => (d.max! > max.max! ? d : max));
+    return {
+      coldLabel: coldest.label,
+      coldStr: `${coldest.min!.toFixed(1)} °C`,
+      hotLabel: hottest.label,
+      hotStr: `${hottest.max!.toFixed(1)} °C`,
+    };
+  });
+
+  // ── Lifecycle ────────────────────────────────────────────────────────────────
+
   constructor() {
-    // Today's data — last 48 h is enough; todayTotal filters by date
     this.sensorService.getHourlyData(48).subscribe(d => this.todayHourlyData.set(d));
 
-    // Live sensor
     this.sensorService.getLatestSensorData().subscribe(d => this.latestData.set(d));
     this.liveSub = this.sensorService.subscribeToSensorData().subscribe(d => { if (d) this.latestData.set(d); });
 
     // Keep the "Updated Xm ago" label ticking even when no new readings arrive
     this.tickTimer = setInterval(() => this.tick.update(v => v + 1), 30_000);
 
-    // Reactive week fetch — re-runs when weekOffset changes.
-    // Fetch enough hours to cover the selected week plus all weeks back to it.
     effect(() => {
       const offset = this.weekOffset();
       const hoursNeeded = (Math.abs(offset) + 1) * 7 * 24;
@@ -378,80 +445,5 @@ export class LightInsightsComponent implements OnDestroy {
     to.setHours(23, 59, 59, 999);
 
     return { from, to };
-  }
-
-  private formatLuxH(v: number): { valueStr: string; unit: string } {
-    if (v === 0) return { valueStr: '—', unit: '' };
-    if (v < 1000) return { valueStr: `${Math.round(v)}`, unit: 'lux·h' };
-    return { valueStr: `${(v / 1000).toFixed(1)}`, unit: 'klux·h' };
-  }
-
-  private formatYTick(v: number): string {
-    if (v === 0) return '0';
-    if (v >= 1000) return `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k`;
-    return Math.round(v).toString();
-  }
-
-  private solar() { const w = this.weatherService.weather(); return { sr: w?.sunrise, ss: w?.sunset }; }
-
-  isOffPeak(): boolean { const { sr, ss } = this.solar(); return isOffPeak(sr, ss); }
-
-  readingSubLabel = computed(() => {
-    const d = this.latestData();
-    if (!d) return '';
-    const { sr, ss } = this.solar();
-    if (d.lightStatus.status === 'TOO_LOW' && isNight(sr, ss)) return 'Low light is expected at night';
-    if (d.lightStatus.status === 'TOO_LOW' && isDawnOrDusk(sr, ss)) return 'Light is low for this time of day';
-    return d.lightStatus.message;
-  });
-
-  displayBadgeLabel = computed(() => {
-    const d = this.latestData();
-    if (!d) return '';
-    const s = d.lightStatus.status;
-    const { sr, ss } = this.solar();
-    if (s === 'TOO_LOW' && isNight(sr, ss)) return 'Night';
-    if (s === 'TOO_LOW' && isDawnOrDusk(sr, ss)) return 'Low light';
-    return this.statusLabel(s);
-  });
-
-  displayBadgeVariant = computed<BadgeVariant>(() => {
-    const d = this.latestData();
-    if (!d) return 'gray';
-    const s = d.lightStatus.status;
-    if (s === 'TOO_LOW' && this.isOffPeak()) return 'gray';
-    if (s === 'OPTIMAL')  return 'green';
-    if (s === 'TOO_LOW')  return 'amber';
-    if (s === 'TOO_HIGH') return 'red';
-    return 'gray';
-  });
-
-  displayBarClass = computed(() => {
-    const d = this.latestData();
-    if (!d) return 'bg-gray-300';
-    const s = d.lightStatus.status;
-    if (s === 'TOO_LOW' && this.isOffPeak()) return 'bg-gray-300';
-    return this.statusBarClass(s);
-  });
-
-  statusLabel(status: string): string {
-    if (status === 'OPTIMAL')  return 'Optimal';
-    if (status === 'TOO_LOW')  return 'Too low';
-    if (status === 'TOO_HIGH') return 'Too high';
-    return status;
-  }
-
-  statusBadgeClass(status: string): string {
-    if (status === 'OPTIMAL')  return 'bg-gw-green-light text-gw-green-dark';
-    if (status === 'TOO_LOW')  return 'bg-gw-amber-light text-gw-amber-dark';
-    if (status === 'TOO_HIGH') return 'bg-gw-red-light text-gw-red-dark';
-    return 'bg-gray-100 text-gray-500';
-  }
-
-  statusBarClass(status: string): string {
-    if (status === 'OPTIMAL')  return 'bg-gw-green';
-    if (status === 'TOO_LOW')  return 'bg-gw-amber';
-    if (status === 'TOO_HIGH') return 'bg-gw-red';
-    return 'bg-gray-300';
   }
 }

@@ -210,7 +210,7 @@ export class SensorService {
     if (status === 'OPTIMAL' && humidityOk && tempOk) {
       return { mood: 'thriving', label: 'Optimal', description: 'All conditions within range' };
     }
-    if (status === 'TOO_LOW' || !humidityOk) {
+    if (status === 'TOO_LOW' || !humidityOk || !tempOk) {
       return { mood: 'stressed', label: 'Attention needed', description: 'One or more conditions are outside the optimal range' };
     }
     if (status === 'TOO_HIGH') {

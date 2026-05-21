@@ -27,6 +27,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/light/light-insights.component').then(m => m.LightInsightsComponent),
       },
       {
+        path: 'temperature',
+        loadComponent: () => import('./features/temperature/temperature-insights.component').then(m => m.TemperatureInsightsComponent),
+      },
+      {
         path: 'digest',
         loadComponent: () => import('./features/digest/digest.component').then(m => m.DigestComponent),
       },
