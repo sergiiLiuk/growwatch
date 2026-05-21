@@ -148,7 +148,7 @@ interface ActivityEvent {
           <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Plants</p>
           <div class="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1" style="scrollbar-width:none">
             @for (plant of plants(); track plant.id) {
-              <a [routerLink]="['/plants']"
+              <a [routerLink]="['/plants', plant.id]"
                  class="flex-shrink-0 w-20 bg-gw-surface border border-gw-border rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
                 <span class="text-2xl leading-none">{{ plantEmoji(plant) }}</span>
                 <span class="text-[11px] font-medium text-gray-700 truncate w-full text-center">{{ plant.name }}</span>
