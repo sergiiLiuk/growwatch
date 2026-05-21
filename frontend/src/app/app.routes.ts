@@ -3,6 +3,10 @@ import { ShellComponent } from './shared/components/shell/shell.component';
 
 export const routes: Routes = [
   {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent),
+  },
+  {
     path: '',
     component: ShellComponent,
     children: [
