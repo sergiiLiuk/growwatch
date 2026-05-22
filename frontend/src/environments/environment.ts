@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
   backendHttpUrl: '/api/graphql',
-  backendWsUrl: 'wss://growwatch-production.up.railway.app/graphql'
+  backendWsUrl: 'ws://localhost:4000/graphql'
 };
