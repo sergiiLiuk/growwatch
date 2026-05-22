@@ -5,15 +5,59 @@ import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { createServer } from 'http';
 import { typeDefs } from './schema';
-import { resolvers, handleSensorData, startHourlyAggregation, saveHourlyData, initPlantCache } from './resolvers';
+import { resolvers, handleSensorData, startHourlyAggregation, saveHourlyData, initPlantCache, setSuperuserId } from './resolvers';
 import { ESP32Message } from './types';
 import { connectDB } from './db';
+import { User, Plant, HourlySensorData } from './models';
+import { hashPassword, verifyToken } from './auth';
 
 const PORT = Number(process.env.PORT) || 4000;
+
+async function seedAndMigrate(): Promise<string> {
+    // Auto-seed the superuser if missing
+    let superuser = await User.findOne({ email: 'super' });
+    if (!superuser) {
+        const passwordHash = await hashPassword('test1234!');
+        superuser = await User.create({ email: 'super', passwordHash, role: 'superuser' });
+        console.log('🌱 Superuser created (email: super, password: test1234!)');
+    }
+
+    const superuserId = superuser._id.toString();
+
+    // Attribute legacy records that have no userId to the superuser
+    const [hourlyMigrated, plantsMigrated] = await Promise.all([
+        HourlySensorData.updateMany({ userId: { $exists: false } }, { $set: { userId: superuserId } }),
+        Plant.updateMany({ userId: { $exists: false } }, { $set: { userId: superuserId } }),
+    ]);
+    if (hourlyMigrated.modifiedCount > 0)
+        console.log(`🔄 Migrated ${hourlyMigrated.modifiedCount} hourly records → superuser`);
+    if (plantsMigrated.modifiedCount > 0)
+        console.log(`🔄 Migrated ${plantsMigrated.modifiedCount} plant records → superuser`);
+
+    // The old schema had `hour: { unique: true }` — drop that legacy single-column index if it
+    // still exists, so the new compound (userId, hour) index can coexist without conflict.
+    try {
+        const indexes = await HourlySensorData.collection.indexes();
+        const oldHourIndex = indexes.find((i: any) => i.key && i.key.hour === 1 && Object.keys(i.key).length === 1 && i.unique);
+        if (oldHourIndex && oldHourIndex.name) {
+            await HourlySensorData.collection.dropIndex(oldHourIndex.name);
+            console.log(`🗑️  Dropped legacy unique index ${oldHourIndex.name} on hour`);
+        }
+    } catch (err) {
+        // Non-fatal — the index might not exist on a fresh DB, or already be gone
+        console.warn('⚠️  Could not check/drop legacy hour index:', (err as Error).message);
+    }
+
+    return superuserId;
+}
 
 async function startServer() {
     await connectDB();
     await initPlantCache();
+
+    const superuserId = await seedAndMigrate();
+    setSuperuserId(superuserId);
+
     startHourlyAggregation();
 
     const app: Express = express();
@@ -21,7 +65,7 @@ async function startServer() {
 
     app.use(express.json());
 
-    // ─── ESP32 endpoint ───────────────────────────────────────────────────────
+    // ─── ESP32 endpoint (unauthenticated; readings attributed to superuser server-side) ──
     app.post('/api/sensor-data', (req: Request, res: Response) => {
         try {
             const data: ESP32Message = req.body;
@@ -62,7 +106,19 @@ async function startServer() {
     const wsServer = new WebSocketServer({ server: httpServer, path: '/graphql' });
     useServer({ schema }, wsServer);
 
-    const apolloServer = new ApolloServer({ schema });
+    const apolloServer = new ApolloServer({
+        schema,
+        context: ({ req }: { req: Request }) => {
+            const authHeader = req.headers.authorization;
+            if (!authHeader?.startsWith('Bearer ')) return { user: null };
+            try {
+                const user = verifyToken(authHeader.slice(7));
+                return { user };
+            } catch {
+                return { user: null };
+            }
+        },
+    });
     await apolloServer.start();
     apolloServer.applyMiddleware({ app: app as any, path: '/graphql', cors: { origin: true, credentials: true } });
 

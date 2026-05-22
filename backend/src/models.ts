@@ -3,6 +3,27 @@ import { PLANT_LIGHT_RANGES, PlantType } from './lightUtils';
 
 const PLANT_TYPE_VALUES = Object.keys(PLANT_LIGHT_RANGES) as PlantType[];
 
+// ── User ────────────────────────────────────────────────────────────────────
+
+export interface IUser extends Document {
+    email: string;
+    passwordHash: string;
+    role: 'superuser' | 'user';
+}
+
+const userSchema = new Schema<IUser>(
+    {
+        email: { type: String, required: true, unique: true },
+        passwordHash: { type: String, required: true },
+        role: { type: String, required: true, enum: ['superuser', 'user'], default: 'user' },
+    },
+    { timestamps: true }
+);
+
+export const User = mongoose.model<IUser>('User', userSchema);
+
+// ── Plant ───────────────────────────────────────────────────────────────────
+
 export interface IPlant extends Document {
     name: string;
     type: PlantType;
@@ -10,6 +31,7 @@ export interface IPlant extends Document {
     count: number;
     monitored: boolean;
     dailyLightHours: number;
+    userId?: string;
 }
 
 const plantSchema = new Schema<IPlant>(
@@ -20,11 +42,14 @@ const plantSchema = new Schema<IPlant>(
         count: { type: Number, required: true, default: 1 },
         monitored: { type: Boolean, required: true, default: true },
         dailyLightHours: { type: Number, required: true, default: 12 },
+        userId: { type: String, index: true },
     },
     { timestamps: true }
 );
 
 export const Plant = mongoose.model<IPlant>('Plant', plantSchema);
+
+// ── HourlySensorData ────────────────────────────────────────────────────────
 
 export interface IHourlySensorData extends Document {
     hour: Date;
@@ -41,12 +66,13 @@ export interface IHourlySensorData extends Document {
     maxHumidity?: number;
     avgPressure?: number;
     avgCo2?: number;
+    userId?: string;
     createdAt: Date;
 }
 
 const hourlySensorDataSchema = new Schema<IHourlySensorData>(
     {
-        hour: { type: Date, required: true, unique: true },
+        hour: { type: Date, required: true },
         lightLevel: { type: Number, required: true },
         minLight: { type: Number, required: true },
         maxLight: { type: Number, required: true },
@@ -60,9 +86,13 @@ const hourlySensorDataSchema = new Schema<IHourlySensorData>(
         maxHumidity: Number,
         avgPressure: Number,
         avgCo2: Number,
+        userId: { type: String, index: true },
     },
     { timestamps: true }
 );
+
+// Compound uniqueness: one record per (user, hour). Was previously unique on hour alone.
+hourlySensorDataSchema.index({ userId: 1, hour: 1 }, { unique: true });
 
 export const HourlySensorData = mongoose.model<IHourlySensorData>(
     'HourlySensorData',

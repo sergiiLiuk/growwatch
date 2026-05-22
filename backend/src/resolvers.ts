@@ -1,12 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
 import { pubsub, SENSOR_DATA_CHANNEL } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant } from './models';
+import { HourlySensorData, Plant, User } from './models';
 import { getLightStatus, PlantType } from './lightUtils';
+import { signToken, verifyPassword, JwtPayload } from './auth';
 
 // In-memory storage for sensor readings
-let sensorDataStore: SensorData[] = [];
+let sensorDataStore: (SensorData & { userId?: string })[] = [];
 let lastSavedHour: number = -1;
+
+// Set by index.ts after superuser is seeded. ESP32 readings are attributed to this user.
+let superuserId: string | null = null;
+export function setSuperuserId(id: string) { superuserId = id; }
 
 interface HourlyAccumulator {
     light: number[];
@@ -27,49 +32,56 @@ async function refreshPrimaryPlant() {
     if (doc) primaryPlantType = doc.type as PlantType;
 }
 
-// Function to save hourly aggregated data to MongoDB
+// Build the upsert document for the current hour from the accumulator. No reset.
+async function upsertCurrentHour() {
+    if (hourAccum.light.length === 0) return;
+
+    const now = new Date();
+    const hourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0);
+
+    const update: any = {
+        hour: hourStart,
+        userId: superuserId ?? undefined,
+        lightLevel: hourAccum.light[hourAccum.light.length - 1],
+        minLight: Math.min(...hourAccum.light),
+        maxLight: Math.max(...hourAccum.light),
+        avgLight: avg(hourAccum.light),
+        readingCount: hourAccum.light.length,
+    };
+
+    if (hourAccum.temperature.length > 0) {
+        update.avgTemperature = avg(hourAccum.temperature);
+        update.minTemperature = Math.min(...hourAccum.temperature);
+        update.maxTemperature = Math.max(...hourAccum.temperature);
+    }
+    if (hourAccum.humidity.length > 0) {
+        update.avgHumidity = avg(hourAccum.humidity);
+        update.minHumidity = Math.min(...hourAccum.humidity);
+        update.maxHumidity = Math.max(...hourAccum.humidity);
+    }
+    if (hourAccum.pressure.length > 0) {
+        update.avgPressure = avg(hourAccum.pressure);
+    }
+    if (hourAccum.co2.length > 0) {
+        update.avgCo2 = avg(hourAccum.co2);
+    }
+
+    // Upsert keyed by (userId, hour) — compound unique index in the schema
+    await HourlySensorData.findOneAndUpdate(
+        { hour: hourStart, userId: superuserId ?? undefined },
+        update,
+        { upsert: true, new: true }
+    );
+}
+
+// Triggered at the top of each hour (resets the accumulator after saving)
 export async function saveHourlyData() {
     if (hourAccum.light.length === 0) {
         console.log('⚠️ No readings to save');
         return;
     }
-
-    const now = new Date();
-    const hourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0);
-
     try {
-        const update: any = {
-            hour: hourStart,
-            lightLevel: hourAccum.light[hourAccum.light.length - 1],
-            minLight: Math.min(...hourAccum.light),
-            maxLight: Math.max(...hourAccum.light),
-            avgLight: avg(hourAccum.light),
-            readingCount: hourAccum.light.length,
-        };
-
-        if (hourAccum.temperature.length > 0) {
-            update.avgTemperature = avg(hourAccum.temperature);
-            update.minTemperature = Math.min(...hourAccum.temperature);
-            update.maxTemperature = Math.max(...hourAccum.temperature);
-        }
-        if (hourAccum.humidity.length > 0) {
-            update.avgHumidity = avg(hourAccum.humidity);
-            update.minHumidity = Math.min(...hourAccum.humidity);
-            update.maxHumidity = Math.max(...hourAccum.humidity);
-        }
-        if (hourAccum.pressure.length > 0) {
-            update.avgPressure = avg(hourAccum.pressure);
-        }
-        if (hourAccum.co2.length > 0) {
-            update.avgCo2 = avg(hourAccum.co2);
-        }
-
-        await HourlySensorData.findOneAndUpdate(
-            { hour: hourStart },
-            update,
-            { upsert: true, new: true }
-        );
-
+        await upsertCurrentHour();
         console.log('💾 Hourly data saved to MongoDB');
     } catch (error) {
         console.error('❌ Error saving hourly data:', error);
@@ -78,7 +90,7 @@ export async function saveHourlyData() {
 
 // Function to handle incoming sensor data from ESP32
 export function handleSensorData(data: any): SensorData {
-    const sensorData: SensorData = {
+    const sensorData: SensorData & { userId?: string } = {
         id: uuidv4(),
         lightLevel: data.lightLevel,
         timestamp: new Date(),
@@ -86,6 +98,7 @@ export function handleSensorData(data: any): SensorData {
         humidity: data.humidity ?? undefined,
         pressure: data.pressure ?? undefined,
         co2: data.co2 ?? undefined,
+        userId: superuserId ?? undefined,
     };
 
     sensorDataStore.push(sensorData);
@@ -99,6 +112,9 @@ export function handleSensorData(data: any): SensorData {
         sensorDataUpdated: sensorData,
     });
 
+    // Persist the current partial-hour snapshot so reload-after-restart shows data immediately
+    upsertCurrentHour().catch(err => console.error('❌ snapshot upsert failed:', err));
+
     if (sensorDataStore.length > 100) {
         sensorDataStore = sensorDataStore.slice(-100);
     }
@@ -110,19 +126,18 @@ export async function initPlantCache() {
     await refreshPrimaryPlant();
 }
 
-// Check every minute if we need to save hourly data
+// Check every minute if we need to save hourly data (at hour boundaries) + reset accumulator
 export function startHourlyAggregation() {
     setInterval(async () => {
         const now = new Date();
         const nowHour = now.getHours();
 
-        // Save data at the start of each new hour
         if (lastSavedHour !== nowHour && now.getMinutes() === 0) {
             await saveHourlyData();
             lastSavedHour = nowHour;
             hourAccum = { light: [], temperature: [], humidity: [], pressure: [], co2: [] };
         }
-    }, 60000); // Check every minute
+    }, 60000);
 }
 
 function mapHourlyDoc(doc: any) {
@@ -145,19 +160,43 @@ function mapHourlyDoc(doc: any) {
     };
 }
 
+type Ctx = { user: JwtPayload | null };
+
 export const resolvers = {
     Query: {
-        sensorData: (): SensorData[] => {
-            return sensorDataStore.slice(-10);
+        sensorData: (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) return [];
+            return sensorDataStore
+                .filter(d => d.userId === ctx.user!.userId)
+                .slice(-10);
         },
-        latestSensorData: (): SensorData | null => {
-            return sensorDataStore.length > 0
-                ? sensorDataStore[sensorDataStore.length - 1]
-                : null;
-        },
-        hourlyData: async (_: any, { limit = 24 }: { limit?: number }) => {
+        latestSensorData: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) return null;
+            const mine = sensorDataStore.filter(d => d.userId === ctx.user!.userId);
+            if (mine.length > 0) return mine[mine.length - 1];
+            // In-memory empty (e.g. just after backend restart) — fall back to latest hourly snapshot
             try {
-                const data = await HourlySensorData.find()
+                const doc = await HourlySensorData.findOne({ userId: ctx.user.userId })
+                    .sort({ hour: -1 })
+                    .lean();
+                if (!doc) return null;
+                return {
+                    id: doc._id.toString(),
+                    lightLevel: doc.avgLight,
+                    timestamp: doc.hour,
+                    temperature: doc.avgTemperature ?? undefined,
+                    humidity: doc.avgHumidity ?? undefined,
+                    co2: doc.avgCo2 ?? undefined,
+                    pressure: doc.avgPressure ?? undefined,
+                };
+            } catch {
+                return null;
+            }
+        },
+        hourlyData: async (_: any, { limit = 24 }: { limit?: number }, ctx: Ctx) => {
+            if (!ctx.user) return [];
+            try {
+                const data = await HourlySensorData.find({ userId: ctx.user.userId })
                     .sort({ hour: -1 })
                     .limit(limit)
                     .lean();
@@ -167,9 +206,11 @@ export const resolvers = {
                 return [];
             }
         },
-        hourlyDataRange: async (_: any, { from, to }: { from: string; to: string }) => {
+        hourlyDataRange: async (_: any, { from, to }: { from: string; to: string }, ctx: Ctx) => {
+            if (!ctx.user) return [];
             try {
                 const data = await HourlySensorData.find({
+                    userId: ctx.user.userId,
                     hour: { $gte: new Date(from), $lte: new Date(to) },
                 }).sort({ hour: 1 }).lean();
                 return data.map(mapHourlyDoc);
@@ -178,8 +219,9 @@ export const resolvers = {
                 return [];
             }
         },
-        plants: async () => {
-            const docs = await Plant.find().sort({ createdAt: 1 }).lean();
+        plants: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) return [];
+            const docs = await Plant.find({ userId: ctx.user.userId }).sort({ createdAt: 1 }).lean();
             return docs.map((d: any) => ({
                 id: d._id.toString(),
                 name: d.name,
@@ -193,25 +235,45 @@ export const resolvers = {
     },
 
     Mutation: {
-        addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }) => {
-            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours });
+        login: async (_: any, { email, password }: { email: string; password: string }) => {
+            const user = await User.findOne({ email });
+            if (!user || !(await verifyPassword(password, user.passwordHash))) {
+                throw new Error('Invalid credentials');
+            }
+            const token = signToken({ userId: user._id.toString(), email: user.email, role: user.role });
+            return { token, email: user.email, role: user.role };
+        },
+        addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours, userId: ctx.user.userId });
             await refreshPrimaryPlant();
             return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
         },
-        updatePlant: async (_: any, { id, name, type, plantedDate, count, dailyLightHours = 12 }: { id: string; name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }) => {
-            const doc = await Plant.findByIdAndUpdate(id, { name, type, plantedDate: new Date(plantedDate), count, dailyLightHours }, { new: true });
+        updatePlant: async (_: any, { id, name, type, plantedDate, count, dailyLightHours = 12 }: { id: string; name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const doc = await Plant.findOneAndUpdate(
+                { _id: id, userId: ctx.user.userId },
+                { name, type, plantedDate: new Date(plantedDate), count, dailyLightHours },
+                { new: true }
+            );
             if (!doc) throw new Error('Plant not found');
             await refreshPrimaryPlant();
             return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
         },
-        setPlantMonitored: async (_: any, { id, monitored }: { id: string; monitored: boolean }) => {
-            const doc = await Plant.findByIdAndUpdate(id, { monitored }, { new: true });
+        setPlantMonitored: async (_: any, { id, monitored }: { id: string; monitored: boolean }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const doc = await Plant.findOneAndUpdate(
+                { _id: id, userId: ctx.user.userId },
+                { monitored },
+                { new: true }
+            );
             if (!doc) throw new Error('Plant not found');
             await refreshPrimaryPlant();
             return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours ?? 12 };
         },
-        removePlant: async (_: any, { id }: { id: string }) => {
-            const result = await Plant.findByIdAndDelete(id);
+        removePlant: async (_: any, { id }: { id: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const result = await Plant.findOneAndDelete({ _id: id, userId: ctx.user.userId });
             await refreshPrimaryPlant();
             return result !== null;
         },
