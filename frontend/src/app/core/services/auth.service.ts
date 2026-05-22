@@ -1,38 +1,72 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
-const STORAGE_KEY = 'growwatch-user';
+const TOKEN_KEY = 'growwatch-token';
 
-interface StoredUser {
+interface TokenPayload {
+  userId: string;
   email: string;
+  role: string;
+  exp: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private _user = signal<StoredUser | null>(this.readStoredUser());
+  private router = inject(Router);
+  private _user = signal<{ email: string; role: string } | null>(null);
 
   readonly user = this._user.asReadonly();
   readonly isAuthenticated = computed(() => this._user() !== null);
 
-  async login(email: string, _password: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const user: StoredUser = { email };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    this._user.set(user);
+  constructor() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      try {
+        const payload = this.decodeToken(token);
+        if (payload.exp * 1000 > Date.now()) {
+          this._user.set({ email: payload.email, role: payload.role });
+        } else {
+          localStorage.removeItem(TOKEN_KEY);
+        }
+      } catch {
+        localStorage.removeItem(TOKEN_KEY);
+      }
+    }
+  }
+
+  async login(email: string, password: string): Promise<void> {
+    // Uses fetch (not Apollo) so login can run before the auth interceptor has anything to attach.
+    const res = await fetch(environment.backendHttpUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `mutation Login($email: String!, $password: String!) {
+          login(email: $email, password: $password) { token email role }
+        }`,
+        variables: { email, password },
+      }),
+    });
+
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+
+    const { token, email: userEmail, role } = json.data.login;
+    localStorage.setItem(TOKEN_KEY, token);
+    this._user.set({ email: userEmail, role });
   }
 
   logout(): void {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     this._user.set(null);
+    this.router.navigate(['/login']);
   }
 
-  private readStoredUser(): StoredUser | null {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as StoredUser;
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    }
+  getToken(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  private decodeToken(token: string): TokenPayload {
+    return JSON.parse(atob(token.split('.')[1]));
   }
 }

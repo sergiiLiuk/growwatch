@@ -4,7 +4,12 @@ module.exports = async function handler(req, res) {
   try {
     const response = await fetch(`${backendUrl}/graphql`, {
       method: req.method,
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        // Forward the Bearer token so the Apollo Server context can identify the user.
+        // Without this, the proxy strips Authorization and every authenticated query returns empty.
+        ...(req.headers.authorization && { authorization: req.headers.authorization }),
+      },
       body: req.method === 'POST' ? JSON.stringify(req.body) : undefined,
     });
 
