@@ -143,13 +143,30 @@ interface ActivityEvent {
         </div>
       </div>
 
-      <!-- Bottom: Plants + Activity -->
+      <!-- Bottom: Activity + Plants — stacked on mobile/tablet, two columns on lg+ -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Recent activity -->
+        <div>
+          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Recent activity</p>
+          <div class="bg-gw-surface border border-gw-border rounded-2xl divide-y divide-gw-border">
+            @if (activityFeed().length === 0) {
+              <p class="text-[12px] text-gray-400 p-4">No events in the last 24 hours.</p>
+            }
+            @for (event of activityFeed(); track event.time + event.label) {
+              <div class="flex items-center gap-3 px-4 py-3">
+                <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="event.ok ? 'bg-gw-green' : 'bg-gw-amber'"></span>
+                <span class="text-[11px] text-gray-400 tabular-nums shrink-0">{{ event.time }}</span>
+                <span class="text-[12px] text-gray-700 flex-1">{{ event.label }}</span>
+              </div>
+            }
+          </div>
+        </div>
 
         <!-- Plants strip -->
         <div>
           <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Plants</p>
-          <div class="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1" style="scrollbar-width:none">
+          <div class="flex gap-3 overflow-x-auto lg:overflow-x-visible lg:flex-wrap pb-1 -mx-1 px-1" style="scrollbar-width:none">
             @for (plant of plants(); track plant.id) {
               <a [routerLink]="['/plants', plant.id]"
                  class="flex-shrink-0 w-20 bg-gw-surface border border-gw-border rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
@@ -163,23 +180,6 @@ interface ActivityEvent {
               <span class="text-xl text-gray-300">+</span>
               <span class="text-[11px] text-gray-400">Add</span>
             </a>
-          </div>
-        </div>
-
-        <!-- Recent activity — desktop only -->
-        <div class="hidden lg:block">
-          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Recent activity</p>
-          <div class="bg-gw-surface border border-gw-border rounded-2xl divide-y divide-gw-border">
-            @if (activityFeed().length === 0) {
-              <p class="text-[12px] text-gray-400 p-4">No events in the last 24 hours.</p>
-            }
-            @for (event of activityFeed(); track event.time + event.label) {
-              <div class="flex items-center gap-3 px-4 py-3">
-                <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="event.ok ? 'bg-gw-green' : 'bg-gw-amber'"></span>
-                <span class="text-[11px] text-gray-400 tabular-nums shrink-0">{{ event.time }}</span>
-                <span class="text-[12px] text-gray-700 flex-1">{{ event.label }}</span>
-              </div>
-            }
           </div>
         </div>
 
