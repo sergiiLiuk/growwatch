@@ -131,6 +131,9 @@ export interface IUserSettings extends Document {
     userId: string;
     tempMin?: number;
     tempMax?: number;
+    digestTime?: string;       // 'HH:MM' (24h)
+    digestEnabled?: boolean;
+    alertsEnabled?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -140,6 +143,9 @@ const userSettingsSchema = new Schema<IUserSettings>(
         userId: { type: String, required: true, unique: true, index: true },
         tempMin: { type: Number },
         tempMax: { type: Number },
+        digestTime: { type: String },
+        digestEnabled: { type: Boolean },
+        alertsEnabled: { type: Boolean },
     },
     { timestamps: true }
 );

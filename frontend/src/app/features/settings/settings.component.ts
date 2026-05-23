@@ -19,20 +19,30 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Notifications</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
-          @for (pref of notifPrefs; track pref.key; let last = $last) {
-            <div class="flex items-center gap-3 p-4" [class.border-b]="!last" [class.border-gray-100]="!last">
-              <div class="flex-1">
-                <div class="text-[14px] font-medium text-gray-800">{{ pref.label }}</div>
-                <div class="text-[11px] text-gray-400 mt-0.5">{{ pref.description }}</div>
-              </div>
-              <button (click)="togglePref(pref)"
-                      class="w-10 h-6 rounded-full transition-colors relative shrink-0"
-                      [class]="pref.enabled ? 'bg-gw-green' : 'bg-gray-200'">
-                <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
-                     [class]="pref.enabled ? 'left-5' : 'left-1'"></div>
-              </button>
+          <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+            <div class="flex-1">
+              <div class="text-[14px] font-medium text-gray-800">Daily digest</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">Evening summary of your greenhouse</div>
             </div>
-          }
+            <button (click)="settings.setDigestEnabled(!settings.effectiveDigestEnabled())"
+                    class="w-10 h-6 rounded-full transition-colors relative shrink-0"
+                    [class]="settings.effectiveDigestEnabled() ? 'bg-gw-green' : 'bg-gray-200'">
+              <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
+                   [class]="settings.effectiveDigestEnabled() ? 'left-5' : 'left-1'"></div>
+            </button>
+          </div>
+          <div class="flex items-center gap-3 p-4">
+            <div class="flex-1">
+              <div class="text-[14px] font-medium text-gray-800">Smart alerts</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">When plants need your attention</div>
+            </div>
+            <button (click)="settings.setAlertsEnabled(!settings.effectiveAlertsEnabled())"
+                    class="w-10 h-6 rounded-full transition-colors relative shrink-0"
+                    [class]="settings.effectiveAlertsEnabled() ? 'bg-gw-green' : 'bg-gray-200'">
+              <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
+                   [class]="settings.effectiveAlertsEnabled() ? 'left-5' : 'left-1'"></div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -41,7 +51,7 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Daily digest time</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3">
           <div class="text-[13px] text-gray-500 flex-1">Send digest at</div>
-          <input type="time" [(ngModel)]="digestTime" (ngModelChange)="saveSettings()"
+          <input type="time" [ngModel]="settings.effectiveDigestTime()" (ngModelChange)="onDigestTimeChange($event)"
                  class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors" />
         </div>
       </div>
@@ -231,19 +241,19 @@ export class SettingsComponent implements OnInit {
   userId = () => this.auth.user()?.userId ?? '';
   userRole = () => this.auth.user()?.role ?? '';
 
-  showDebug = false;
+  // showDebug stays in localStorage — purely client-only UI state (per device/browser).
+  private readonly DEBUG_KEY = 'growwatch-show-debug';
+  showDebug = localStorage.getItem(this.DEBUG_KEY) === '1';
 
   toggleDebug() {
     this.showDebug = !this.showDebug;
-    this.saveSettings();
+    localStorage.setItem(this.DEBUG_KEY, this.showDebug ? '1' : '0');
   }
 
   async copy(value: string) {
     if (!value) return;
     try { await navigator.clipboard.writeText(value); } catch {}
   }
-
-  digestTime = '20:00';
 
   readonly tempOptions = Array.from({ length: 41 }, (_, i) => i); // 0..40
 
@@ -257,49 +267,19 @@ export class SettingsComponent implements OnInit {
     this.settings.setTempMax(v);
   }
 
+  onDigestTimeChange(value: string | null) {
+    const v = typeof value === 'string' && value.length > 0 ? value : null;
+    this.settings.setDigestTime(v);
+  }
+
   resetTempRange() {
     this.settings.resetTempRange();
   }
 
-  notifPrefs = [
-    { key: 'digest', label: 'Daily digest', description: 'Evening summary of your greenhouse', enabled: true },
-    { key: 'alerts', label: 'Smart alerts', description: 'When plants need your attention',    enabled: true },
-  ];
-
-  private loadSettings() {
-    try {
-      const saved = localStorage.getItem(this.STORAGE_KEY);
-      if (!saved) return;
-      const parsed = JSON.parse(saved);
-      if (parsed.digestTime) this.digestTime = parsed.digestTime;
-      if (typeof parsed.showDebug === 'boolean') this.showDebug = parsed.showDebug;
-      if (parsed.notifPrefs) {
-        for (const pref of this.notifPrefs) {
-          if (parsed.notifPrefs[pref.key] !== undefined) pref.enabled = parsed.notifPrefs[pref.key];
-        }
-      }
-    } catch {}
-  }
-
-  saveSettings() {
-    const raw = localStorage.getItem(this.STORAGE_KEY);
-    const existing = raw ? (() => { try { return JSON.parse(raw); } catch { return {}; } })() : {};
-    const data = {
-      ...existing,
-      digestTime: this.digestTime,
-      showDebug: this.showDebug,
-      notifPrefs: Object.fromEntries(this.notifPrefs.map(p => [p.key, p.enabled])),
-    };
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-  }
-
-  togglePref(pref: { key: string; enabled: boolean }) {
-    pref.enabled = !pref.enabled;
-    this.saveSettings();
-  }
-
   ngOnInit() {
-    this.loadSettings();
+    // Stale localStorage cleanup — these fields now live in the DB
+    const raw = localStorage.getItem(this.STORAGE_KEY);
+    if (raw) localStorage.removeItem(this.STORAGE_KEY);
   }
 
   openSensorSetup() { this.router.navigate(['/settings/sensor-setup']); }

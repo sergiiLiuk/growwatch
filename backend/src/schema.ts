@@ -92,6 +92,9 @@ export const typeDefs = gql`
   type UserSettings {
     tempMin: Float
     tempMax: Float
+    digestTime: String
+    digestEnabled: Boolean
+    alertsEnabled: Boolean
   }
 
   type Query {
@@ -121,7 +124,13 @@ export const typeDefs = gql`
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!
     removeDevice(id: String!): Boolean!
-    updateUserSettings(tempMin: Float, tempMax: Float): UserSettings!
+    updateUserSettings(
+      tempMin: Float
+      tempMax: Float
+      digestTime: String
+      digestEnabled: Boolean
+      alertsEnabled: Boolean
+    ): UserSettings!
   }
 
   type Subscription {

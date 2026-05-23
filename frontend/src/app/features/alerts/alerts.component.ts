@@ -167,7 +167,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.sub = this.sensorService.subscribeToSensorData().subscribe(data => {
-      if (data) this.checkConditions(data);
+      if (!data) return;
+      if (!this.userSettings.effectiveAlertsEnabled()) return;
+      this.checkConditions(data);
     });
   }
 

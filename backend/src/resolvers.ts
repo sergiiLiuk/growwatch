@@ -336,6 +336,9 @@ export const resolvers = {
             return {
                 tempMin: settings?.tempMin ?? null,
                 tempMax: settings?.tempMax ?? null,
+                digestTime: settings?.digestTime ?? null,
+                digestEnabled: settings?.digestEnabled ?? null,
+                alertsEnabled: settings?.alertsEnabled ?? null,
             };
         },
     },
@@ -410,19 +413,35 @@ export const resolvers = {
         },
         updateUserSettings: async (
             _: any,
-            { tempMin, tempMax }: { tempMin?: number | null; tempMax?: number | null },
+            args: {
+                tempMin?: number | null;
+                tempMax?: number | null;
+                digestTime?: string | null;
+                digestEnabled?: boolean | null;
+                alertsEnabled?: boolean | null;
+            },
             ctx: Ctx
         ) => {
             if (!ctx.user) throw new Error('Unauthorized');
-            const update: any = {};
-            // null explicitly resets a field to default; undefined leaves it unchanged
-            if (tempMin === null) update.$unset = { ...(update.$unset ?? {}), tempMin: '' };
-            else if (typeof tempMin === 'number') update.$set = { ...(update.$set ?? {}), tempMin };
-            if (tempMax === null) update.$unset = { ...(update.$unset ?? {}), tempMax: '' };
-            else if (typeof tempMax === 'number') update.$set = { ...(update.$set ?? {}), tempMax };
 
-            // Always set userId on upsert so the row has the owner from the start
-            update.$setOnInsert = { userId: ctx.user.userId };
+            const $set: any = {};
+            const $unset: any = {};
+
+            // null explicitly resets a field to default; undefined leaves it unchanged
+            const apply = <T>(key: string, value: T | null | undefined, validate: (v: any) => boolean) => {
+                if (value === null) $unset[key] = '';
+                else if (value !== undefined && validate(value)) $set[key] = value;
+            };
+
+            apply('tempMin', args.tempMin, (v) => typeof v === 'number');
+            apply('tempMax', args.tempMax, (v) => typeof v === 'number');
+            apply('digestTime', args.digestTime, (v) => typeof v === 'string');
+            apply('digestEnabled', args.digestEnabled, (v) => typeof v === 'boolean');
+            apply('alertsEnabled', args.alertsEnabled, (v) => typeof v === 'boolean');
+
+            const update: any = { $setOnInsert: { userId: ctx.user.userId } };
+            if (Object.keys($set).length) update.$set = $set;
+            if (Object.keys($unset).length) update.$unset = $unset;
 
             const settings = await UserSettings.findOneAndUpdate(
                 { userId: ctx.user.userId },
@@ -432,6 +451,9 @@ export const resolvers = {
             return {
                 tempMin: settings?.tempMin ?? null,
                 tempMax: settings?.tempMax ?? null,
+                digestTime: settings?.digestTime ?? null,
+                digestEnabled: settings?.digestEnabled ?? null,
+                alertsEnabled: settings?.alertsEnabled ?? null,
             };
         },
     },
