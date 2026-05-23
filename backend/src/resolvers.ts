@@ -242,6 +242,19 @@ function mapHourlyDoc(doc: any) {
     };
 }
 
+// Safely coerce stored date values to an ISO string. Some legacy/imported
+// plant rows have plantedDate stored as a string instead of a Date — calling
+// .toISOString() directly on those would throw and break the entire query.
+function toIsoSafe(value: any): string {
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'string' || typeof value === 'number') {
+        const d = new Date(value);
+        if (!isNaN(d.getTime())) return d.toISOString();
+    }
+    // Last-resort fallback so a single bad row doesn't 500 the whole query
+    return new Date(0).toISOString();
+}
+
 function mapDevice(doc: any) {
     return {
         id: doc._id.toString(),
@@ -319,7 +332,7 @@ export const resolvers = {
                 id: d._id.toString(),
                 name: d.name,
                 type: d.type,
-                plantedDate: d.plantedDate.toISOString(),
+                plantedDate: toIsoSafe(d.plantedDate),
                 count: d.count ?? 1,
                 monitored: d.monitored ?? true,
                 dailyLightHours: d.dailyLightHours ?? 12,
@@ -357,7 +370,7 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours, userId: ctx.user.userId });
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
+            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: toIsoSafe(doc.plantedDate), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
         },
         updatePlant: async (_: any, { id, name, type, plantedDate, count, dailyLightHours = 12 }: { id: string; name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -368,7 +381,7 @@ export const resolvers = {
             );
             if (!doc) throw new Error('Plant not found');
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
+            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: toIsoSafe(doc.plantedDate), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
         },
         setPlantMonitored: async (_: any, { id, monitored }: { id: string; monitored: boolean }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -379,7 +392,7 @@ export const resolvers = {
             );
             if (!doc) throw new Error('Plant not found');
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: doc.plantedDate.toISOString(), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours ?? 12 };
+            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: toIsoSafe(doc.plantedDate), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours ?? 12 };
         },
         removePlant: async (_: any, { id }: { id: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
