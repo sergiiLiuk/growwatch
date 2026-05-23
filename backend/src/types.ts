@@ -6,6 +6,7 @@ export interface SensorData {
     humidity?: number;
     co2?: number;
     pressure?: number;
+    deviceId?: string;
 }
 
 export interface ESP32Message {
@@ -14,4 +15,5 @@ export interface ESP32Message {
     humidity?: number;
     co2?: number;
     pressure?: number;
+    deviceId?: string;
 }

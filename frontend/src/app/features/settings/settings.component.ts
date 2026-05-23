@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-settings',
@@ -63,28 +64,67 @@ import { Router } from '@angular/router';
         </div>
       </div>
 
-      <!-- Sensor setup guide link -->
-      <div class="mt-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Setup</div>
-        <button (click)="openSensorSetup()"
-                class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
-          <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-            <svg class="w-4 h-4 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
+      <!-- Account -->
+      <div class="mt-5 lg:hidden">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Account</div>
+        <button (click)="logout()"
+                class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-red-200 transition-colors">
+          <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-              <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-              <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
           </div>
           <div class="flex-1 text-left">
-            <div class="text-[14px] font-medium text-gray-800">Sensor setup guide</div>
-            <div class="text-[11px] text-gray-400 mt-0.5">How to connect your ESP32 to WiFi</div>
+            <div class="text-[14px] font-medium text-red-600">Log out</div>
+            <div class="text-[11px] text-gray-400 mt-0.5">{{ userEmail() }}</div>
           </div>
-          <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
         </button>
+      </div>
+
+      <!-- Sensor setup + devices -->
+      <div class="mt-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Setup</div>
+        <div class="space-y-2">
+          <button (click)="openDevices()"
+                  class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+            <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="16" height="16" rx="3"/>
+                <circle cx="12" cy="12" r="2" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="flex-1 text-left">
+              <div class="text-[14px] font-medium text-gray-800">My devices</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">Pair and manage your ESP32 sensors</div>
+            </div>
+            <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button (click)="openSensorSetup()"
+                  class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+            <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="flex-1 text-left">
+              <div class="text-[14px] font-medium text-gray-800">Sensor setup guide</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">How to connect your ESP32 to WiFi</div>
+            </div>
+            <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -92,7 +132,10 @@ import { Router } from '@angular/router';
 })
 export class SettingsComponent implements OnInit {
   private router = inject(Router);
+  private auth = inject(AuthService);
   private readonly STORAGE_KEY = 'growwatch-settings';
+
+  userEmail = () => this.auth.user()?.email ?? '';
 
   digestTime = '20:00';
 
@@ -133,5 +176,7 @@ export class SettingsComponent implements OnInit {
   }
 
   openSensorSetup() { this.router.navigate(['/settings/sensor-setup']); }
+  openDevices() { this.router.navigate(['/settings/devices']); }
+  logout() { this.auth.logout(); }
 
 }

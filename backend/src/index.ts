@@ -65,16 +65,28 @@ async function startServer() {
 
     app.use(express.json());
 
-    // ─── ESP32 endpoint (unauthenticated; readings attributed to superuser server-side) ──
-    app.post('/api/sensor-data', (req: Request, res: Response) => {
+    // ─── ESP32 endpoint ──
+    // Routing rules:
+    //   1) If payload includes `deviceId` (MAC) and a Device row matches → attribute to its user
+    //   2) Else if exactly one user has an open claim window → bind this MAC to them
+    //   3) Else reject with 401
+    app.post('/api/sensor-data', async (req: Request, res: Response) => {
         try {
             const data: ESP32Message = req.body;
-            const result = handleSensorData(data);
+            const result = await handleSensorData(data);
+
+            if (!result) {
+                return res.status(401).json({
+                    error: 'Unknown device. Open a device claim from the GrowWatch app or contact admin.',
+                });
+            }
 
             console.log(`📥 ESP32: light=${result.lightLevel}lux${
                 result.temperature !== undefined ? ` temp=${result.temperature}°C` : ''
             }${
                 result.humidity !== undefined ? ` hum=${result.humidity}%` : ''
+            }${
+                result.deviceId ? ` device=${result.deviceId.slice(-6)}` : ''
             }`);
 
             res.json({ success: true, data: result });

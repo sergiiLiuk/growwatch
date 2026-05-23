@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { pubsub, SENSOR_DATA_CHANNEL } from './pubsub';
+import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User } from './models';
+import { HourlySensorData, Plant, User, Device } from './models';
 import { getLightStatus, PlantType } from './lightUtils';
 import { signToken, verifyPassword, JwtPayload } from './auth';
 
@@ -9,9 +9,37 @@ import { signToken, verifyPassword, JwtPayload } from './auth';
 let sensorDataStore: (SensorData & { userId?: string })[] = [];
 let lastSavedHour: number = -1;
 
-// Set by index.ts after superuser is seeded. ESP32 readings are attributed to this user.
+// Set by index.ts after superuser is seeded. Used as the default user when the hourly
+// timer flushes the accumulator at hour boundaries (no fallback for device attribution).
 let superuserId: string | null = null;
 export function setSuperuserId(id: string) { superuserId = id; }
+
+// ── Device claim window (in-memory) ─────────────────────────────────────────
+// userId → expiresAt (ms epoch). Cleared on bind or expiry.
+const CLAIM_WINDOW_MS = 10 * 60 * 1000;
+const pendingClaims = new Map<string, number>();
+
+function openClaim(userId: string): number {
+    const expiresAt = Date.now() + CLAIM_WINDOW_MS;
+    pendingClaims.set(userId, expiresAt);
+    return expiresAt;
+}
+
+function cancelClaim(userId: string): boolean {
+    return pendingClaims.delete(userId);
+}
+
+function purgeExpiredClaims() {
+    const now = Date.now();
+    for (const [uid, exp] of pendingClaims) {
+        if (exp <= now) pendingClaims.delete(uid);
+    }
+}
+
+function activeClaimants(): string[] {
+    purgeExpiredClaims();
+    return [...pendingClaims.keys()];
+}
 
 interface HourlyAccumulator {
     light: number[];
@@ -33,21 +61,23 @@ async function refreshPrimaryPlant() {
 }
 
 // Build the upsert document for the current hour from the accumulator. No reset.
-async function upsertCurrentHour() {
+async function upsertCurrentHour(userId: string | null, deviceId?: string) {
     if (hourAccum.light.length === 0) return;
+    if (!userId) return;
 
     const now = new Date();
     const hourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0);
 
     const update: any = {
         hour: hourStart,
-        userId: superuserId ?? undefined,
+        userId,
         lightLevel: hourAccum.light[hourAccum.light.length - 1],
         minLight: Math.min(...hourAccum.light),
         maxLight: Math.max(...hourAccum.light),
         avgLight: avg(hourAccum.light),
         readingCount: hourAccum.light.length,
     };
+    if (deviceId) update.deviceId = deviceId;
 
     if (hourAccum.temperature.length > 0) {
         update.avgTemperature = avg(hourAccum.temperature);
@@ -68,28 +98,77 @@ async function upsertCurrentHour() {
 
     // Upsert keyed by (userId, hour) — compound unique index in the schema
     await HourlySensorData.findOneAndUpdate(
-        { hour: hourStart, userId: superuserId ?? undefined },
+        { hour: hourStart, userId },
         update,
         { upsert: true, new: true }
     );
 }
 
 // Triggered at the top of each hour (resets the accumulator after saving)
-export async function saveHourlyData() {
+export async function saveHourlyData(userId?: string | null, deviceId?: string) {
     if (hourAccum.light.length === 0) {
         console.log('⚠️ No readings to save');
         return;
     }
     try {
-        await upsertCurrentHour();
+        await upsertCurrentHour(userId ?? superuserId, deviceId);
         console.log('💾 Hourly data saved to MongoDB');
     } catch (error) {
         console.error('❌ Error saving hourly data:', error);
     }
 }
 
+// Resolve which user this incoming sensor data belongs to.
+// Returns { userId, deviceId } or null when the device is unknown and there is no fallback.
+async function resolveDeviceOwner(
+    mac: string | undefined
+): Promise<{ userId: string; deviceId: string } | null> {
+    if (mac) {
+        const existing = await Device.findOne({ mac });
+        if (existing) {
+            existing.lastSeenAt = new Date();
+            await existing.save();
+            return { userId: existing.userId, deviceId: existing._id.toString() };
+        }
+
+        // Unknown device — try to bind to an open claim window
+        const claimants = activeClaimants();
+        if (claimants.length === 1) {
+            const userId = claimants[0];
+            const defaultName = `Device ${mac.slice(-5)}`;
+            const created = await Device.create({
+                mac,
+                userId,
+                name: defaultName,
+                lastSeenAt: new Date(),
+            });
+            pendingClaims.delete(userId);
+
+            // Notify the waiting UI
+            pubsub.publish(deviceClaimedChannel(userId), {
+                deviceClaimed: mapDevice(created),
+            });
+
+            console.log(`🔗 Claimed device ${mac} → user ${userId}`);
+            return { userId, deviceId: created._id.toString() };
+        }
+
+        if (claimants.length > 1) {
+            console.warn(`⚠️ Multiple claim windows open (${claimants.length}); ignoring unknown device ${mac}`);
+        }
+    }
+
+    return null;
+}
+
 // Function to handle incoming sensor data from ESP32
-export function handleSensorData(data: any): SensorData {
+export async function handleSensorData(data: any): Promise<SensorData | null> {
+    const owner = await resolveDeviceOwner(data.deviceId);
+    if (!owner) {
+        console.warn(`🚫 Rejected sensor data — unknown device${data.deviceId ? ` ${data.deviceId}` : ''} and no claim/fallback`);
+        return null;
+    }
+
     const sensorData: SensorData & { userId?: string } = {
         id: uuidv4(),
         lightLevel: data.lightLevel,
@@ -98,7 +177,8 @@ export function handleSensorData(data: any): SensorData {
         humidity: data.humidity ?? undefined,
         pressure: data.pressure ?? undefined,
         co2: data.co2 ?? undefined,
-        userId: superuserId ?? undefined,
+        deviceId: owner.deviceId || undefined,
+        userId: owner.userId,
     };
 
     sensorDataStore.push(sensorData);
@@ -113,7 +193,8 @@ export function handleSensorData(data: any): SensorData {
     });
 
     // Persist the current partial-hour snapshot so reload-after-restart shows data immediately
-    upsertCurrentHour().catch(err => console.error('❌ snapshot upsert failed:', err));
+    upsertCurrentHour(owner.userId, owner.deviceId || undefined)
+        .catch(err => console.error('❌ snapshot upsert failed:', err));
 
     if (sensorDataStore.length > 100) {
         sensorDataStore = sensorDataStore.slice(-100);
@@ -157,6 +238,17 @@ function mapHourlyDoc(doc: any) {
         maxHumidity: doc.maxHumidity ?? null,
         avgPressure: doc.avgPressure ?? null,
         avgCo2: doc.avgCo2 ?? null,
+        deviceId: doc.deviceId ?? null,
+    };
+}
+
+function mapDevice(doc: any) {
+    return {
+        id: doc._id.toString(),
+        mac: doc.mac,
+        name: doc.name,
+        lastSeenAt: doc.lastSeenAt ? doc.lastSeenAt.toISOString() : null,
+        createdAt: doc.createdAt ? doc.createdAt.toISOString() : new Date().toISOString(),
     };
 }
 
@@ -188,6 +280,7 @@ export const resolvers = {
                     humidity: doc.avgHumidity ?? undefined,
                     co2: doc.avgCo2 ?? undefined,
                     pressure: doc.avgPressure ?? undefined,
+                    deviceId: doc.deviceId ?? undefined,
                 };
             } catch {
                 return null;
@@ -232,6 +325,11 @@ export const resolvers = {
                 dailyLightHours: d.dailyLightHours ?? 12,
             }));
         },
+        myDevices: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) return [];
+            const docs = await Device.find({ userId: ctx.user.userId }).sort({ createdAt: 1 }).lean();
+            return docs.map(mapDevice);
+        },
     },
 
     Mutation: {
@@ -240,8 +338,9 @@ export const resolvers = {
             if (!user || !(await verifyPassword(password, user.passwordHash))) {
                 throw new Error('Invalid credentials');
             }
-            const token = signToken({ userId: user._id.toString(), email: user.email, role: user.role });
-            return { token, email: user.email, role: user.role };
+            const userId = user._id.toString();
+            const token = signToken({ userId, email: user.email, role: user.role });
+            return { token, email: user.email, role: user.role, userId };
         },
         addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -277,6 +376,30 @@ export const resolvers = {
             await refreshPrimaryPlant();
             return result !== null;
         },
+        openDeviceClaim: (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const expiresAt = openClaim(ctx.user.userId);
+            return new Date(expiresAt).toISOString();
+        },
+        cancelDeviceClaim: (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            return cancelClaim(ctx.user.userId);
+        },
+        renameDevice: async (_: any, { id, name }: { id: string; name: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const doc = await Device.findOneAndUpdate(
+                { _id: id, userId: ctx.user.userId },
+                { name },
+                { new: true }
+            );
+            if (!doc) throw new Error('Device not found');
+            return mapDevice(doc);
+        },
+        removeDevice: async (_: any, { id }: { id: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const result = await Device.findOneAndDelete({ _id: id, userId: ctx.user.userId });
+            return result !== null;
+        },
     },
 
     SensorData: {
@@ -294,6 +417,10 @@ export const resolvers = {
     Subscription: {
         sensorDataUpdated: {
             subscribe: () => pubsub.asyncIterator([SENSOR_DATA_CHANNEL]),
+        },
+        deviceClaimed: {
+            subscribe: (_: any, { userId }: { userId: string }) =>
+                pubsub.asyncIterator([deviceClaimedChannel(userId)]),
         },
     },
 };

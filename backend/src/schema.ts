@@ -45,6 +45,7 @@ export const typeDefs = gql`
     humidity: Float
     pressure: Float
     co2: Float
+    deviceId: String
   }
 
   type HourlySensorData {
@@ -64,6 +65,7 @@ export const typeDefs = gql`
     maxHumidity: Float
     avgPressure: Float
     avgCo2: Float
+    deviceId: String
   }
 
   type Plant {
@@ -76,18 +78,28 @@ export const typeDefs = gql`
     dailyLightHours: Int!
   }
 
+  type Device {
+    id: String!
+    mac: String!
+    name: String!
+    lastSeenAt: String
+    createdAt: String!
+  }
+
   type Query {
     sensorData: [SensorData!]!
     latestSensorData: SensorData
     hourlyData(limit: Int): [HourlySensorData!]!
     hourlyDataRange(from: String!, to: String!): [HourlySensorData!]!
     plants: [Plant!]!
+    myDevices: [Device!]!
   }
 
   type AuthPayload {
     token: String!
     email: String!
     role: String!
+    userId: String!
   }
 
   type Mutation {
@@ -96,9 +108,14 @@ export const typeDefs = gql`
     updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!
     removePlant(id: String!): Boolean!
     setPlantMonitored(id: String!, monitored: Boolean!): Plant!
+    openDeviceClaim: String!
+    cancelDeviceClaim: Boolean!
+    renameDevice(id: String!, name: String!): Device!
+    removeDevice(id: String!): Boolean!
   }
 
   type Subscription {
     sensorDataUpdated: SensorData!
+    deviceClaimed(userId: String!): Device!
   }
 `;

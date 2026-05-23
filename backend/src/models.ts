@@ -67,6 +67,7 @@ export interface IHourlySensorData extends Document {
     avgPressure?: number;
     avgCo2?: number;
     userId?: string;
+    deviceId?: string;
     createdAt: Date;
 }
 
@@ -87,6 +88,7 @@ const hourlySensorDataSchema = new Schema<IHourlySensorData>(
         avgPressure: Number,
         avgCo2: Number,
         userId: { type: String, index: true },
+        deviceId: { type: String, index: true },
     },
     { timestamps: true }
 );
@@ -98,3 +100,25 @@ export const HourlySensorData = mongoose.model<IHourlySensorData>(
     'HourlySensorData',
     hourlySensorDataSchema
 );
+
+// ── Device ──────────────────────────────────────────────────────────────────
+
+export interface IDevice extends Document {
+    mac: string;
+    userId: string;
+    name: string;
+    lastSeenAt?: Date;
+    createdAt: Date;
+}
+
+const deviceSchema = new Schema<IDevice>(
+    {
+        mac: { type: String, required: true, unique: true, index: true },
+        userId: { type: String, required: true, index: true },
+        name: { type: String, required: true },
+        lastSeenAt: { type: Date },
+    },
+    { timestamps: true }
+);
+
+export const Device = mongoose.model<IDevice>('Device', deviceSchema);

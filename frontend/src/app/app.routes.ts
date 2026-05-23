@@ -48,6 +48,10 @@ export const routes: Routes = [
         path: 'settings/sensor-setup',
         loadComponent: () => import('./features/settings/sensor-setup.component').then(m => m.SensorSetupComponent),
       },
+      {
+        path: 'settings/devices',
+        loadComponent: () => import('./features/settings/devices.component').then(m => m.DevicesComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { AuthService } from '../../../core/services/auth.service';
 
 const ICONS = {
   home: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
@@ -9,6 +10,7 @@ const ICONS = {
   alerts: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>`,
   settings: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`,
   logo: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 3c0 0-6 4-6 9a6 6 0 0012 0c0-5-6-9-6-9z"/><line x1="12" y1="12" x2="12" y2="21"/></svg>`,
+  logout: `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
 };
 
 @Component({
@@ -45,8 +47,8 @@ const ICONS = {
           }
         </nav>
 
-        <!-- Settings -->
-        <div class="flex items-center justify-center px-2 pb-5">
+        <!-- Settings + Logout -->
+        <div class="flex flex-col items-center gap-1 px-2 pb-5">
           <a routerLink="/settings" title="Settings"
              routerLinkActive="" #srla="routerLinkActive"
              [class.bg-gw-green-light]="srla.isActive"
@@ -55,6 +57,10 @@ const ICONS = {
              class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gw-surface hover:text-gray-600 transition-colors">
             <span [innerHTML]="icons.settings"></span>
           </a>
+          <button (click)="logout()" title="Log out"
+                  class="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gw-surface hover:text-red-500 transition-colors">
+            <span [innerHTML]="icons.logout"></span>
+          </button>
         </div>
 
       </aside>
@@ -87,9 +93,14 @@ const ICONS = {
 })
 export class ShellComponent {
   private san = inject(DomSanitizer);
+  private auth = inject(AuthService);
   private s = (svg: string): SafeHtml => this.san.bypassSecurityTrustHtml(svg);
 
-  icons = { logo: this.s(ICONS.logo), settings: this.s(ICONS.settings) };
+  icons = {
+    logo: this.s(ICONS.logo),
+    settings: this.s(ICONS.settings),
+    logout: this.s(ICONS.logout),
+  };
 
   navItems = [
     { path: '/',       label: 'Home',     icon: this.s(ICONS.home)    },
@@ -102,4 +113,8 @@ export class ShellComponent {
     ...this.navItems,
     { path: '/settings', label: 'Settings', icon: this.s(ICONS.settings) },
   ];
+
+  logout() {
+    this.auth.logout();
+  }
 }
