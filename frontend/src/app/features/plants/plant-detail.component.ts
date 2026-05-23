@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PlantService, Plant, PlantType, PLANT_TYPE_OPTIONS } from '../../core/services/plant.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
+import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plant-detail',
@@ -130,7 +131,7 @@ export class PlantDetailComponent {
   }
 
   getPlantedLabel(plant: Plant): string {
-    return plant.plantedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    return dayjs(plant.plantedDate).format('D MMM');
   }
 
   toggleMonitored(e: Event) {

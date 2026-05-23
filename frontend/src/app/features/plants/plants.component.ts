@@ -6,6 +6,7 @@ import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
+import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plants',
@@ -277,7 +278,7 @@ export class PlantsComponent {
     const type = this.formType();
     if (!this.canSubmit() || !type) return;
     this.saving.set(true);
-    this.plantService.add(this.formName(), type, new Date(this.formDate()), this.formCount())
+    this.plantService.add(this.formName(), type, dayjs(this.formDate()).toDate(), this.formCount())
       .subscribe({
         next: () => this.cancelForm(),
         error: err => { console.error('Failed to add plant:', err); this.saving.set(false); },

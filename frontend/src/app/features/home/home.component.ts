@@ -6,6 +6,7 @@ import { SensorService, SensorData, HourlySensorData, MoodInfo, PLANT_LIGHT_RANG
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
+import dayjs from 'dayjs';
 
 const PLANT_EMOJI: Record<string, string> = {
   TOMATO: '🍅', PEPPER: '🌶️', CUCUMBER: '🥒', ZUCCHINI: '🥒', EGGPLANT: '🍆',
@@ -460,7 +461,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       if (m === 'stressed') return 'Stressed';
       if (m === 'critical') return 'Critical';
     }
-    const days = Math.floor((Date.now() - new Date(plant.plantedDate).getTime()) / 86400000);
+    const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
     return `Day ${days}`;
   }
 

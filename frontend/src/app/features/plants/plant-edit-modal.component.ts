@@ -1,6 +1,7 @@
 import { Component, input, output, effect, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PlantService, Plant, PLANT_TYPE_OPTIONS } from '../../core/services/plant.service';
+import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plant-edit-modal',
@@ -111,7 +112,7 @@ export class PlantEditModalComponent {
       const p = this.plant();
       if (p) {
         this.name.set(p.name);
-        this.date.set(p.plantedDate.toISOString().split('T')[0]);
+        this.date.set(dayjs(p.plantedDate).format('YYYY-MM-DD'));
         this.count.set(p.count);
         this.dailyLightHours.set(p.dailyLightHours ?? 12);
         this.saving.set(false);
@@ -123,7 +124,7 @@ export class PlantEditModalComponent {
     const p = this.plant();
     if (!p || !this.canSave()) return;
     this.saving.set(true);
-    this.plantService.update(p.id, this.name(), p.type, new Date(this.date()), this.count(), this.dailyLightHours())
+    this.plantService.update(p.id, this.name(), p.type, dayjs(this.date()).toDate(), this.count(), this.dailyLightHours())
       .subscribe({
         next: () => { this.saving.set(false); this.saved.emit(); },
         error: err => { console.error('Failed to update plant:', err); this.saving.set(false); },

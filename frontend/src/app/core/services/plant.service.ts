@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
 import { Observable } from 'rxjs';
+import dayjs from 'dayjs';
 import { GraphQLClientService } from './graphql-client.service';
 
 export type PlantType =
@@ -109,7 +110,17 @@ export class PlantService {
   }
 
   private mapPlants(raw: RawPlant[]): Plant[] {
-    return raw.map(p => ({ ...p, type: p.type as PlantType, plantedDate: new Date(p.plantedDate), count: p.count ?? 1, monitored: p.monitored ?? true, dailyLightHours: p.dailyLightHours ?? 12 }));
+    return raw.map(p => {
+      const parsed = dayjs(p.plantedDate);
+      return {
+        ...p,
+        type: p.type as PlantType,
+        plantedDate: parsed.isValid() ? parsed.toDate() : new Date(),
+        count: p.count ?? 1,
+        monitored: p.monitored ?? true,
+        dailyLightHours: p.dailyLightHours ?? 12,
+      };
+    });
   }
 
   add(name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12): Observable<Plant> {
@@ -117,7 +128,7 @@ export class PlantService {
       this.client
         .mutate<{ addPlant: RawPlant }>({
           mutation: ADD_PLANT,
-          variables: { name: name.trim(), type: type.trim(), plantedDate: plantedDate.toISOString(), count, dailyLightHours },
+          variables: { name: name.trim(), type: type.trim(), plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours },
         })
         .then(result => {
           const mapped = this.mapPlants([result.data!.addPlant])[0];
@@ -134,7 +145,7 @@ export class PlantService {
       this.client
         .mutate<{ updatePlant: RawPlant }>({
           mutation: UPDATE_PLANT,
-          variables: { id, name: name.trim(), type, plantedDate: plantedDate.toISOString(), count, dailyLightHours },
+          variables: { id, name: name.trim(), type, plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours },
         })
         .then(result => {
           const mapped = this.mapPlants([result.data!.updatePlant])[0];
@@ -180,7 +191,7 @@ export class PlantService {
   }
 
   getAgeLabel(plant: Plant): string {
-    const days = Math.floor((Date.now() - plant.plantedDate.getTime()) / 86400000);
+    const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
     if (days < 7) return `${days} day${days !== 1 ? 's' : ''} old`;
     const weeks = Math.floor(days / 7);
     if (weeks < 8) return `${weeks} week${weeks !== 1 ? 's' : ''} old`;
@@ -189,7 +200,7 @@ export class PlantService {
   }
 
   getAgeShort(plant: Plant): string {
-    const days = Math.floor((Date.now() - plant.plantedDate.getTime()) / 86400000);
+    const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
     if (days < 7) return `${days} day${days !== 1 ? 's' : ''}`;
     const weeks = Math.floor(days / 7);
     if (weeks < 8) return `${weeks} week${weeks !== 1 ? 's' : ''}`;
