@@ -24,12 +24,13 @@ const ICONS = {
 
         <!-- Logo -->
         <div class="flex items-center justify-center py-4 shrink-0">
-          <div class="w-8 h-8 rounded-lg bg-gw-green-light flex items-center justify-center">
+          <a routerLink="/" title="Home"
+             class="w-8 h-8 rounded-lg bg-gw-green-light flex items-center justify-center hover:bg-gw-green-light/60 transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0e3624" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 3c0 0-6 4-6 9a6 6 0 0 0 12 0c0-5-6-9-6-9z"/>
               <line x1="12" y1="12" x2="12" y2="21"/>
             </svg>
-          </div>
+          </a>
         </div>
 
         <!-- Nav -->

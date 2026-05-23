@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -32,30 +32,32 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 mb-3">
           <div class="flex items-center gap-3">
             <div class="flex-1 min-w-0">
-              @if (editingId() === d.id) {
-                <input [(ngModel)]="editingName"
-                       class="text-[14px] font-medium text-gray-800 border-b border-gw-green outline-none w-full"
-                       autofocus />
-              } @else {
-                <div class="text-[14px] font-medium text-gray-800 truncate">{{ d.name }}</div>
-              }
+              <div class="text-[14px] font-medium text-gray-800 truncate">{{ d.name }}</div>
               <div class="text-[11px] text-gray-400 mt-0.5 font-mono">{{ d.mac }}</div>
               <div class="text-[11px] mt-0.5" [class]="onlineClass(d)">
                 {{ lastSeenLabel(d) }}
               </div>
             </div>
-            <div class="flex gap-2">
-              @if (editingId() === d.id) {
-                <button (click)="commitRename(d)"
-                        class="text-[12px] text-gw-green-dark font-medium">Save</button>
-                <button (click)="cancelEdit()"
-                        class="text-[12px] text-gray-400">Cancel</button>
-              } @else {
-                <button (click)="startEdit(d)"
-                        class="text-[12px] text-gray-500 hover:text-gray-800">Rename</button>
-                <button (click)="remove(d)"
-                        class="text-[12px] text-red-500 hover:text-red-700">Remove</button>
-              }
+            <div class="flex gap-1 shrink-0">
+              <button (click)="startRename(d)" title="Rename"
+                      class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gw-green-light hover:text-gw-green-dark transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </button>
+              <button (click)="startDelete(d)" title="Remove"
+                      class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/>
+                  <path d="M14 11v6"/>
+                  <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -90,6 +92,7 @@ import { AuthService } from '../../core/services/auth.service';
         </p>
       </div>
 
+      <!-- Claim (add device) modal -->
       @if (claiming()) {
         <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
@@ -126,6 +129,66 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
       }
 
+      <!-- Rename device modal -->
+      @if (renamingDevice(); as rd) {
+        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+            <h2 class="text-[16px] font-medium text-gray-800 mb-1">Rename device</h2>
+            <p class="text-[11px] text-gray-400 mb-3 font-mono">{{ rd.mac }}</p>
+            <label class="text-[11px] text-gray-500 mb-1 block">Name</label>
+            <input [(ngModel)]="renameInput" #renameField
+                   (keydown.enter)="confirmRename()"
+                   (keydown.escape)="cancelRename()"
+                   class="w-full text-[14px] border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gw-green mb-4" />
+            <div class="flex gap-2">
+              <button (click)="cancelRename()"
+                      class="flex-1 px-4 py-2 rounded-xl border border-gray-300 text-[13px] text-gray-700">
+                Cancel
+              </button>
+              <button (click)="confirmRename()"
+                      [disabled]="!renameInput.trim() || renameInput.trim() === rd.name"
+                      class="flex-1 px-4 py-2 rounded-xl bg-gw-green text-white text-[13px] font-medium disabled:opacity-50">
+                Rename
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Delete device confirmation modal -->
+      @if (deletingDevice(); as dd) {
+        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-[16px] font-medium text-gray-800">Remove device?</h2>
+                <p class="text-[11px] text-gray-400 font-mono mt-0.5">{{ dd.mac }}</p>
+              </div>
+            </div>
+            <p class="text-[13px] text-gray-600 leading-relaxed mb-4">
+              Remove <strong>{{ dd.name }}</strong> from your account? You can re-pair it later by clicking "Add device" and resetting the ESP32.
+            </p>
+            <div class="flex gap-2">
+              <button (click)="cancelDelete()"
+                      class="flex-1 px-4 py-2 rounded-xl border border-gray-300 text-[13px] text-gray-700">
+                Cancel
+              </button>
+              <button (click)="confirmDelete()"
+                      class="flex-1 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[13px] font-medium transition-colors">
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (errorMessage()) {
         <div class="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-700">
           {{ errorMessage() }}
@@ -152,8 +215,10 @@ export class DevicesComponent implements OnInit, OnDestroy {
   justClaimed = signal<Device | null>(null);
   newDeviceName = '';
 
-  editingId = signal<string | null>(null);
-  editingName = '';
+  renamingDevice = signal<Device | null>(null);
+  renameInput = '';
+
+  deletingDevice = signal<Device | null>(null);
 
   private claimSub?: Subscription;
   private countdownTimer?: ReturnType<typeof setInterval>;
@@ -215,12 +280,8 @@ export class DevicesComponent implements OnInit, OnDestroy {
 
   cancelClaim() {
     this.deviceService.cancelClaim().subscribe({
-      next: () => {
-        this.cleanupClaim();
-      },
-      error: () => {
-        this.cleanupClaim();
-      },
+      next: () => this.cleanupClaim(),
+      error: () => this.cleanupClaim(),
     });
   }
 
@@ -249,40 +310,66 @@ export class DevicesComponent implements OnInit, OnDestroy {
     });
   }
 
-  startEdit(d: Device) {
-    this.editingId.set(d.id);
-    this.editingName = d.name;
+  // ── Rename ──────────────────────────────────────────────────────────────
+
+  startRename(d: Device) {
+    this.errorMessage.set(null);
+    this.renameInput = d.name;
+    this.renamingDevice.set(d);
   }
 
-  cancelEdit() {
-    this.editingId.set(null);
+  cancelRename() {
+    this.renamingDevice.set(null);
+    this.renameInput = '';
   }
 
-  commitRename(d: Device) {
-    const name = this.editingName.trim();
+  confirmRename() {
+    const d = this.renamingDevice();
+    if (!d) return;
+    const name = this.renameInput.trim();
     if (!name || name === d.name) {
-      this.editingId.set(null);
+      this.cancelRename();
       return;
     }
     this.deviceService.renameDevice(d.id, name).subscribe({
       next: updated => {
         this.devices.update(list => list.map(x => (x.id === d.id ? updated : x)));
-        this.editingId.set(null);
+        this.cancelRename();
       },
       error: () => {
         this.errorMessage.set('Failed to rename device');
-        this.editingId.set(null);
+        this.cancelRename();
       },
     });
   }
 
-  remove(d: Device) {
-    if (!confirm(`Remove "${d.name}"? You can re-pair it later.`)) return;
+  // ── Delete ──────────────────────────────────────────────────────────────
+
+  startDelete(d: Device) {
+    this.errorMessage.set(null);
+    this.deletingDevice.set(d);
+  }
+
+  cancelDelete() {
+    this.deletingDevice.set(null);
+  }
+
+  confirmDelete() {
+    const d = this.deletingDevice();
+    if (!d) return;
     this.deviceService.removeDevice(d.id).subscribe({
-      next: () => this.devices.update(list => list.filter(x => x.id !== d.id)),
-      error: () => this.errorMessage.set('Failed to remove device'),
+      next: () => {
+        this.devices.update(list => list.filter(x => x.id !== d.id));
+        this.cancelDelete();
+      },
+      error: () => {
+        this.errorMessage.set('Failed to remove device');
+        this.cancelDelete();
+      },
     });
   }
+
+  // ── Misc ────────────────────────────────────────────────────────────────
 
   lastSeenLabel(d: Device): string {
     if (!d.lastSeenAt) return 'Never seen';
