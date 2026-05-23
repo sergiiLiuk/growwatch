@@ -185,6 +185,39 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
         </div>
       </div>
 
+      <!-- Debug info (temporary) -->
+      <div class="mt-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Debug</div>
+        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+          <div class="flex items-center gap-3 p-4" [class.border-b]="showDebug" [class.border-gray-100]="showDebug">
+            <div class="text-[14px] font-medium text-gray-800 flex-1">Debug</div>
+            <button (click)="toggleDebug()"
+                    class="w-10 h-6 rounded-full transition-colors relative shrink-0"
+                    [class]="showDebug ? 'bg-gw-green' : 'bg-gray-200'">
+              <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
+                   [class]="showDebug ? 'left-5' : 'left-1'"></div>
+            </button>
+          </div>
+          @if (showDebug) {
+            <div class="font-mono text-[11px]">
+              <div class="flex items-start gap-3 p-3 border-b border-gray-100">
+                <span class="text-gray-400 w-16 shrink-0">user ID</span>
+                <span class="text-gray-700 break-all flex-1">{{ userId() || '—' }}</span>
+                <button (click)="copy(userId())" class="text-gw-green-dark hover:underline shrink-0">copy</button>
+              </div>
+              <div class="flex items-start gap-3 p-3 border-b border-gray-100">
+                <span class="text-gray-400 w-16 shrink-0">email</span>
+                <span class="text-gray-700 break-all flex-1">{{ userEmail() || '—' }}</span>
+              </div>
+              <div class="flex items-start gap-3 p-3">
+                <span class="text-gray-400 w-16 shrink-0">role</span>
+                <span class="text-gray-700 break-all flex-1">{{ userRole() || '—' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
     </div>
   `,
 })
@@ -195,6 +228,20 @@ export class SettingsComponent implements OnInit {
   private readonly STORAGE_KEY = 'growwatch-settings';
 
   userEmail = () => this.auth.user()?.email ?? '';
+  userId = () => this.auth.user()?.userId ?? '';
+  userRole = () => this.auth.user()?.role ?? '';
+
+  showDebug = false;
+
+  toggleDebug() {
+    this.showDebug = !this.showDebug;
+    this.saveSettings();
+  }
+
+  async copy(value: string) {
+    if (!value) return;
+    try { await navigator.clipboard.writeText(value); } catch {}
+  }
 
   digestTime = '20:00';
 
@@ -225,6 +272,7 @@ export class SettingsComponent implements OnInit {
       if (!saved) return;
       const parsed = JSON.parse(saved);
       if (parsed.digestTime) this.digestTime = parsed.digestTime;
+      if (typeof parsed.showDebug === 'boolean') this.showDebug = parsed.showDebug;
       if (parsed.notifPrefs) {
         for (const pref of this.notifPrefs) {
           if (parsed.notifPrefs[pref.key] !== undefined) pref.enabled = parsed.notifPrefs[pref.key];
@@ -234,8 +282,12 @@ export class SettingsComponent implements OnInit {
   }
 
   saveSettings() {
+    const raw = localStorage.getItem(this.STORAGE_KEY);
+    const existing = raw ? (() => { try { return JSON.parse(raw); } catch { return {}; } })() : {};
     const data = {
+      ...existing,
       digestTime: this.digestTime,
+      showDebug: this.showDebug,
       notifPrefs: Object.fromEntries(this.notifPrefs.map(p => [p.key, p.enabled])),
     };
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
