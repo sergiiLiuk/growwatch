@@ -122,3 +122,26 @@ const deviceSchema = new Schema<IDevice>(
 );
 
 export const Device = mongoose.model<IDevice>('Device', deviceSchema);
+
+// ── UserSettings ────────────────────────────────────────────────────────────
+// One row per user. Holds per-user UI/alert thresholds that don't belong on the
+// User record (which is auth-only). Created lazily on first write.
+
+export interface IUserSettings extends Document {
+    userId: string;
+    tempMin?: number;
+    tempMax?: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const userSettingsSchema = new Schema<IUserSettings>(
+    {
+        userId: { type: String, required: true, unique: true, index: true },
+        tempMin: { type: Number },
+        tempMax: { type: Number },
+    },
+    { timestamps: true }
+);
+
+export const UserSettings = mongoose.model<IUserSettings>('UserSettings', userSettingsSchema);

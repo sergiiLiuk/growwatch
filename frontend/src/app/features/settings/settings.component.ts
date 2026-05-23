@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { UserSettingsService } from '../../core/services/user-settings.service';
 
 @Component({
   selector: 'app-settings',
@@ -42,6 +43,34 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="text-[13px] text-gray-500 flex-1">Send digest at</div>
           <input type="time" [(ngModel)]="digestTime" (ngModelChange)="saveSettings()"
                  class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors" />
+        </div>
+      </div>
+
+      <!-- Temperature range -->
+      <div class="mb-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Temperature range</div>
+        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+          <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+            <div class="text-[13px] text-gray-500 flex-1">Minimum (°C)</div>
+            <input type="number" [ngModel]="settings.effectiveTempMin()" (ngModelChange)="onTempMinChange($event)"
+                   placeholder="{{ settings.DEFAULT_TEMP_MIN }}" step="1"
+                   class="w-20 text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors text-right" />
+          </div>
+          <div class="flex items-center gap-3 p-4">
+            <div class="text-[13px] text-gray-500 flex-1">Maximum (°C)</div>
+            <input type="number" [ngModel]="settings.effectiveTempMax()" (ngModelChange)="onTempMaxChange($event)"
+                   placeholder="{{ settings.DEFAULT_TEMP_MAX }}" step="1"
+                   class="w-20 text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors text-right" />
+          </div>
+        </div>
+        <div class="flex items-center justify-between mt-2 px-1">
+          <p class="text-[11px] text-gray-400 leading-relaxed flex-1">
+            Alerts trigger when temperature falls outside this range.
+          </p>
+          <button (click)="resetTempRange()"
+                  class="text-[11px] text-gw-green-dark hover:underline ml-3 shrink-0">
+            Reset to default ({{ settings.DEFAULT_TEMP_MIN }}–{{ settings.DEFAULT_TEMP_MAX }}°C)
+          </button>
         </div>
       </div>
 
@@ -133,11 +162,26 @@ import { AuthService } from '../../core/services/auth.service';
 export class SettingsComponent implements OnInit {
   private router = inject(Router);
   private auth = inject(AuthService);
+  settings = inject(UserSettingsService);
   private readonly STORAGE_KEY = 'growwatch-settings';
 
   userEmail = () => this.auth.user()?.email ?? '';
 
   digestTime = '20:00';
+
+  onTempMinChange(value: number | null) {
+    const v = typeof value === 'number' && Number.isFinite(value) ? value : null;
+    this.settings.setTempMin(v);
+  }
+
+  onTempMaxChange(value: number | null) {
+    const v = typeof value === 'number' && Number.isFinite(value) ? value : null;
+    this.settings.setTempMax(v);
+  }
+
+  resetTempRange() {
+    this.settings.resetTempRange();
+  }
 
   notifPrefs = [
     { key: 'digest', label: 'Daily digest', description: 'Evening summary of your greenhouse', enabled: true },

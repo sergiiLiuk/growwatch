@@ -12,6 +12,7 @@ const PLANT_EMOJI: Record<string, string> = {
   LETTUCE: '🥬', SPINACH: '🥬', KALE: '🥬', ARUGULA: '🥬', RADISH: '🌱',
   BASIL: '🌿', MINT: '🌿', PARSLEY: '🌿', CILANTRO: '🌿', CHIVE: '🌿',
   OREGANO: '🌿', THYME: '🌿', ROSEMARY: '🌿', STRAWBERRY: '🍓',
+  GRAPES: '🍇', MELON: '🍈', WATERMELON: '🍉',
 };
 
 interface ActivityEvent {

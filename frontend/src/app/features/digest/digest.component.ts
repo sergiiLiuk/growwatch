@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { SensorService, HourlySensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
+import { UserSettingsService } from '../../core/services/user-settings.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 
 interface DigestItem {
@@ -72,6 +73,7 @@ interface DigestItem {
 export class DigestComponent implements OnInit {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
+  private userSettings = inject(UserSettingsService);
 
   today = new Date();
   loading = signal(true);
@@ -103,15 +105,25 @@ export class DigestComponent implements OnInit {
 
     const hasTemp = data.some(d => d.avgTemperature != null);
     if (hasTemp) {
+      const userMin = this.userSettings.effectiveTempMin();
+      const userMax = this.userSettings.effectiveTempMax();
       const avgTemp = data.filter(d => d.avgTemperature != null).reduce((s, d) => s + d.avgTemperature!, 0) / data.length;
       const minTemp = Math.min(...data.filter(d => d.minTemperature != null).map(d => d.minTemperature!));
       const maxTemp = Math.max(...data.filter(d => d.maxTemperature != null).map(d => d.maxTemperature!));
-      const tempOk = minTemp >= 15 && maxTemp <= 30;
+      const outOfRangeHours = data.filter(d =>
+        (d.minTemperature != null && d.minTemperature < userMin) ||
+        (d.maxTemperature != null && d.maxTemperature > userMax)
+      ).length;
+      const tempOk = outOfRangeHours === 0;
+      const direction = minTemp < userMin && maxTemp > userMax ? 'both too cold and too hot'
+                      : minTemp < userMin ? 'below your minimum'
+                      : maxTemp > userMax ? 'above your maximum'
+                      : '';
       items.push({
         icon: '🌡️', label: 'Temperature', status: tempOk ? 'ok' : 'warn',
         message: tempOk
-          ? `Temperature was stable all day. No heat stress detected.`
-          : `Temperature went outside the comfort zone. Keep an eye on ventilation.`,
+          ? `Temperature stayed within your ${userMin}–${userMax}°C range all day.`
+          : `Temperature went ${direction} on ${outOfRangeHours} hour${outOfRangeHours === 1 ? '' : 's'} today (range ${userMin}–${userMax}°C).`,
         detail: `range ${minTemp.toFixed(1)}–${maxTemp.toFixed(1)}°C · avg ${avgTemp.toFixed(1)}°C`,
       });
     }

@@ -20,4 +20,7 @@ export const PLANT_TYPE_STYLE: Record<PlantType, { emoji: string; bg: string }> 
   THYME:      { emoji: '🌿', bg: 'bg-yellow-50' },
   ROSEMARY:   { emoji: '🌿', bg: 'bg-sky-50'    },
   STRAWBERRY: { emoji: '🍓', bg: 'bg-red-50'    },
+  GRAPES:     { emoji: '🍇', bg: 'bg-purple-50' },
+  MELON:      { emoji: '🍈', bg: 'bg-yellow-50' },
+  WATERMELON: { emoji: '🍉', bg: 'bg-pink-50'   },
 };

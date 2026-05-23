@@ -27,6 +27,9 @@ export const typeDefs = gql`
     THYME
     ROSEMARY
     STRAWBERRY
+    GRAPES
+    MELON
+    WATERMELON
   }
 
   type LightStatusInfo {
@@ -86,6 +89,11 @@ export const typeDefs = gql`
     createdAt: String!
   }
 
+  type UserSettings {
+    tempMin: Float
+    tempMax: Float
+  }
+
   type Query {
     sensorData: [SensorData!]!
     latestSensorData: SensorData
@@ -93,6 +101,7 @@ export const typeDefs = gql`
     hourlyDataRange(from: String!, to: String!): [HourlySensorData!]!
     plants: [Plant!]!
     myDevices: [Device!]!
+    myUserSettings: UserSettings!
   }
 
   type AuthPayload {
@@ -112,6 +121,7 @@ export const typeDefs = gql`
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!
     removeDevice(id: String!): Boolean!
+    updateUserSettings(tempMin: Float, tempMax: Float): UserSettings!
   }
 
   type Subscription {

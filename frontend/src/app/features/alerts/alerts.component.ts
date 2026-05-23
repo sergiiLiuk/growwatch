@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { SensorService, SensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
+import { UserSettingsService } from '../../core/services/user-settings.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 
 export interface Alert {
@@ -78,6 +79,7 @@ export interface Alert {
 export class AlertsComponent implements OnInit, OnDestroy {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
+  private userSettings = inject(UserSettingsService);
   private sub?: Subscription;
   private lastData: SensorData | null = null;
   private readonly STORAGE_KEY = 'growwatch-alerts';
@@ -147,12 +149,16 @@ export class AlertsComponent implements OnInit, OnDestroy {
       this.addAlert('warn', 'Low humidity', `Humidity at ${Math.round(data.humidity)}% — ${plantNames} prefer above 50%. Consider misting.`);
     }
 
-    // Temperature alerts
+    // Temperature alerts — uses user-configured thresholds (defaults 15-30°C)
     if (data.temperature != null) {
-      if (data.temperature < 10) {
-        this.addAlert('danger', 'Temperature too low', `${data.temperature.toFixed(1)}°C — this is too cold for most greenhouse plants.`);
-      } else if (data.temperature > 35) {
-        this.addAlert('danger', 'Temperature too high', `${data.temperature.toFixed(1)}°C — heat stress risk for ${plantNames}.`);
+      const min = this.userSettings.effectiveTempMin();
+      const max = this.userSettings.effectiveTempMax();
+      if (data.temperature < min) {
+        this.addAlert('warn', 'Temperature too low',
+          `${data.temperature.toFixed(1)}°C — below your minimum of ${min}°C for ${plantNames}.`);
+      } else if (data.temperature > max) {
+        this.addAlert('warn', 'Temperature too high',
+          `${data.temperature.toFixed(1)}°C — above your maximum of ${max}°C. Heat stress risk for ${plantNames}.`);
       }
     }
 

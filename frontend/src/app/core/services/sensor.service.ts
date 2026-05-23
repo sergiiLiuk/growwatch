@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
 import { Observable, retry, timer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
+import { UserSettingsService } from './user-settings.service';
 
 export const PLANT_LIGHT_RANGES: Record<string, { min: number; max: number; label: string }> = {
   TOMATO:     { min: 20000, max: 50000, label: 'Tomato' },
@@ -23,6 +24,9 @@ export const PLANT_LIGHT_RANGES: Record<string, { min: number; max: number; labe
   THYME:      { min: 15000, max: 30000, label: 'Thyme' },
   ROSEMARY:   { min: 20000, max: 40000, label: 'Rosemary' },
   STRAWBERRY: { min: 15000, max: 30000, label: 'Strawberry' },
+  GRAPES:     { min: 25000, max: 50000, label: 'Grapes' },
+  MELON:      { min: 22000, max: 45000, label: 'Melon' },
+  WATERMELON: { min: 25000, max: 50000, label: 'Watermelon' },
 };
 
 export type LightStatus = 'TOO_LOW' | 'OPTIMAL' | 'TOO_HIGH';
@@ -77,6 +81,7 @@ export interface MoodInfo {
 @Injectable({ providedIn: 'root' })
 export class SensorService {
   private apolloClient: ApolloClient;
+  private userSettings = inject(UserSettingsService);
 
   constructor(gqlClient: GraphQLClientService) {
     this.apolloClient = gqlClient.client;
@@ -205,7 +210,9 @@ export class SensorService {
 
     const status = data.lightStatus?.status;
     const humidityOk = data.humidity == null || (data.humidity >= 40 && data.humidity <= 80);
-    const tempOk = data.temperature == null || (data.temperature >= 15 && data.temperature <= 30);
+    const tempMin = this.userSettings.effectiveTempMin();
+    const tempMax = this.userSettings.effectiveTempMax();
+    const tempOk = data.temperature == null || (data.temperature >= tempMin && data.temperature <= tempMax);
 
     if (status === 'OPTIMAL' && humidityOk && tempOk) {
       return { mood: 'thriving', label: 'Optimal', description: 'All conditions within range' };

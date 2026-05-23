@@ -25,6 +25,9 @@ export const PLANT_LIGHT_RANGES = {
 
     // Fruit
     STRAWBERRY: { min: 15000, max: 30000, label: 'Strawberry' },
+    GRAPES:     { min: 25000, max: 50000, label: 'Grapes' },
+    MELON:      { min: 22000, max: 45000, label: 'Melon' },
+    WATERMELON: { min: 25000, max: 50000, label: 'Watermelon' },
 };
 
 export type PlantType = keyof typeof PLANT_LIGHT_RANGES;

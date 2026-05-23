@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device } from './models';
+import { HourlySensorData, Plant, User, Device, UserSettings } from './models';
 import { getLightStatus, PlantType } from './lightUtils';
 import { signToken, verifyPassword, JwtPayload } from './auth';
 
@@ -330,6 +330,14 @@ export const resolvers = {
             const docs = await Device.find({ userId: ctx.user.userId }).sort({ createdAt: 1 }).lean();
             return docs.map(mapDevice);
         },
+        myUserSettings: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const settings = await UserSettings.findOne({ userId: ctx.user.userId }).lean();
+            return {
+                tempMin: settings?.tempMin ?? null,
+                tempMax: settings?.tempMax ?? null,
+            };
+        },
     },
 
     Mutation: {
@@ -399,6 +407,32 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             const result = await Device.findOneAndDelete({ _id: id, userId: ctx.user.userId });
             return result !== null;
+        },
+        updateUserSettings: async (
+            _: any,
+            { tempMin, tempMax }: { tempMin?: number | null; tempMax?: number | null },
+            ctx: Ctx
+        ) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const update: any = {};
+            // null explicitly resets a field to default; undefined leaves it unchanged
+            if (tempMin === null) update.$unset = { ...(update.$unset ?? {}), tempMin: '' };
+            else if (typeof tempMin === 'number') update.$set = { ...(update.$set ?? {}), tempMin };
+            if (tempMax === null) update.$unset = { ...(update.$unset ?? {}), tempMax: '' };
+            else if (typeof tempMax === 'number') update.$set = { ...(update.$set ?? {}), tempMax };
+
+            // Always set userId on upsert so the row has the owner from the start
+            update.$setOnInsert = { userId: ctx.user.userId };
+
+            const settings = await UserSettings.findOneAndUpdate(
+                { userId: ctx.user.userId },
+                update,
+                { upsert: true, new: true }
+            ).lean();
+            return {
+                tempMin: settings?.tempMin ?? null,
+                tempMax: settings?.tempMax ?? null,
+            };
         },
     },
 

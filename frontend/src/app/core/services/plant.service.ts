@@ -7,7 +7,8 @@ export type PlantType =
   | 'TOMATO' | 'PEPPER' | 'CUCUMBER' | 'ZUCCHINI' | 'EGGPLANT'
   | 'LETTUCE' | 'SPINACH' | 'KALE' | 'ARUGULA' | 'RADISH'
   | 'BASIL' | 'MINT' | 'PARSLEY' | 'CILANTRO' | 'CHIVE'
-  | 'OREGANO' | 'THYME' | 'ROSEMARY' | 'STRAWBERRY';
+  | 'OREGANO' | 'THYME' | 'ROSEMARY'
+  | 'STRAWBERRY' | 'GRAPES' | 'MELON' | 'WATERMELON';
 
 export interface PlantTypeOption {
   value: PlantType;
@@ -35,6 +36,9 @@ export const PLANT_TYPE_OPTIONS: PlantTypeOption[] = [
   { value: 'THYME',      label: 'Thyme',        group: 'Herbs' },
   { value: 'ROSEMARY',   label: 'Rosemary',     group: 'Herbs' },
   { value: 'STRAWBERRY', label: 'Strawberry',   group: 'Fruit' },
+  { value: 'GRAPES',     label: 'Grapes',       group: 'Fruit' },
+  { value: 'MELON',      label: 'Melon',        group: 'Fruit' },
+  { value: 'WATERMELON', label: 'Watermelon',   group: 'Fruit' },
 ];
 
 export interface Plant {
