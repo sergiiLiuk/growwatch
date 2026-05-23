@@ -24,7 +24,8 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
 
       <!-- Form card -->
-      <div class="w-full max-w-sm bg-gw-surface rounded-2xl p-8 shadow-sm border border-gw-border/50">
+      <form (ngSubmit)="signIn()"
+            class="w-full max-w-sm bg-gw-surface rounded-2xl p-8 shadow-sm border border-gw-border/50">
 
         <!-- Email -->
         <div class="mb-5">
@@ -73,13 +74,13 @@ import { AuthService } from '../../core/services/auth.service';
 
         <!-- Sign in button -->
         <button
-          (click)="signIn()"
+          type="submit"
           [disabled]="loading()"
           class="w-full py-3.5 rounded-xl bg-gw-green text-white font-semibold text-base hover:bg-gw-green-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ loading() ? 'Signing in…' : 'Sign in' }}
         </button>
 
-      </div>
+      </form>
     </div>
   `,
 })
