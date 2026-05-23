@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
 import { HourlySensorData, Plant, User, Device, UserSettings } from './models';
@@ -245,14 +246,18 @@ function mapHourlyDoc(doc: any) {
 // Safely coerce stored date values to an ISO string. Some legacy/imported
 // plant rows have plantedDate stored as a string instead of a Date — calling
 // .toISOString() directly on those would throw and break the entire query.
-function toIsoSafe(value: any): string {
-    if (value instanceof Date) return value.toISOString();
-    if (typeof value === 'string' || typeof value === 'number') {
-        const d = new Date(value);
-        if (!isNaN(d.getTime())) return d.toISOString();
+function toIsoSafe(value: any, fallback?: any): string {
+    // Unwrap MongoDB Extended-JSON shape ({ $date: "..." }) if present
+    if (value && typeof value === 'object' && !(value instanceof Date) && '$date' in value) {
+        value = (value as any).$date;
     }
-    // Last-resort fallback so a single bad row doesn't 500 the whole query
-    return new Date(0).toISOString();
+    const d = dayjs(value);
+    if (d.isValid()) return d.toISOString();
+    if (fallback !== undefined) return toIsoSafe(fallback);
+    // Last-resort fallback — return now() so the UI shows something sensible
+    // instead of an epoch ("686 months old") for a corrupted row.
+    console.warn('⚠️ toIsoSafe: unparseable date, defaulting to now. raw:', JSON.stringify(value));
+    return dayjs().toISOString();
 }
 
 function mapDevice(doc: any) {
@@ -332,7 +337,7 @@ export const resolvers = {
                 id: d._id.toString(),
                 name: d.name,
                 type: d.type,
-                plantedDate: toIsoSafe(d.plantedDate),
+                plantedDate: toIsoSafe(d.plantedDate, d.createdAt),
                 count: d.count ?? 1,
                 monitored: d.monitored ?? true,
                 dailyLightHours: d.dailyLightHours ?? 12,
