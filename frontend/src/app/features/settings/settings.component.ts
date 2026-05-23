@@ -57,7 +57,7 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
               <span class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Min</span>
               <div class="relative">
                 <select [ngModel]="settings.effectiveTempMin()" (ngModelChange)="onTempMinChange($event)"
-                        class="appearance-none w-20 text-center text-[15px] font-medium text-gw-green-dark bg-gw-parchment border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
+                        class="appearance-none w-20 text-center text-[15px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
                   @for (t of tempOptions; track t) {
                     <option [ngValue]="t">{{ t }}°</option>
                   }
@@ -77,7 +77,7 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
               <span class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Max</span>
               <div class="relative">
                 <select [ngModel]="settings.effectiveTempMax()" (ngModelChange)="onTempMaxChange($event)"
-                        class="appearance-none w-20 text-center text-[15px] font-medium text-gw-green-dark bg-gw-parchment border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
+                        class="appearance-none w-20 text-center text-[15px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
                   @for (t of tempOptions; track t) {
                     <option [ngValue]="t">{{ t }}°</option>
                   }
