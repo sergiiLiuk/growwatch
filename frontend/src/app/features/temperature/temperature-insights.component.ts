@@ -2,11 +2,12 @@ import { Component, OnDestroy, signal, computed, effect, inject } from '@angular
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorService, SensorData, HourlySensorData } from '../../core/services/sensor.service';
+import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
 
-const TEMP_OPTIMAL_MIN = 15;
-const TEMP_OPTIMAL_MAX = 30;
+// this.userSettings.effectiveTempMin() / this.userSettings.effectiveTempMax() now come from UserSettingsService.effectiveTempMin/Max
+// (defaults 15 / 30 if the user hasn't set a custom range)
 const CHART_HEIGHT_PX = 96;
 const Y_AXIS_DEFAULT_MAX = 40;
 
@@ -214,6 +215,7 @@ interface OptimalLine {
 export class TemperatureInsightsComponent implements OnDestroy {
   private sensorService = inject(SensorService);
   private router = inject(Router);
+  private userSettings = inject(UserSettingsService);
   private weekSub?: Subscription;
   private liveSub?: Subscription;
   private tickTimer?: ReturnType<typeof setInterval>;
@@ -234,24 +236,24 @@ export class TemperatureInsightsComponent implements OnDestroy {
   badgeVariant = computed<BadgeVariant>(() => {
     const t = this.liveTemp();
     if (t == null) return 'gray';
-    if (t < TEMP_OPTIMAL_MIN || t > TEMP_OPTIMAL_MAX) return 'amber';
+    if (t < this.userSettings.effectiveTempMin() || t > this.userSettings.effectiveTempMax()) return 'amber';
     return 'green';
   });
 
   badgeLabel = computed(() => {
     const t = this.liveTemp();
     if (t == null) return '';
-    if (t < TEMP_OPTIMAL_MIN) return 'Too cold';
-    if (t > TEMP_OPTIMAL_MAX) return 'Too warm';
+    if (t < this.userSettings.effectiveTempMin()) return 'Too cold';
+    if (t > this.userSettings.effectiveTempMax()) return 'Too warm';
     return 'Optimal';
   });
 
   readingSubLabel = computed(() => {
     const t = this.liveTemp();
     if (t == null) return '';
-    if (t < TEMP_OPTIMAL_MIN) return `Below ${TEMP_OPTIMAL_MIN}°C optimal floor`;
-    if (t > TEMP_OPTIMAL_MAX) return `Above ${TEMP_OPTIMAL_MAX}°C optimal ceiling`;
-    return `Within ${TEMP_OPTIMAL_MIN}–${TEMP_OPTIMAL_MAX}°C optimal range`;
+    if (t < this.userSettings.effectiveTempMin()) return `Below ${this.userSettings.effectiveTempMin()}°C optimal floor`;
+    if (t > this.userSettings.effectiveTempMax()) return `Above ${this.userSettings.effectiveTempMax()}°C optimal ceiling`;
+    return `Within ${this.userSettings.effectiveTempMin()}–${this.userSettings.effectiveTempMax()}°C optimal range`;
   });
 
   lastSeenLabel = computed(() => {
@@ -328,7 +330,7 @@ export class TemperatureInsightsComponent implements OnDestroy {
 
   optimalLines = computed<OptimalLine[]>(() => {
     const yMax = this.chartYMax();
-    return [TEMP_OPTIMAL_MIN, TEMP_OPTIMAL_MAX].map(v => ({
+    return [this.userSettings.effectiveTempMin(), this.userSettings.effectiveTempMax()].map(v => ({
       label: `${v}°`,
       y: Math.round((v / yMax) * CHART_HEIGHT_PX),
     }));
@@ -346,8 +348,8 @@ export class TemperatureInsightsComponent implements OnDestroy {
         barHeightPx = Math.max(4, valToY(r.max) - valToY(r.min)); // 4px floor for visibility
         avgY = valToY(r.avg);
 
-        const withinOptimal = r.min >= TEMP_OPTIMAL_MIN && r.max <= TEMP_OPTIMAL_MAX;
-        const avgOutsideOptimal = r.avg < TEMP_OPTIMAL_MIN || r.avg > TEMP_OPTIMAL_MAX;
+        const withinOptimal = r.min >= this.userSettings.effectiveTempMin() && r.max <= this.userSettings.effectiveTempMax();
+        const avgOutsideOptimal = r.avg < this.userSettings.effectiveTempMin() || r.avg > this.userSettings.effectiveTempMax();
         const isFaded = !r.isToday;
         if (avgOutsideOptimal) barClass = isFaded ? 'bg-gw-red/50' : 'bg-gw-red';
         else if (!withinOptimal) barClass = isFaded ? 'bg-gw-amber/50' : 'bg-gw-amber';
