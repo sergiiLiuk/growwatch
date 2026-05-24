@@ -4,11 +4,12 @@ import { PlantService, Plant, PlantType, PLANT_TYPE_OPTIONS } from '../../core/s
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plant-detail',
-  imports: [PlantEditModalComponent, IconComponent],
+  imports: [PlantEditModalComponent, IconComponent, StatusBadgeComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -45,17 +46,37 @@ import dayjs from 'dayjs';
 
       @if (plant(); as p) {
 
-        <!-- Plant card -->
-        <div class="bg-gw-green-light rounded-2xl p-5 mb-4">
+        <!-- Plant card — desaturated when monitoring is paused -->
+        <div class="rounded-2xl p-5 mb-4 transition-colors"
+             [class.bg-gw-green-light]="p.monitored"
+             [class.bg-gray-100]="!p.monitored">
           <div class="flex items-center gap-4 mb-5">
-            <div class="w-16 h-16 rounded-full bg-white flex items-center justify-center text-3xl shrink-0">
+            <div class="w-16 h-16 rounded-full bg-white flex items-center justify-center text-3xl shrink-0"
+                 [class.opacity-60]="!p.monitored">
               {{ getEmoji(p.type) }}
             </div>
-            <div>
-              <h1 class="text-[20px] font-semibold text-gw-green-dark leading-tight">{{ p.name }}</h1>
-              <p class="text-[13px] text-gw-green-dark/70 mt-0.5">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h1 class="text-[20px] font-semibold leading-tight"
+                    [class.text-gw-green-dark]="p.monitored"
+                    [class.text-gray-700]="!p.monitored">
+                  {{ p.name }}
+                </h1>
+                @if (!p.monitored) {
+                  <app-status-badge label="Paused" variant="gray" />
+                }
+              </div>
+              <p class="text-[13px] mt-0.5"
+                 [class.text-gw-green-dark/70]="p.monitored"
+                 [class.text-gray-500]="!p.monitored">
                 {{ getTypeLabel(p.type) }} · {{ p.count }} plant{{ p.count !== 1 ? 's' : '' }}
               </p>
+              @if (!p.monitored) {
+                <p class="text-[11px] text-gray-400 mt-1.5 flex items-center gap-1">
+                  <app-icon name="pause" class="w-3 h-3" />
+                  Monitoring is paused
+                </p>
+              }
             </div>
           </div>
 
