@@ -354,6 +354,28 @@ export const resolvers = {
                 alertsEnabled: settings?.alertsEnabled ?? null,
             };
         },
+        allUsers: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
+
+            const users = await User.find({}).sort({ createdAt: 1 }).lean();
+            // Counts per user via aggregation (cheap for small user counts; revisit if it scales)
+            const [deviceCounts, plantCounts] = await Promise.all([
+                Device.aggregate([{ $group: { _id: '$userId', n: { $sum: 1 } } }]),
+                Plant.aggregate([{ $group: { _id: '$userId', n: { $sum: 1 } } }]),
+            ]);
+            const devicesByUser = new Map(deviceCounts.map((d: any) => [d._id, d.n]));
+            const plantsByUser = new Map(plantCounts.map((p: any) => [p._id, p.n]));
+
+            return users.map((u: any) => ({
+                id: u._id.toString(),
+                email: u.email,
+                role: u.role,
+                createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
+                deviceCount: devicesByUser.get(u._id.toString()) ?? 0,
+                plantCount: plantsByUser.get(u._id.toString()) ?? 0,
+            }));
+        },
     },
 
     Mutation: {

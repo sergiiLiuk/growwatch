@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { ShellComponent } from './shared/components/shell/shell.component';
 import { authGuard } from './core/guards/auth.guard';
+import { superuserGuard } from './core/guards/superuser.guard';
 
 export const routes: Routes = [
   {
@@ -51,6 +52,11 @@ export const routes: Routes = [
       {
         path: 'settings/devices',
         loadComponent: () => import('./features/settings/devices.component').then(m => m.DevicesComponent),
+      },
+      {
+        path: 'admin',
+        canActivate: [superuserGuard],
+        loadComponent: () => import('./features/admin/admin.component').then(m => m.AdminComponent),
       },
     ],
   },

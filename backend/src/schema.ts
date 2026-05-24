@@ -97,6 +97,15 @@ export const typeDefs = gql`
     alertsEnabled: Boolean
   }
 
+  type User {
+    id: String!
+    email: String!
+    role: String!
+    createdAt: String!
+    deviceCount: Int!
+    plantCount: Int!
+  }
+
   type Query {
     sensorData: [SensorData!]!
     latestSensorData: SensorData
@@ -105,6 +114,7 @@ export const typeDefs = gql`
     plants: [Plant!]!
     myDevices: [Device!]!
     myUserSettings: UserSettings!
+    allUsers: [User!]!
   }
 
   type AuthPayload {

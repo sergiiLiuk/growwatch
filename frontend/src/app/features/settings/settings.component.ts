@@ -152,6 +152,32 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
         </button>
       </div>
 
+      <!-- Admin (superuser only) -->
+      @if (isSuperuser()) {
+        <div class="mt-5">
+          <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Admin</div>
+          <button (click)="openAdmin()"
+                  class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+            <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 00-3-3.87"/>
+                <path d="M4 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
+                <circle cx="10" cy="7" r="4"/>
+                <path d="M16 3.13a4 4 0 010 7.75"/>
+              </svg>
+            </div>
+            <div class="flex-1 text-left">
+              <div class="text-[14px] font-medium text-gray-800">All users</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">Superuser-only view of every registered account</div>
+            </div>
+            <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+      }
+
       <!-- Sensor setup + devices -->
       <div class="mt-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Setup</div>
@@ -240,6 +266,7 @@ export class SettingsComponent implements OnInit {
   userEmail = () => this.auth.user()?.email ?? '';
   userId = () => this.auth.user()?.userId ?? '';
   userRole = () => this.auth.user()?.role ?? '';
+  isSuperuser = () => this.auth.user()?.role === 'superuser';
 
   // showDebug stays in localStorage — purely client-only UI state (per device/browser).
   private readonly DEBUG_KEY = 'growwatch-show-debug';
@@ -284,6 +311,7 @@ export class SettingsComponent implements OnInit {
 
   openSensorSetup() { this.router.navigate(['/settings/sensor-setup']); }
   openDevices() { this.router.navigate(['/settings/devices']); }
+  openAdmin() { this.router.navigate(['/admin']); }
   logout() { this.auth.logout(); }
 
 }
