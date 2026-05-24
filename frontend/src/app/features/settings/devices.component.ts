@@ -4,10 +4,11 @@ import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { DeviceService, Device } from '../../core/services/device.service';
 import { AuthService } from '../../core/services/auth.service';
+import { IconComponent } from '../../shared/components/atoms/icon.component';
 
 @Component({
   selector: 'app-devices',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, IconComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -41,22 +42,11 @@ import { AuthService } from '../../core/services/auth.service';
             <div class="flex gap-1 shrink-0">
               <button (click)="startRename(d)" title="Rename"
                       class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gw-green-light/60 hover:text-gw-green-dark transition-colors">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 20h9"/>
-                  <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                </svg>
+                <app-icon name="pencil" class="w-4 h-4" />
               </button>
               <button (click)="startDelete(d)" title="Remove"
                       class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6"/>
-                  <path d="M14 11v6"/>
-                  <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
-                </svg>
+                <app-icon name="trash" class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -161,11 +151,7 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
             <div class="flex items-center gap-3 mb-3">
               <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                </svg>
+                <app-icon name="trash-simple" class="w-5 h-5 text-red-500" />
               </div>
               <div>
                 <h2 class="text-[16px] font-medium text-gray-800">Remove device?</h2>

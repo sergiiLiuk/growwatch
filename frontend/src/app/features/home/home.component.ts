@@ -6,6 +6,7 @@ import { SensorService, SensorData, HourlySensorData, MoodInfo, PLANT_LIGHT_RANG
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
+import { IconComponent } from '../../shared/components/atoms/icon.component';
 import dayjs from 'dayjs';
 
 const PLANT_EMOJI: Record<string, string> = {
@@ -24,7 +25,7 @@ interface ActivityEvent {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, SensorCardComponent],
+  imports: [RouterLink, SensorCardComponent, IconComponent],
   template: `
     <div class="max-w-4xl mx-auto px-4 py-6">
 
@@ -81,11 +82,7 @@ interface ActivityEvent {
         <div class="bg-gw-surface border border-gw-border rounded-2xl p-5 mb-5">
           <div class="flex items-start gap-4">
             <div class="w-10 h-10 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
-                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3c0 0-6 4-6 9a6 6 0 0012 0c0-5-6-9-6-9z"/>
-                <line x1="12" y1="12" x2="12" y2="21"/>
-              </svg>
+              <app-icon name="plants" class="w-5 h-5 text-gw-green-dark" />
             </div>
             <div class="flex-1 min-w-0">
               <p class="font-display text-[15px] font-semibold text-gw-green-dark mb-1">Add your first plant</p>

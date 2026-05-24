@@ -3,10 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
+import { IconComponent } from '../../shared/components/atoms/icon.component';
 
 @Component({
   selector: 'app-settings',
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -72,11 +73,8 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
                     <option [ngValue]="t">{{ t }}°</option>
                   }
                 </select>
-                <svg class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
+                <app-icon name="chevron-down" strokeWidth="2"
+                          class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
@@ -92,11 +90,8 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
                     <option [ngValue]="t">{{ t }}°</option>
                   }
                 </select>
-                <svg class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
+                <app-icon name="chevron-down" strokeWidth="2"
+                          class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
@@ -138,12 +133,7 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
         <button (click)="logout()"
                 class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-red-200 transition-colors">
           <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-            <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24"
-                 stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
+            <app-icon name="logout" class="w-4 h-4 text-red-500" />
           </div>
           <div class="flex-1 text-left">
             <div class="text-[14px] font-medium text-red-600">Log out</div>
@@ -159,21 +149,13 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
           <button (click)="openAdmin()"
                   class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
             <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
-                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 00-3-3.87"/>
-                <path d="M4 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
-                <circle cx="10" cy="7" r="4"/>
-                <path d="M16 3.13a4 4 0 010 7.75"/>
-              </svg>
+              <app-icon name="admin" class="w-4 h-4 text-gw-green-dark" />
             </div>
             <div class="flex-1 text-left">
               <div class="text-[14px] font-medium text-gray-800">All users</div>
               <div class="text-[11px] text-gray-400 mt-0.5">Superuser-only view of every registered account</div>
             </div>
-            <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
+            <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
           </button>
         </div>
       }
@@ -185,38 +167,24 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
           <button (click)="openDevices()"
                   class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
             <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
-                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="4" y="4" width="16" height="16" rx="3"/>
-                <circle cx="12" cy="12" r="2" fill="currentColor"/>
-              </svg>
+              <app-icon name="device" class="w-4 h-4 text-gw-green-dark" />
             </div>
             <div class="flex-1 text-left">
               <div class="text-[14px] font-medium text-gray-800">My devices</div>
               <div class="text-[11px] text-gray-400 mt-0.5">Pair and manage your ESP32 sensors</div>
             </div>
-            <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
+            <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
           </button>
           <button (click)="openSensorSetup()"
                   class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
             <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
-                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-                <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-                <circle cx="12" cy="20" r="1" fill="currentColor"/>
-              </svg>
+              <app-icon name="wifi" class="w-4 h-4 text-gw-green-dark" />
             </div>
             <div class="flex-1 text-left">
               <div class="text-[14px] font-medium text-gray-800">Sensor setup guide</div>
               <div class="text-[11px] text-gray-400 mt-0.5">How to connect your ESP32 to WiFi</div>
             </div>
-            <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
+            <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
           </button>
         </div>
       </div>

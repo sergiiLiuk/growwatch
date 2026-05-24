@@ -6,11 +6,12 @@ import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
+import { IconComponent } from '../../shared/components/atoms/icon.component';
 import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plants',
-  imports: [FormsModule, PlantEditModalComponent, StatusBadgeComponent, EmptyStateComponent],
+  imports: [FormsModule, PlantEditModalComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -58,11 +59,7 @@ import dayjs from 'dayjs';
                                   [variant]="plant.monitored ? 'green' : 'gray'" />
                 <button (click)="$event.stopPropagation(); toggleMenu(plant.id)"
                         class="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
-                  <svg width="3" height="15" viewBox="0 0 3 15" fill="currentColor">
-                    <circle cx="1.5" cy="1.5" r="1.5"/>
-                    <circle cx="1.5" cy="7.5" r="1.5"/>
-                    <circle cx="1.5" cy="13.5" r="1.5"/>
-                  </svg>
+                  <app-icon name="dots-vertical" class="w-[14px] h-[14px]" />
                 </button>
               </div>
             </div>
@@ -73,31 +70,17 @@ import dayjs from 'dayjs';
                    style="box-shadow: 0 2px 12px rgba(0,0,0,0.08)">
                 <button (click)="startEdit(plant)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
+                  <app-icon name="pencil-square" class="w-[14px] h-[14px]" />
                   Edit plant
                 </button>
                 <button (click)="toggleMonitored(plant)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    @if (plant.monitored) {
-                      <path d="M10 9v6m4-6v6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-                    } @else {
-                      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    }
-                  </svg>
+                  <app-icon [name]="plant.monitored ? 'pause' : 'play'" class="w-[14px] h-[14px]" />
                   {{ plant.monitored ? 'Pause monitoring' : 'Resume monitoring' }}
                 </button>
                 <button (click)="startDelete(plant)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gw-red hover:bg-gw-red-light transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14H6L5 6"/>
-                    <path d="M10 11v6M14 11v6"/>
-                    <path d="M9 6V4h6v2"/>
-                  </svg>
+                  <app-icon name="trash-simple" class="w-[14px] h-[14px]" />
                   Remove plant
                 </button>
               </div>
@@ -193,13 +176,7 @@ import dayjs from 'dayjs';
         <div class="w-full max-w-sm bg-white rounded-xl border-[0.5px] border-gray-200 p-6 text-center"
              (click)="$event.stopPropagation()">
           <div class="w-14 h-14 bg-gw-red-light rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                 stroke-linecap="round" stroke-linejoin="round" class="text-gw-red">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14H6L5 6"/>
-              <path d="M10 11v6M14 11v6"/>
-              <path d="M9 6V4h6v2"/>
-            </svg>
+            <app-icon name="trash-simple" class="w-[22px] h-[22px] text-gw-red" />
           </div>
           <h2 class="text-[16px] font-medium text-gray-900 mb-2">Remove {{ deletePlant()!.name }}?</h2>
           <p class="text-[13px] text-gray-500 mb-6 leading-relaxed">

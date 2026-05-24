@@ -2,20 +2,18 @@ import { Component, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { IconComponent } from '../../shared/components/atoms/icon.component';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   template: `
     <div class="min-h-screen bg-gw-parchment flex flex-col items-center justify-center px-6">
 
       <!-- Logo + branding -->
       <div class="flex flex-col items-center mb-10">
-        <div class="w-20 h-20 rounded-full bg-gw-green flex items-center justify-center mb-5 shadow-sm">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22V13"/>
-            <path d="M12 13C12 13 7 10 7 6a5 5 0 0 1 10 0c0 4-5 7-5 7z"/>
-          </svg>
+        <div class="w-20 h-20 rounded-full bg-gw-green flex items-center justify-center mb-5 shadow-sm text-white">
+          <app-icon name="leaf" class="w-9 h-9" strokeWidth="1.8" />
         </div>
         <h1 class="text-[1.75rem] tracking-tight">
           <span class="font-bold text-gw-green-dark">Grow</span><span class="font-normal text-gray-500">Watch</span>
@@ -52,18 +50,7 @@ import { AuthService } from '../../core/services/auth.service';
             />
             <button type="button" (click)="showPassword.set(!showPassword())"
                     class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-              @if (showPassword()) {
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              } @else {
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              }
+              <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" class="w-[18px] h-[18px]" strokeWidth="1.8" />
             </button>
           </div>
         </div>

@@ -3,11 +3,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PlantService, Plant, PlantType, PLANT_TYPE_OPTIONS } from '../../core/services/plant.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
+import { IconComponent } from '../../shared/components/atoms/icon.component';
 import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plant-detail',
-  imports: [PlantEditModalComponent],
+  imports: [PlantEditModalComponent, IconComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -21,33 +22,19 @@ import dayjs from 'dayjs';
           <div class="relative">
             <button (click)="toggleMenu($event)"
                     class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
-              <svg width="3" height="15" viewBox="0 0 3 15" fill="currentColor">
-                <circle cx="1.5" cy="1.5" r="1.5"/>
-                <circle cx="1.5" cy="7.5" r="1.5"/>
-                <circle cx="1.5" cy="13.5" r="1.5"/>
-              </svg>
+              <app-icon name="dots-vertical" class="w-[14px] h-[14px]" />
             </button>
             @if (menuOpen()) {
               <div class="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl border-[0.5px] border-gray-200 w-44 py-1"
                    style="box-shadow: 0 2px 12px rgba(0,0,0,0.08)">
                 <button (click)="startEdit($event)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
+                  <app-icon name="pencil-square" class="w-[14px] h-[14px]" />
                   Edit plant
                 </button>
                 <button (click)="toggleMonitored($event)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    @if (plant()!.monitored) {
-                      <path d="M10 9v6m4-6v6"/>
-                    } @else {
-                      <polyline points="12 6 12 12 16 14"/>
-                    }
-                  </svg>
+                  <app-icon [name]="plant()!.monitored ? 'pause' : 'play'" class="w-[14px] h-[14px]" />
                   {{ plant()!.monitored ? 'Pause monitoring' : 'Resume monitoring' }}
                 </button>
               </div>

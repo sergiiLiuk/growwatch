@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { IconComponent } from '../../shared/components/atoms/icon.component';
 
 const STEPS = [
   {
@@ -38,7 +39,7 @@ const HINT_ICONS: Record<string, string> = { hand: '☝️', wifi: '📶', globe
 
 @Component({
   selector: 'app-sensor-setup',
-  imports: [],
+  imports: [IconComponent],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6">
 
@@ -53,13 +54,7 @@ const HINT_ICONS: Record<string, string> = { hand: '☝️', wifi: '📶', globe
       <!-- Hero card -->
       <div class="bg-gw-green-light rounded-2xl p-5 flex items-center gap-4 mb-6">
         <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center shrink-0">
-          <svg class="w-7 h-7 text-gw-green-dark" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-            <circle cx="12" cy="20" r="1" fill="currentColor"/>
-          </svg>
+          <app-icon name="wifi" class="w-7 h-7 text-gw-green-dark" />
         </div>
         <div>
           <p class="text-[16px] font-semibold text-gw-green-dark leading-tight">Connect sensor to WiFi</p>
@@ -93,11 +88,7 @@ const HINT_ICONS: Record<string, string> = { hand: '☝️', wifi: '📶', globe
       <!-- Troubleshooting -->
       <div class="bg-amber-50 border-[0.5px] border-amber-200 rounded-xl p-4 mb-6">
         <div class="flex items-center gap-2 mb-3">
-          <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
+          <app-icon name="alert-triangle" class="w-4 h-4 text-amber-600 shrink-0" />
           <p class="text-[13px] font-semibold text-amber-800">If something goes wrong</p>
         </div>
         <ul class="flex flex-col gap-2.5 list-disc list-inside">
@@ -114,11 +105,7 @@ const HINT_ICONS: Record<string, string> = { hand: '☝️', wifi: '📶', globe
         <p class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Changing WiFi later</p>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-start gap-3">
           <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0 mt-0.5">
-            <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24"
-                 stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"/>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
+            <app-icon name="refresh" class="w-4 h-4 text-gray-500" />
           </div>
           <div>
             <p class="text-[14px] font-semibold text-gray-900 mb-1">Need to change network?</p>
