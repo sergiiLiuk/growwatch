@@ -352,6 +352,7 @@ export const resolvers = {
                 digestTime: settings?.digestTime ?? null,
                 digestEnabled: settings?.digestEnabled ?? null,
                 alertsEnabled: settings?.alertsEnabled ?? null,
+                locale: settings?.locale ?? null,
             };
         },
         allUsers: async (_: any, __: any, ctx: Ctx) => {
@@ -454,6 +455,7 @@ export const resolvers = {
                 digestTime?: string | null;
                 digestEnabled?: boolean | null;
                 alertsEnabled?: boolean | null;
+                locale?: string | null;
             },
             ctx: Ctx
         ) => {
@@ -473,6 +475,7 @@ export const resolvers = {
             apply('digestTime', args.digestTime, (v) => typeof v === 'string');
             apply('digestEnabled', args.digestEnabled, (v) => typeof v === 'boolean');
             apply('alertsEnabled', args.alertsEnabled, (v) => typeof v === 'boolean');
+            apply('locale', args.locale, (v) => typeof v === 'string');
 
             const update: any = { $setOnInsert: { userId: ctx.user.userId } };
             if (Object.keys($set).length) update.$set = $set;
@@ -489,6 +492,7 @@ export const resolvers = {
                 digestTime: settings?.digestTime ?? null,
                 digestEnabled: settings?.digestEnabled ?? null,
                 alertsEnabled: settings?.alertsEnabled ?? null,
+                locale: settings?.locale ?? null,
             };
         },
     },

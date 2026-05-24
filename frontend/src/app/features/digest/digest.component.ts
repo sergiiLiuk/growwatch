@@ -4,6 +4,7 @@ import { SensorService, HourlySensorData } from '../../core/services/sensor.serv
 import { PlantService } from '../../core/services/plant.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 interface DigestItem {
   icon: string;
@@ -15,12 +16,12 @@ interface DigestItem {
 
 @Component({
   selector: 'app-digest',
-  imports: [DatePipe, EmptyStateComponent],
+  imports: [DatePipe, EmptyStateComponent, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
       <div class="mb-6">
-        <h1 class="text-[18px] font-medium text-gray-800">Daily digest</h1>
+        <h1 class="text-[18px] font-medium text-gray-800">{{ t('digest.title') }}</h1>
         <p class="text-[11px] text-gray-400 mt-0.5">{{ today | date:'EEEE, d MMMM' }}</p>
       </div>
 
@@ -40,8 +41,8 @@ interface DigestItem {
           }
         </div>
       } @else if (digestItems().length === 0) {
-        <app-empty-state emoji="📋" title="No data yet for today."
-                         subtitle="Check back after your sensors have been running for a few hours." />
+        <app-empty-state emoji="📋" [title]="t('digest.noDataToday')"
+                         [subtitle]="t('digest.noDataHint')" />
       } @else {
 
         <!-- Summary bubble -->
@@ -74,6 +75,13 @@ export class DigestComponent implements OnInit {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
   private userSettings = inject(UserSettingsService);
+  private transloco = inject(TranslocoService);
+  // Reactive locale signal so computeds re-run when language changes
+  private localeKey = signal(this.transloco.getActiveLang());
+
+  constructor() {
+    this.transloco.langChanges$.subscribe(l => this.localeKey.set(l));
+  }
 
   today = new Date();
   loading = signal(true);
@@ -82,9 +90,11 @@ export class DigestComponent implements OnInit {
   private monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
 
   digestItems = computed<DigestItem[]>(() => {
+    this.localeKey(); // dependency so computed re-runs on language change
     const data = this.hourlyData();
     if (data.length === 0) return [];
 
+    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
     const items: DigestItem[] = [];
 
     const avgLight = data.reduce((s, d) => s + d.avgLight, 0) / data.length;
@@ -92,15 +102,16 @@ export class DigestComponent implements OnInit {
     const maxHour = data.find(d => d.maxLight === maxLight);
     const optimalHours = data.filter(d => d.lightStatus?.status === 'OPTIMAL').length;
     const lightOk = optimalHours >= data.length * 0.5;
+    const lightAt = maxHour
+      ? t('digest.lightAt', { time: new Date(maxHour.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+      : '';
 
     items.push({
       icon: '☀️',
-      label: 'Light',
+      label: t('digest.lightLabel'),
       status: lightOk ? 'ok' : 'warn',
-      message: lightOk
-        ? `Good light day — ${optimalHours}h of optimal conditions for your plants.`
-        : `Light was below optimal for most of the day. Consider supplemental lighting.`,
-      detail: `avg ${Math.round(avgLight)} lux · peak ${Math.round(maxLight)} lux${maxHour ? ' at ' + new Date(maxHour.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`,
+      message: lightOk ? t('digest.lightOkMsg', { hours: optimalHours }) : t('digest.lightWarnMsg'),
+      detail: t('digest.lightDetail', { avg: Math.round(avgLight), peak: Math.round(maxLight), at: lightAt }),
     });
 
     const hasTemp = data.some(d => d.avgTemperature != null);
@@ -115,16 +126,16 @@ export class DigestComponent implements OnInit {
         (d.maxTemperature != null && d.maxTemperature > userMax)
       ).length;
       const tempOk = outOfRangeHours === 0;
-      const direction = minTemp < userMin && maxTemp > userMax ? 'both too cold and too hot'
-                      : minTemp < userMin ? 'below your minimum'
-                      : maxTemp > userMax ? 'above your maximum'
+      const direction = minTemp < userMin && maxTemp > userMax ? t('digest.tempDirectionBoth')
+                      : minTemp < userMin ? t('digest.tempDirectionBelow')
+                      : maxTemp > userMax ? t('digest.tempDirectionAbove')
                       : '';
       items.push({
-        icon: '🌡️', label: 'Temperature', status: tempOk ? 'ok' : 'warn',
+        icon: '🌡️', label: t('digest.tempLabel'), status: tempOk ? 'ok' : 'warn',
         message: tempOk
-          ? `Temperature stayed within your ${userMin}–${userMax}°C range all day.`
-          : `Temperature went ${direction} on ${outOfRangeHours} hour${outOfRangeHours === 1 ? '' : 's'} today (range ${userMin}–${userMax}°C).`,
-        detail: `range ${minTemp.toFixed(1)}–${maxTemp.toFixed(1)}°C · avg ${avgTemp.toFixed(1)}°C`,
+          ? t('digest.tempOkMsg', { min: userMin, max: userMax })
+          : t('digest.tempWarnMsg', { direction, hours: outOfRangeHours, min: userMin, max: userMax }),
+        detail: t('digest.tempDetail', { min: minTemp.toFixed(1), max: maxTemp.toFixed(1), avg: avgTemp.toFixed(1) }),
       });
     }
 
@@ -134,11 +145,9 @@ export class DigestComponent implements OnInit {
       const minHum = Math.min(...data.filter(d => d.minHumidity != null).map(d => d.minHumidity!));
       const humOk = minHum >= 40;
       items.push({
-        icon: '💧', label: 'Humidity', status: humOk ? 'ok' : 'warn',
-        message: humOk
-          ? `Humidity stayed comfortable throughout the day.`
-          : `Humidity dipped below 40% — your plants prefer above 50%. Consider watering tomorrow.`,
-        detail: `avg ${Math.round(avgHum)}% · low ${Math.round(minHum)}%`,
+        icon: '💧', label: t('digest.humidityLabel'), status: humOk ? 'ok' : 'warn',
+        message: humOk ? t('digest.humidityOkMsg') : t('digest.humidityWarnMsg'),
+        detail: t('digest.humidityDetail', { avg: Math.round(avgHum), low: Math.round(minHum) }),
       });
     }
 
@@ -146,9 +155,9 @@ export class DigestComponent implements OnInit {
     if (hasPressure) {
       const avgPressure = data.filter(d => d.avgPressure != null).reduce((s, d) => s + d.avgPressure!, 0) / data.length;
       items.push({
-        icon: '🔵', label: 'Pressure', status: 'ok',
-        message: `Pressure was steady. No weather stress detected.`,
-        detail: `avg ${Math.round(avgPressure)} hPa`,
+        icon: '🔵', label: t('digest.pressureLabel'), status: 'ok',
+        message: t('digest.pressureMsg'),
+        detail: t('digest.pressureDetail', { avg: Math.round(avgPressure) }),
       });
     }
 
@@ -156,14 +165,18 @@ export class DigestComponent implements OnInit {
   });
 
   summaryMessage = computed(() => {
+    this.localeKey();
     const items = this.digestItems();
     const plants = this.monitoredPlants();
-    const plantNames = plants.length > 0 ? plants.map(p => p.name).join(' and ') : 'your plants';
+    const plantNames = plants.length > 0
+      ? plants.map(p => p.name).join(' · ')
+      : this.transloco.translate('digest.yourPlants');
     const warnings = items.filter(i => i.status === 'warn').length;
+    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
 
-    if (warnings === 0) return `A good day for ${plantNames}. All conditions were within comfortable range.`;
-    if (warnings === 1) return `Mostly a good day, but one thing needs your attention. Check the details below.`;
-    return `${warnings} conditions were outside the ideal range today. ${plantNames} would appreciate some adjustments tomorrow.`;
+    if (warnings === 0) return t('digest.summaryGood', { plants: plantNames });
+    if (warnings === 1) return t('digest.summaryOneWarning');
+    return t('digest.summaryManyWarnings', { n: warnings, plants: plantNames });
   });
 
   ngOnInit() {

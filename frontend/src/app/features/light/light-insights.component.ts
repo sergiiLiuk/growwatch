@@ -7,6 +7,7 @@ import { WeatherService } from '../../core/services/weather.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
 import { isNight, isDawnOrDusk, isOffPeak } from '../../core/utils/time';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 interface DayBar {
   dateStr: string;
@@ -23,23 +24,24 @@ interface DayBar {
 
 @Component({
   selector: 'app-light-insights',
-  imports: [PageContainerComponent, StatusBadgeComponent],
+  imports: [PageContainerComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
     <app-page-container>
+      <ng-container *transloco="let t">
 
       <button (click)="back()"
               class="flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-600 transition-colors mb-6">
-        ‹ Home
+        ‹ {{ t('nav.home') }}
       </button>
 
       <div class="mb-6">
-        <h1 class="text-[18px] font-medium text-gray-800">Light insights</h1>
-        <p class="text-[11px] text-gray-400 mt-0.5">Live reading and daily history</p>
+        <h1 class="text-[18px] font-medium text-gray-800">{{ t('insights.lightTitle') }}</h1>
+        <p class="text-[11px] text-gray-400 mt-0.5">{{ t('insights.lightSubtitle') }}</p>
       </div>
 
       <!-- Live reading -->
       <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Live reading</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('insights.liveReading') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
           @if (latestData()) {
             <div class="flex items-start justify-between mb-3">
@@ -57,11 +59,11 @@ interface DayBar {
                                   class="mt-1 shrink-0" />
               }
             </div>
-            <div class="text-[11px] text-gray-400 mt-3">Updated {{ lastSeenLabel() }}</div>
+            <div class="text-[11px] text-gray-400 mt-3">{{ t('insights.updated') }} {{ lastSeenLabel() }}</div>
           } @else {
             <div class="flex items-center gap-3 py-2">
               <div class="w-2 h-2 rounded-full bg-gray-300 shrink-0 animate-pulse"></div>
-              <span class="text-[13px] text-gray-400">Waiting for sensor data…</span>
+              <span class="text-[13px] text-gray-400">{{ t('insights.waitingForData') }}</span>
             </div>
           }
         </div>
@@ -69,21 +71,21 @@ interface DayBar {
 
       <!-- Today's total -->
       <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Today</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('insights.today') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
-          @if (todayTotal(); as t) {
+          @if (todayTotal(); as tt) {
             <div class="flex items-baseline gap-1.5 mb-1">
               <span class="text-[28px] font-semibold text-gray-900 leading-none tabular-nums">
-                {{ t.valueStr }}
+                {{ tt.valueStr }}
               </span>
-              <span class="text-[13px] text-gray-400">{{ t.unit }}</span>
+              <span class="text-[13px] text-gray-400">{{ tt.unit }}</span>
             </div>
             <div class="text-[12px] text-gray-400">
-              {{ t.hourCount }} {{ t.hourCount === 1 ? 'hour' : 'hours' }} logged · {{ t.readingCount }} readings
+              {{ tt.hourCount === 1 ? t('insights.hourLogged', { n: tt.hourCount }) : t('insights.hoursLogged', { n: tt.hourCount }) }} · {{ t('insights.readingsCount', { n: tt.readingCount }) }}
             </div>
           } @else {
-            <p class="text-[13px] text-gray-400 py-1">No hourly data yet for today.</p>
-            <p class="text-[11px] text-gray-300 mt-0.5">Hourly snapshots are saved at the start of each hour.</p>
+            <p class="text-[13px] text-gray-400 py-1">{{ t('insights.noHourlyData') }}</p>
+            <p class="text-[11px] text-gray-300 mt-0.5">{{ t('insights.hourlySnapshotsHint') }}</p>
           }
         </div>
       </div>
@@ -91,7 +93,7 @@ interface DayBar {
       <!-- Week history chart -->
       <div>
         <div class="flex items-center justify-between mb-2">
-          <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wide">Week history</div>
+          <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{{ t('insights.weekHistory') }}</div>
           <div class="flex items-center gap-1">
             <button (click)="prevWeek()"
                     [disabled]="weekOffset() <= -12"
@@ -184,6 +186,7 @@ interface DayBar {
         </div>
       </div>
 
+      </ng-container>
     </app-page-container>
   `,
 })

@@ -7,6 +7,7 @@ import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { TranslocoDirective } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 
 const PLANT_EMOJI: Record<string, string> = {
@@ -25,9 +26,9 @@ interface ActivityEvent {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, SensorCardComponent, IconComponent],
+  imports: [RouterLink, SensorCardComponent, IconComponent, TranslocoDirective],
   template: `
-    <div class="max-w-4xl mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto px-4 py-6" *transloco="let t">
 
       <!-- Hero row: weather + phase -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
@@ -47,7 +48,7 @@ interface ActivityEvent {
             </div>
           } @else {
             <span class="flex-1 text-[13px] text-gray-400">
-              {{ weatherService.loading() ? 'Loading weather…' : 'Weather unavailable' }}
+              {{ weatherService.loading() ? t('home.loadingWeather') : t('home.weatherUnavailable') }}
             </span>
           }
         </div>
@@ -55,9 +56,9 @@ interface ActivityEvent {
         <!-- Phase / mood card -->
         <div class="rounded-2xl p-4 border border-transparent flex flex-col" [class]="moodBg()">
           <div class="flex items-start justify-between gap-2 mb-1">
-            <span class="text-[10px] font-semibold tracking-widest uppercase opacity-50" [class]="moodIconColor()">Current phase</span>
+            <span class="text-[10px] font-semibold tracking-widest uppercase opacity-50" [class]="moodIconColor()">{{ t('home.currentPhase') }}</span>
             @if (co2Status() === 'warn') {
-              <span class="text-[10px] font-medium bg-gw-amber text-white px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">CO₂ elevated</span>
+              <span class="text-[10px] font-medium bg-gw-amber text-white px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">{{ t('home.co2Elevated') }}</span>
             }
           </div>
           <div class="font-display text-[22px] font-bold leading-tight" [class]="moodIconColor()">{{ mood().label }}</div>
@@ -85,14 +86,13 @@ interface ActivityEvent {
               <app-icon name="plants" class="w-5 h-5 text-gw-green-dark" />
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-display text-[15px] font-semibold text-gw-green-dark mb-1">Add your first plant</p>
+              <p class="font-display text-[15px] font-semibold text-gw-green-dark mb-1">{{ t('home.addYourFirstPlant') }}</p>
               <p class="text-[13px] text-gray-500 leading-relaxed">
-                Tell GrowWatch what you're growing and you'll get personalised light advice,
-                a mood ring, and alerts tailored to your plant's needs.
+                {{ t('home.addYourFirstPlantBody') }}
               </p>
               <a routerLink="/plants"
                  class="inline-block mt-3 text-[13px] font-medium bg-gw-green text-white px-4 py-2 rounded-xl hover:bg-gw-green-dark transition-colors">
-                + Add a plant
+                {{ t('home.addAPlant') }}
               </a>
             </div>
           </div>
@@ -101,10 +101,10 @@ interface ActivityEvent {
 
       <!-- Sensors section -->
       <div class="mb-5">
-        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Sensors</p>
+        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('home.sensors') }}</p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <app-sensor-card
-            label="Temp"
+            [label]="t('home.temp')"
             [value]="tempValue()"
             unit="°C"
             [status]="tempStatus()"
@@ -113,7 +113,7 @@ interface ActivityEvent {
             [rangeMax]="tempRange().max"
             link="/temperature" />
           <app-sensor-card
-            label="Humidity"
+            [label]="t('home.humidity')"
             [value]="humidValue()"
             unit="%"
             [status]="humidStatus()"
@@ -121,7 +121,7 @@ interface ActivityEvent {
             [rangeMin]="humidRange().min"
             [rangeMax]="humidRange().max" />
           <app-sensor-card
-            label="CO₂"
+            [label]="t('home.co2')"
             [value]="co2Value()"
             unit="ppm"
             [status]="co2Status()"
@@ -129,7 +129,7 @@ interface ActivityEvent {
             [rangeMin]="co2Range().min"
             [rangeMax]="co2Range().max" />
           <app-sensor-card
-            label="Light"
+            [label]="t('home.light')"
             [value]="lightValue()"
             unit="lx"
             [status]="lightStatus()"
@@ -145,10 +145,10 @@ interface ActivityEvent {
 
         <!-- Recent activity -->
         <div>
-          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Recent activity</p>
+          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('home.recentActivity') }}</p>
           <div class="bg-gw-surface border border-gw-border rounded-2xl divide-y divide-gw-border">
             @if (activityFeed().length === 0) {
-              <p class="text-[12px] text-gray-400 p-4">No events in the last 24 hours.</p>
+              <p class="text-[12px] text-gray-400 p-4">{{ t('home.noEventsLast24h') }}</p>
             }
             @for (event of activityFeed(); track event.time + event.label) {
               <div class="flex items-center gap-3 px-4 py-3">
@@ -162,7 +162,7 @@ interface ActivityEvent {
 
         <!-- Plants strip -->
         <div>
-          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Plants</p>
+          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('nav.plants') }}</p>
           <div class="flex gap-3 overflow-x-auto lg:overflow-x-visible lg:flex-wrap pb-1 -mx-1 px-1" style="scrollbar-width:none">
             @for (plant of plants(); track plant.id) {
               <a [routerLink]="['/plants', plant.id]"
@@ -175,7 +175,7 @@ interface ActivityEvent {
             <a routerLink="/plants"
                class="flex-shrink-0 w-20 bg-gw-surface border border-dashed border-gw-border rounded-2xl p-3 flex flex-col items-center justify-center gap-1 text-center hover:border-gray-400 transition-colors">
               <span class="text-xl text-gray-300">+</span>
-              <span class="text-[11px] text-gray-400">Add</span>
+              <span class="text-[11px] text-gray-400">{{ t('home.addPlant') }}</span>
             </a>
           </div>
         </div>

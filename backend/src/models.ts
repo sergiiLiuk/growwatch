@@ -134,6 +134,7 @@ export interface IUserSettings extends Document {
     digestTime?: string;       // 'HH:MM' (24h)
     digestEnabled?: boolean;
     alertsEnabled?: boolean;
+    locale?: string;           // 'en' | 'da' (extensible)
     createdAt: Date;
     updatedAt: Date;
 }
@@ -146,6 +147,7 @@ const userSettingsSchema = new Schema<IUserSettings>(
         digestTime: { type: String },
         digestEnabled: { type: Boolean },
         alertsEnabled: { type: Boolean },
+        locale: { type: String },
     },
     { timestamps: true }
 );

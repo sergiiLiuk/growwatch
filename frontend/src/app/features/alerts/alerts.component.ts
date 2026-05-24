@@ -5,6 +5,7 @@ import { SensorService, SensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 export interface Alert {
   id: string;
@@ -16,30 +17,30 @@ export interface Alert {
 
 @Component({
   selector: 'app-alerts',
-  imports: [DatePipe, EmptyStateComponent],
+  imports: [DatePipe, EmptyStateComponent, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-[18px] font-medium text-gray-800">Alerts</h1>
-          <p class="text-[11px] text-gray-400 mt-0.5">{{ todayCount() }} today</p>
+          <h1 class="text-[18px] font-medium text-gray-800">{{ t('alerts.title') }}</h1>
+          <p class="text-[11px] text-gray-400 mt-0.5">{{ t('alerts.todayCount', { n: todayCount() }) }}</p>
         </div>
         @if (alerts().length > 0) {
           <button (click)="clearAll()" class="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
-            Clear all
+            {{ t('alerts.clearAll') }}
           </button>
         }
       </div>
 
       @if (alerts().length === 0) {
-        <app-empty-state emoji="🔔" title="No alerts yet."
-                         subtitle="You'll be notified when your plants need attention." />
+        <app-empty-state emoji="🔔" [title]="t('alerts.noAlerts')"
+                         [subtitle]="t('alerts.noAlertsHint')" />
       } @else {
 
         <!-- Today -->
         @if (todayAlerts().length > 0) {
-          <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">Today</div>
+          <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">{{ t('common.today') }}</div>
           <div class="flex flex-col gap-2 mb-5">
             @for (alert of todayAlerts(); track alert.id) {
               <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex gap-3">
@@ -57,7 +58,7 @@ export interface Alert {
 
         <!-- Earlier -->
         @if (earlierAlerts().length > 0) {
-          <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">Earlier</div>
+          <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">{{ t('common.earlier') }}</div>
           <div class="flex flex-col gap-2">
             @for (alert of earlierAlerts(); track alert.id) {
               <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex gap-3 opacity-60">
@@ -80,6 +81,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
   private userSettings = inject(UserSettingsService);
+  private transloco = inject(TranslocoService);
   private sub?: Subscription;
   private lastData: SensorData | null = null;
   private readonly STORAGE_KEY = 'growwatch-alerts';
@@ -133,20 +135,24 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   private checkConditions(data: SensorData) {
     const plants = this.monitoredPlants();
-    const plantNames = plants.length > 0 ? plants.map(p => p.name).join(', ') : 'your plants';
+    const plantNames = plants.length > 0
+      ? plants.map(p => p.name).join(', ')
+      : this.transloco.translate('alerts.yourPlants');
+    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
 
     // Light alerts
     if (data.lightStatus?.status === 'TOO_LOW') {
-      this.addAlert('warn', 'Low light', `Light is below optimal for ${plantNames}. Consider supplemental lighting.`);
+      this.addAlert('warn', t('alerts.lowLight'), t('alerts.lowLightMsg', { plants: plantNames }));
     } else if (data.lightStatus?.status === 'TOO_HIGH') {
-      this.addAlert('warn', 'Intense light', `Light intensity is very high — ${plantNames} might appreciate some shade.`);
+      this.addAlert('warn', t('alerts.intenseLight'), t('alerts.intenseLightMsg', { plants: plantNames }));
     } else if (data.lightStatus?.status === 'OPTIMAL' && this.lastData?.lightStatus?.status !== 'OPTIMAL') {
-      this.addAlert('info', 'Great light conditions', `Light is now optimal for ${plantNames}.`);
+      this.addAlert('info', t('alerts.greatLight'), t('alerts.greatLightMsg', { plants: plantNames }));
     }
 
     // Humidity alerts
     if (data.humidity != null && data.humidity < 40) {
-      this.addAlert('warn', 'Low humidity', `Humidity at ${Math.round(data.humidity)}% — ${plantNames} prefer above 50%. Consider misting.`);
+      this.addAlert('warn', t('alerts.lowHumidity'),
+        t('alerts.lowHumidityMsg', { value: Math.round(data.humidity), plants: plantNames }));
     }
 
     // Temperature alerts — uses user-configured thresholds (defaults 15-30°C)
@@ -154,11 +160,11 @@ export class AlertsComponent implements OnInit, OnDestroy {
       const min = this.userSettings.effectiveTempMin();
       const max = this.userSettings.effectiveTempMax();
       if (data.temperature < min) {
-        this.addAlert('warn', 'Temperature too low',
-          `${data.temperature.toFixed(1)}°C — below your minimum of ${min}°C for ${plantNames}.`);
+        this.addAlert('warn', t('alerts.tempTooLow'),
+          t('alerts.tempTooLowMsg', { value: data.temperature.toFixed(1), min, plants: plantNames }));
       } else if (data.temperature > max) {
-        this.addAlert('warn', 'Temperature too high',
-          `${data.temperature.toFixed(1)}°C — above your maximum of ${max}°C. Heat stress risk for ${plantNames}.`);
+        this.addAlert('warn', t('alerts.tempTooHigh'),
+          t('alerts.tempTooHighMsg', { value: data.temperature.toFixed(1), max, plants: plantNames }));
       }
     }
 

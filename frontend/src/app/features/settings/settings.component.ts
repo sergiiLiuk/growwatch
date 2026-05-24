@@ -1,29 +1,49 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 
 @Component({
   selector: 'app-settings',
-  imports: [FormsModule, IconComponent],
+  imports: [FormsModule, IconComponent, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
       <div class="mb-6">
-        <h1 class="text-[18px] font-medium text-gray-800">Settings</h1>
-        <p class="text-[11px] text-gray-400 mt-0.5">Notifications and sensor</p>
+        <h1 class="text-[18px] font-medium text-gray-800">{{ t('settings.title') }}</h1>
+        <p class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.subtitle') }}</p>
+      </div>
+
+      <!-- Language -->
+      <div class="mb-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.language') }}</div>
+        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+          @for (loc of localeOptions; track loc.code; let last = $last) {
+            <button (click)="settings.setLocale(loc.code)"
+                    class="w-full flex items-center gap-3 p-4 text-left transition-colors hover:bg-gray-50"
+                    [class.border-b]="!last"
+                    [class.border-gray-100]="!last">
+              <span class="text-[18px] leading-none">{{ loc.flag }}</span>
+              <span class="flex-1 text-[14px] font-medium text-gray-800">{{ loc.label }}</span>
+              @if (settings.effectiveLocale() === loc.code) {
+                <app-icon name="check" class="w-4 h-4 text-gw-green-dark" />
+              }
+            </button>
+          }
+        </div>
       </div>
 
       <!-- Notifications -->
       <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Notifications</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.notifications') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
           <div class="flex items-center gap-3 p-4 border-b border-gray-100">
             <div class="flex-1">
-              <div class="text-[14px] font-medium text-gray-800">Daily digest</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">Evening summary of your greenhouse</div>
+              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.dailyDigest') }}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.dailyDigestDescription') }}</div>
             </div>
             <button (click)="settings.setDigestEnabled(!settings.effectiveDigestEnabled())"
                     class="w-10 h-6 rounded-full transition-colors relative shrink-0"
@@ -34,8 +54,8 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
           </div>
           <div class="flex items-center gap-3 p-4">
             <div class="flex-1">
-              <div class="text-[14px] font-medium text-gray-800">Smart alerts</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">When plants need your attention</div>
+              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.smartAlerts') }}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.smartAlertsDescription') }}</div>
             </div>
             <button (click)="settings.setAlertsEnabled(!settings.effectiveAlertsEnabled())"
                     class="w-10 h-6 rounded-full transition-colors relative shrink-0"
@@ -49,9 +69,9 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 
       <!-- Digest time -->
       <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Daily digest time</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.dailyDigestTime') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3">
-          <div class="text-[13px] text-gray-500 flex-1">Send digest at</div>
+          <div class="text-[13px] text-gray-500 flex-1">{{ t('settings.sendDigestAt') }}</div>
           <input type="time" [ngModel]="settings.effectiveDigestTime()" (ngModelChange)="onDigestTimeChange($event)"
                  class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors" />
         </div>
@@ -59,13 +79,13 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 
       <!-- Temperature range -->
       <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Temperature range</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.temperatureRange') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
           <div class="flex items-center justify-center gap-3">
 
             <!-- Min -->
             <div class="flex-1 flex flex-col items-center">
-              <span class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Min</span>
+              <span class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">{{ t('settings.min') }}</span>
               <div class="relative">
                 <select [ngModel]="settings.effectiveTempMin()" (ngModelChange)="onTempMinChange($event)"
                         class="appearance-none w-20 text-center text-[15px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
@@ -82,7 +102,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 
             <!-- Max -->
             <div class="flex-1 flex flex-col items-center">
-              <span class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Max</span>
+              <span class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">{{ t('settings.max') }}</span>
               <div class="relative">
                 <select [ngModel]="settings.effectiveTempMax()" (ngModelChange)="onTempMaxChange($event)"
                         class="appearance-none w-20 text-center text-[15px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
@@ -99,44 +119,44 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
         <div class="flex items-center justify-between mt-2 px-1">
           <p class="text-[11px] text-gray-400 leading-relaxed flex-1">
-            Alerts trigger when temperature falls outside this range.
+            {{ t('settings.alertsTriggerOutside') }}
           </p>
           <button (click)="resetTempRange()"
                   class="text-[11px] text-gw-green-dark hover:underline ml-3 shrink-0">
-            Reset ({{ settings.DEFAULT_TEMP_MIN }}–{{ settings.DEFAULT_TEMP_MAX }}°)
+            {{ t('settings.resetTo') }} ({{ settings.DEFAULT_TEMP_MIN }}–{{ settings.DEFAULT_TEMP_MAX }}°)
           </button>
         </div>
       </div>
 
       <!-- About -->
       <div>
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">About</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.about') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
           <div class="flex items-center gap-3 p-4 border-b border-gray-100">
-            <div class="text-[13px] text-gray-500 flex-1">App</div>
+            <div class="text-[13px] text-gray-500 flex-1">{{ t('settings.app') }}</div>
             <div class="text-[13px] text-gray-800">GrowWatch</div>
           </div>
           <div class="flex items-center gap-3 p-4 border-b border-gray-100">
-            <div class="text-[13px] text-gray-500 flex-1">Version</div>
+            <div class="text-[13px] text-gray-500 flex-1">{{ t('settings.version') }}</div>
             <div class="text-[13px] text-gray-800">0.1.0 MVP</div>
           </div>
           <div class="flex items-center gap-3 p-4">
-            <div class="text-[13px] text-gray-500 flex-1">Data interval</div>
-            <div class="text-[13px] text-gray-800">5 seconds live · 1h persisted</div>
+            <div class="text-[13px] text-gray-500 flex-1">{{ t('settings.dataInterval') }}</div>
+            <div class="text-[13px] text-gray-800">{{ t('settings.dataIntervalValue') }}</div>
           </div>
         </div>
       </div>
 
       <!-- Account -->
       <div class="mt-5 lg:hidden">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Account</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.account') }}</div>
         <button (click)="logout()"
                 class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-red-200 transition-colors">
           <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center shrink-0">
             <app-icon name="logout" class="w-4 h-4 text-red-500" />
           </div>
           <div class="flex-1 text-left">
-            <div class="text-[14px] font-medium text-red-600">Log out</div>
+            <div class="text-[14px] font-medium text-red-600">{{ t('nav.logout') }}</div>
             <div class="text-[11px] text-gray-400 mt-0.5">{{ userEmail() }}</div>
           </div>
         </button>
@@ -145,15 +165,15 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
       <!-- Admin (superuser only) -->
       @if (isSuperuser()) {
         <div class="mt-5">
-          <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Admin</div>
+          <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.admin') }}</div>
           <button (click)="openAdmin()"
                   class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
             <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
               <app-icon name="admin" class="w-4 h-4 text-gw-green-dark" />
             </div>
             <div class="flex-1 text-left">
-              <div class="text-[14px] font-medium text-gray-800">All users</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">Superuser-only view of every registered account</div>
+              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.adminAllUsers') }}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.adminAllUsersDescription') }}</div>
             </div>
             <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
           </button>
@@ -162,7 +182,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 
       <!-- Sensor setup + devices -->
       <div class="mt-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Setup</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.setup') }}</div>
         <div class="space-y-2">
           <button (click)="openDevices()"
                   class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
@@ -170,8 +190,8 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
               <app-icon name="device" class="w-4 h-4 text-gw-green-dark" />
             </div>
             <div class="flex-1 text-left">
-              <div class="text-[14px] font-medium text-gray-800">My devices</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">Pair and manage your ESP32 sensors</div>
+              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.myDevices') }}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.myDevicesDescription') }}</div>
             </div>
             <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
           </button>
@@ -181,8 +201,8 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
               <app-icon name="wifi" class="w-4 h-4 text-gw-green-dark" />
             </div>
             <div class="flex-1 text-left">
-              <div class="text-[14px] font-medium text-gray-800">Sensor setup guide</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">How to connect your ESP32 to WiFi</div>
+              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.sensorSetupGuide') }}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.sensorSetupGuideDescription') }}</div>
             </div>
             <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
           </button>
@@ -191,10 +211,10 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 
       <!-- Debug info (temporary) -->
       <div class="mt-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Debug</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.debug') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
           <div class="flex items-center gap-3 p-4" [class.border-b]="showDebug" [class.border-gray-100]="showDebug">
-            <div class="text-[14px] font-medium text-gray-800 flex-1">Debug</div>
+            <div class="text-[14px] font-medium text-gray-800 flex-1">{{ t('settings.debug') }}</div>
             <button (click)="toggleDebug()"
                     class="w-10 h-6 rounded-full transition-colors relative shrink-0"
                     [class]="showDebug ? 'bg-gw-green' : 'bg-gray-200'">
@@ -205,16 +225,16 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
           @if (showDebug) {
             <div class="font-mono text-[11px]">
               <div class="flex items-start gap-3 p-3 border-b border-gray-100">
-                <span class="text-gray-400 w-16 shrink-0">user ID</span>
+                <span class="text-gray-400 w-16 shrink-0">{{ t('settings.userId') }}</span>
                 <span class="text-gray-700 break-all flex-1">{{ userId() || '—' }}</span>
-                <button (click)="copy(userId())" class="text-gw-green-dark hover:underline shrink-0">copy</button>
+                <button (click)="copy(userId())" class="text-gw-green-dark hover:underline shrink-0">{{ t('settings.copy') }}</button>
               </div>
               <div class="flex items-start gap-3 p-3 border-b border-gray-100">
-                <span class="text-gray-400 w-16 shrink-0">email</span>
+                <span class="text-gray-400 w-16 shrink-0">{{ t('settings.email') }}</span>
                 <span class="text-gray-700 break-all flex-1">{{ userEmail() || '—' }}</span>
               </div>
               <div class="flex items-start gap-3 p-3">
-                <span class="text-gray-400 w-16 shrink-0">role</span>
+                <span class="text-gray-400 w-16 shrink-0">{{ t('settings.role') }}</span>
                 <span class="text-gray-700 break-all flex-1">{{ userRole() || '—' }}</span>
               </div>
             </div>
@@ -251,6 +271,11 @@ export class SettingsComponent implements OnInit {
   }
 
   readonly tempOptions = Array.from({ length: 41 }, (_, i) => i); // 0..40
+
+  readonly localeOptions = [
+    { code: 'en', label: 'English',  flag: '🇬🇧' },
+    { code: 'da', label: 'Dansk',    flag: '🇩🇰' },
+  ];
 
   onTempMinChange(value: number | null) {
     const v = typeof value === 'number' && Number.isFinite(value) ? value : null;

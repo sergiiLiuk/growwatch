@@ -5,27 +5,28 @@ import { Subscription } from 'rxjs';
 import { DeviceService, Device } from '../../core/services/device.service';
 import { AuthService } from '../../core/services/auth.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-devices',
-  imports: [FormsModule, RouterLink, IconComponent],
+  imports: [FormsModule, RouterLink, IconComponent, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
       <button (click)="back()"
               class="flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-600 transition-colors mb-6">
-        ‹ Settings
+        ‹ {{ t('nav.settings') }}
       </button>
 
       <div class="mb-6">
-        <h1 class="text-[18px] font-medium text-gray-800">My devices</h1>
-        <p class="text-[11px] text-gray-400 mt-0.5">ESP32 sensors paired to your account</p>
+        <h1 class="text-[18px] font-medium text-gray-800">{{ t('devices.title') }}</h1>
+        <p class="text-[11px] text-gray-400 mt-0.5">{{ t('devices.subtitle') }}</p>
       </div>
 
       @if (devices().length === 0 && !loading()) {
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-6 text-center">
-          <div class="text-[14px] text-gray-600">No devices yet</div>
-          <div class="text-[11px] text-gray-400 mt-1">Click "Add device" and power on your ESP32</div>
+          <div class="text-[14px] text-gray-600">{{ t('devices.noDevices') }}</div>
+          <div class="text-[11px] text-gray-400 mt-1">{{ t('devices.noDevicesHint') }}</div>
         </div>
       }
 
@@ -56,29 +57,29 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
       <button (click)="startClaim()"
               [disabled]="claiming()"
               class="w-full mt-4 px-4 py-3 rounded-xl bg-gw-green text-white text-[14px] font-medium disabled:opacity-50">
-        + Add device
+        {{ t('devices.addDevice') }}
       </button>
 
       <!-- Pairing guide -->
       <div class="mt-6 bg-gw-surface border-[0.5px] border-gw-border rounded-xl p-4">
-        <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">How to pair</div>
+        <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">{{ t('devices.howToPair') }}</div>
         <ol class="space-y-2.5 text-[13px] text-gray-700">
           <li class="flex gap-3">
             <span class="w-5 h-5 rounded-full bg-gw-green-light text-gw-green-dark text-[11px] font-medium flex items-center justify-center shrink-0 mt-0.5">1</span>
-            <span>Tap <strong>+ Add device</strong> above to open a 10-minute pairing window.</span>
+            <span [innerHTML]="t('devices.step1')"></span>
           </li>
           <li class="flex gap-3">
             <span class="w-5 h-5 rounded-full bg-gw-green-light text-gw-green-dark text-[11px] font-medium flex items-center justify-center shrink-0 mt-0.5">2</span>
-            <span>Power on your ESP32, or press its <strong>reset</strong> button if already running. The sensor must be connected to WiFi.</span>
+            <span [innerHTML]="t('devices.step2')"></span>
           </li>
           <li class="flex gap-3">
             <span class="w-5 h-5 rounded-full bg-gw-green-light text-gw-green-dark text-[11px] font-medium flex items-center justify-center shrink-0 mt-0.5">3</span>
-            <span>Within about a minute, the device appears in the modal. Give it a name (e.g. "Greenhouse 1") and save.</span>
+            <span [innerHTML]="t('devices.step3')"></span>
           </li>
         </ol>
         <p class="text-[11px] text-gray-400 mt-3 leading-relaxed">
-          New ESP32? Set up WiFi first using the
-          <a routerLink="/settings/sensor-setup" class="text-gw-green-dark underline hover:no-underline">sensor setup guide</a>.
+          {{ t('devices.newESP32Hint') }}
+          <a routerLink="/settings/sensor-setup" class="text-gw-green-dark underline hover:no-underline">{{ t('devices.newESP32HintLink') }}</a>.
         </p>
       </div>
 
@@ -87,31 +88,31 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
             @if (!justClaimed()) {
-              <h2 class="text-[16px] font-medium text-gray-800 mb-1">Waiting for your sensor…</h2>
+              <h2 class="text-[16px] font-medium text-gray-800 mb-1">{{ t('devices.waitingForSensor') }}</h2>
               <p class="text-[12px] text-gray-500 mb-4">
-                Power on your ESP32 (or press its reset button). It should appear within a minute.
+                {{ t('devices.waitingForSensorBody') }}
               </p>
               <div class="text-[24px] font-data text-gw-green-dark text-center mb-4">
                 {{ countdownLabel() }}
               </div>
               <button (click)="cancelClaim()"
                       class="w-full px-4 py-2 rounded-xl border border-gray-300 text-[13px] text-gray-700">
-                Cancel
+                {{ t('common.cancel') }}
               </button>
             } @else {
-              <h2 class="text-[16px] font-medium text-gray-800 mb-1">Found device 🎉</h2>
+              <h2 class="text-[16px] font-medium text-gray-800 mb-1">{{ t('devices.foundDevice') }}</h2>
               <p class="text-[11px] text-gray-400 mb-3 font-mono">{{ justClaimed()!.mac }}</p>
-              <label class="text-[11px] text-gray-500 mb-1 block">Name</label>
+              <label class="text-[11px] text-gray-500 mb-1 block">{{ t('common.name') }}</label>
               <input [(ngModel)]="newDeviceName"
                      class="w-full text-[14px] border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-gw-green mb-4" />
               <div class="flex gap-2">
                 <button (click)="skipNaming()"
                         class="flex-1 px-4 py-2 rounded-xl border border-gray-300 text-[13px] text-gray-700">
-                  Skip
+                  {{ t('common.skip') }}
                 </button>
                 <button (click)="confirmName()"
                         class="flex-1 px-4 py-2 rounded-xl bg-gw-green text-white text-[13px] font-medium">
-                  Save
+                  {{ t('common.save') }}
                 </button>
               </div>
             }
@@ -123,9 +124,9 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
       @if (renamingDevice(); as rd) {
         <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
-            <h2 class="text-[16px] font-medium text-gray-800 mb-1">Rename device</h2>
+            <h2 class="text-[16px] font-medium text-gray-800 mb-1">{{ t('devices.renameDevice') }}</h2>
             <p class="text-[11px] text-gray-400 mb-3 font-mono">{{ rd.mac }}</p>
-            <label class="text-[11px] text-gray-500 mb-1 block">Name</label>
+            <label class="text-[11px] text-gray-500 mb-1 block">{{ t('common.name') }}</label>
             <input [(ngModel)]="renameInput" #renameField
                    (keydown.enter)="confirmRename()"
                    (keydown.escape)="cancelRename()"
@@ -133,12 +134,12 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
             <div class="flex gap-2">
               <button (click)="cancelRename()"
                       class="flex-1 px-4 py-2 rounded-xl border border-gray-300 text-[13px] text-gray-700">
-                Cancel
+                {{ t('common.cancel') }}
               </button>
               <button (click)="confirmRename()"
                       [disabled]="!renameInput.trim() || renameInput.trim() === rd.name"
                       class="flex-1 px-4 py-2 rounded-xl bg-gw-green text-white text-[13px] font-medium disabled:opacity-50">
-                Rename
+                {{ t('common.rename') }}
               </button>
             </div>
           </div>
@@ -154,21 +155,21 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
                 <app-icon name="trash-simple" class="w-5 h-5 text-red-500" />
               </div>
               <div>
-                <h2 class="text-[16px] font-medium text-gray-800">Remove device?</h2>
+                <h2 class="text-[16px] font-medium text-gray-800">{{ t('devices.removeDeviceTitle') }}</h2>
                 <p class="text-[11px] text-gray-400 font-mono mt-0.5">{{ dd.mac }}</p>
               </div>
             </div>
             <p class="text-[13px] text-gray-600 leading-relaxed mb-4">
-              Remove <strong>{{ dd.name }}</strong> from your account? You can re-pair it later by clicking "Add device" and resetting the ESP32.
+              {{ t('devices.removeDeviceBody', { name: dd.name }) }}
             </p>
             <div class="flex gap-2">
               <button (click)="cancelDelete()"
                       class="flex-1 px-4 py-2 rounded-xl border border-gray-300 text-[13px] text-gray-700">
-                Cancel
+                {{ t('common.cancel') }}
               </button>
               <button (click)="confirmDelete()"
                       class="flex-1 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[13px] font-medium transition-colors">
-                Remove
+                {{ t('common.remove') }}
               </button>
             </div>
           </div>

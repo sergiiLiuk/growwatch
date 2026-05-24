@@ -95,6 +95,7 @@ export const typeDefs = gql`
     digestTime: String
     digestEnabled: Boolean
     alertsEnabled: Boolean
+    locale: String
   }
 
   type User {
@@ -140,6 +141,7 @@ export const typeDefs = gql`
       digestTime: String
       digestEnabled: Boolean
       alertsEnabled: Boolean
+      locale: String
     ): UserSettings!
   }
 

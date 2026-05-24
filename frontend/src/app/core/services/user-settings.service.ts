@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
+import { TranslocoService } from '@jsverse/transloco';
 import { GraphQLClientService } from './graphql-client.service';
 import { AuthService } from './auth.service';
 
@@ -12,12 +13,14 @@ import { AuthService } from './auth.service';
  *   - digestTime         ('HH:MM', default '20:00')
  *   - digestEnabled      (default true)
  *   - alertsEnabled      (default true)
+ *   - locale             ('en' | 'da', default = browser language if supported, else 'en')
  *
  * `null` for any field = "use default".
  */
 @Injectable({ providedIn: 'root' })
 export class UserSettingsService {
   private auth = inject(AuthService);
+  private transloco = inject(TranslocoService);
   private apolloClient: ApolloClient;
 
   readonly DEFAULT_TEMP_MIN = 15;
@@ -25,18 +28,26 @@ export class UserSettingsService {
   readonly DEFAULT_DIGEST_TIME = '20:00';
   readonly DEFAULT_DIGEST_ENABLED = true;
   readonly DEFAULT_ALERTS_ENABLED = true;
+  readonly SUPPORTED_LOCALES = ['en', 'da'] as const;
 
   tempMin = signal<number | null>(null);
   tempMax = signal<number | null>(null);
   digestTime = signal<string | null>(null);
   digestEnabled = signal<boolean | null>(null);
   alertsEnabled = signal<boolean | null>(null);
+  locale = signal<string | null>(null);
 
   effectiveTempMin = computed(() => this.tempMin() ?? this.DEFAULT_TEMP_MIN);
   effectiveTempMax = computed(() => this.tempMax() ?? this.DEFAULT_TEMP_MAX);
   effectiveDigestTime = computed(() => this.digestTime() ?? this.DEFAULT_DIGEST_TIME);
   effectiveDigestEnabled = computed(() => this.digestEnabled() ?? this.DEFAULT_DIGEST_ENABLED);
   effectiveAlertsEnabled = computed(() => this.alertsEnabled() ?? this.DEFAULT_ALERTS_ENABLED);
+  effectiveLocale = computed(() => {
+    const stored = this.locale();
+    if (stored && (this.SUPPORTED_LOCALES as readonly string[]).includes(stored)) return stored;
+    const browser = (navigator.language ?? 'en').slice(0, 2).toLowerCase();
+    return (this.SUPPORTED_LOCALES as readonly string[]).includes(browser) ? browser : 'en';
+  });
 
   constructor(gqlClient: GraphQLClientService) {
     this.apolloClient = gqlClient.client;
@@ -50,6 +61,15 @@ export class UserSettingsService {
         this.digestTime.set(null);
         this.digestEnabled.set(null);
         this.alertsEnabled.set(null);
+        this.locale.set(null);
+      }
+    });
+
+    // Whenever the effective locale changes, switch the transloco active lang
+    effect(() => {
+      const lang = this.effectiveLocale();
+      if (this.transloco.getActiveLang() !== lang) {
+        this.transloco.setActiveLang(lang);
       }
     });
   }
@@ -63,11 +83,12 @@ export class UserSettingsService {
           digestTime: string | null;
           digestEnabled: boolean | null;
           alertsEnabled: boolean | null;
+          locale: string | null;
         };
       }>({
         query: gql`
           query MyUserSettings {
-            myUserSettings { tempMin tempMax digestTime digestEnabled alertsEnabled }
+            myUserSettings { tempMin tempMax digestTime digestEnabled alertsEnabled locale }
           }
         `,
         fetchPolicy: 'network-only',
@@ -79,6 +100,7 @@ export class UserSettingsService {
         this.digestTime.set(s.digestTime);
         this.digestEnabled.set(s.digestEnabled);
         this.alertsEnabled.set(s.alertsEnabled);
+        this.locale.set(s.locale);
       }
     } catch (err) {
       console.error('Failed to load user settings:', err);
@@ -90,6 +112,7 @@ export class UserSettingsService {
   setDigestTime(value: string | null) { this.digestTime.set(value); return this.persist({ digestTime: value }); }
   setDigestEnabled(value: boolean | null) { this.digestEnabled.set(value); return this.persist({ digestEnabled: value }); }
   setAlertsEnabled(value: boolean | null) { this.alertsEnabled.set(value); return this.persist({ alertsEnabled: value }); }
+  setLocale(value: string | null) { this.locale.set(value); return this.persist({ locale: value }); }
 
   async resetTempRange(): Promise<void> {
     this.tempMin.set(null);
@@ -107,6 +130,7 @@ export class UserSettingsService {
     digestTime?: string | null;
     digestEnabled?: boolean | null;
     alertsEnabled?: boolean | null;
+    locale?: string | null;
   }): Promise<void> {
     try {
       const result = await this.apolloClient.mutate<{
@@ -116,17 +140,20 @@ export class UserSettingsService {
           digestTime: string | null;
           digestEnabled: boolean | null;
           alertsEnabled: boolean | null;
+          locale: string | null;
         };
       }>({
         mutation: gql`
           mutation UpdateUserSettings(
             $tempMin: Float, $tempMax: Float,
-            $digestTime: String, $digestEnabled: Boolean, $alertsEnabled: Boolean
+            $digestTime: String, $digestEnabled: Boolean, $alertsEnabled: Boolean,
+            $locale: String
           ) {
             updateUserSettings(
               tempMin: $tempMin, tempMax: $tempMax,
-              digestTime: $digestTime, digestEnabled: $digestEnabled, alertsEnabled: $alertsEnabled
-            ) { tempMin tempMax digestTime digestEnabled alertsEnabled }
+              digestTime: $digestTime, digestEnabled: $digestEnabled, alertsEnabled: $alertsEnabled,
+              locale: $locale
+            ) { tempMin tempMax digestTime digestEnabled alertsEnabled locale }
           }
         `,
         variables: args,
@@ -139,6 +166,7 @@ export class UserSettingsService {
         this.digestTime.set(s.digestTime);
         this.digestEnabled.set(s.digestEnabled);
         this.alertsEnabled.set(s.alertsEnabled);
+        this.locale.set(s.locale);
       }
     } catch (err) {
       console.error('Failed to save user settings:', err);

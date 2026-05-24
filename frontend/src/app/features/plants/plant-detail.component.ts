@@ -5,19 +5,20 @@ import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
+import { TranslocoDirective } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plant-detail',
-  imports: [PlantEditModalComponent, IconComponent, StatusBadgeComponent],
+  imports: [PlantEditModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <button (click)="back()"
                 class="flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-600 transition-colors">
-          ‹ My plants
+          ‹ {{ t('plants.myPlants') }}
         </button>
         @if (plant()) {
           <div class="relative">
@@ -31,12 +32,12 @@ import dayjs from 'dayjs';
                 <button (click)="startEdit($event)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
                   <app-icon name="pencil-square" class="w-[14px] h-[14px]" />
-                  Edit plant
+                  {{ t('plants.editPlant') }}
                 </button>
                 <button (click)="toggleMonitored($event)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
                   <app-icon [name]="plant()!.monitored ? 'pause' : 'play'" class="w-[14px] h-[14px]" />
-                  {{ plant()!.monitored ? 'Pause monitoring' : 'Resume monitoring' }}
+                  {{ plant()!.monitored ? t('plants.pauseMonitoring') : t('plants.resumeMonitoring') }}
                 </button>
               </div>
             }
@@ -63,18 +64,18 @@ import dayjs from 'dayjs';
                   {{ p.name }}
                 </h1>
                 @if (!p.monitored) {
-                  <app-status-badge label="Paused" variant="gray" />
+                  <app-status-badge [label]="t('plants.paused')" variant="gray" />
                 }
               </div>
               <p class="text-[13px] mt-0.5"
                  [class.text-gw-green-dark/70]="p.monitored"
                  [class.text-gray-500]="!p.monitored">
-                {{ getTypeLabel(p.type) }} · {{ p.count }} plant{{ p.count !== 1 ? 's' : '' }}
+                {{ getTypeLabel(p.type) }} · {{ p.count === 1 ? t('plants.plantCountOne') : t('plants.plantCount', { n: p.count }) }}
               </p>
               @if (!p.monitored) {
                 <p class="text-[11px] text-gray-400 mt-1.5 flex items-center gap-1">
                   <app-icon name="pause" class="w-3 h-3" />
-                  Monitoring is paused
+                  {{ t('plants.monitoringPaused') }}
                 </p>
               }
             </div>
@@ -84,21 +85,21 @@ import dayjs from 'dayjs';
           <div class="grid grid-cols-3 gap-2">
             <div class="bg-white rounded-xl p-3 text-center">
               <div class="text-[16px] font-semibold text-gw-green-dark">{{ plantService.getAgeShort(p) }}</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">age</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('plants.age') }}</div>
             </div>
             <div class="bg-white rounded-xl p-3 text-center">
               <div class="text-[15px] font-semibold text-gw-green-dark">{{ getPlantedLabel(p) }}</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">planted</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('plants.planted') }}</div>
             </div>
             <div class="bg-white rounded-xl p-3 text-center">
               <div class="text-[16px] font-semibold text-gw-green-dark">{{ p.count }}</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">plants</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('nav.plants') }}</div>
             </div>
           </div>
         </div>
 
       } @else {
-        <p class="text-[13px] text-gray-400">Plant not found.</p>
+        <p class="text-[13px] text-gray-400">{{ t('plants.plantNotFound') }}</p>
       }
 
     </div>

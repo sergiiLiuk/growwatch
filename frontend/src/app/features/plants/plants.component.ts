@@ -7,34 +7,35 @@ import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { TranslocoDirective } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plants',
-  imports: [FormsModule, PlantEditModalComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent],
+  imports: [FormsModule, PlantEditModalComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-[18px] font-medium text-gray-800">My plants</h1>
+          <h1 class="text-[18px] font-medium text-gray-800">{{ t('plants.myPlants') }}</h1>
           <p class="text-[11px] text-gray-400 mt-0.5">
-            {{ plants().length }} plant{{ plants().length !== 1 ? 's' : '' }}
-            @if (plants().length > 0) { · all monitored }
+            {{ plants().length === 1 ? t('plants.plantCountOne') : t('plants.plantCount', { n: plants().length }) }}
+            @if (plants().length > 0) { · {{ t('plants.allMonitored') }} }
           </p>
         </div>
         <button (click)="showForm.set(true)"
                 [disabled]="showForm()"
                 class="text-[13px] bg-white border-[0.5px] border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          + Add plant
+          {{ t('plants.addPlantButton') }}
         </button>
       </div>
 
       <!-- Empty state -->
       @if (!plantsLoading() && plants().length === 0) {
-        <app-empty-state emoji="🌱" title="No plants yet."
-                         subtitle="Add your first plant to personalise the greenhouse voice." />
+        <app-empty-state emoji="🌱" [title]="t('plants.noPlantsYet')"
+                         [subtitle]="t('plants.noPlantsSubtitle')" />
       }
 
       <!-- Plant list -->
@@ -55,7 +56,7 @@ import dayjs from 'dayjs';
                 </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
-                <app-status-badge [label]="plant.monitored ? 'Monitored' : 'Paused'"
+                <app-status-badge [label]="plant.monitored ? t('plants.monitored') : t('plants.paused')"
                                   [variant]="plant.monitored ? 'green' : 'gray'" />
                 <button (click)="$event.stopPropagation(); toggleMenu(plant.id)"
                         class="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
@@ -71,17 +72,17 @@ import dayjs from 'dayjs';
                 <button (click)="startEdit(plant)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
                   <app-icon name="pencil-square" class="w-[14px] h-[14px]" />
-                  Edit plant
+                  {{ t('plants.editPlant') }}
                 </button>
                 <button (click)="toggleMonitored(plant)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
                   <app-icon [name]="plant.monitored ? 'pause' : 'play'" class="w-[14px] h-[14px]" />
-                  {{ plant.monitored ? 'Pause monitoring' : 'Resume monitoring' }}
+                  {{ plant.monitored ? t('plants.pauseMonitoring') : t('plants.resumeMonitoring') }}
                 </button>
                 <button (click)="startDelete(plant)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gw-red hover:bg-gw-red-light transition-colors">
                   <app-icon name="trash-simple" class="w-[14px] h-[14px]" />
-                  Remove plant
+                  {{ t('plants.removePlant') }}
                 </button>
               </div>
             }
@@ -94,7 +95,7 @@ import dayjs from 'dayjs';
         <button (click)="showForm.set(true)"
                 [disabled]="showForm()"
                 class="w-full mt-3 py-4 text-[13px] text-gray-400 hover:text-gray-600 border-t border-dashed border-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-          + Add another plant
+          {{ t('plants.addAnotherPlant') }}
         </button>
       }
     </div>
@@ -102,27 +103,27 @@ import dayjs from 'dayjs';
     <!-- Add plant modal -->
     @if (showForm()) {
       <div class="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center"
-           (click)="cancelForm()">
+           (click)="cancelForm()" *transloco="let t">
         <div class="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl border-[0.5px] border-gray-200"
              (click)="$event.stopPropagation()">
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
             <div class="w-10 h-1 bg-gray-200 rounded-full"></div>
           </div>
           <div class="p-6">
-            <h2 class="text-[14px] font-medium text-gray-800 mb-1">Add a plant</h2>
-            <p class="text-[13px] text-gray-400 mb-5">Tell me what you're growing.</p>
+            <h2 class="text-[14px] font-medium text-gray-800 mb-1">{{ t('plants.addPlant') }}</h2>
+            <p class="text-[13px] text-gray-400 mb-5">{{ t('plants.addPlantSubtitle') }}</p>
             <div class="flex flex-col gap-4">
               <div>
-                <label class="block text-[11px] text-gray-400 mb-1.5">Plant name</label>
+                <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantName') }}</label>
                 <input [ngModel]="formName()" (ngModelChange)="formName.set($event)"
-                       type="text" placeholder="e.g. Big Basil"
+                       type="text" [placeholder]="t('plants.namePlaceholder')"
                        class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
               </div>
               <div>
-                <label class="block text-[11px] text-gray-400 mb-1.5">Plant type</label>
+                <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantType') }}</label>
                 <select [ngModel]="formType()" (ngModelChange)="formType.set($event)"
                         class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors bg-white">
-                  <option value="">Select a plant type…</option>
+                  <option value="">{{ t('plants.selectType') }}</option>
                   @for (group of typeGroups; track group.name) {
                     <optgroup [label]="group.name">
                       @for (opt of group.options; track opt.value) {
@@ -133,13 +134,13 @@ import dayjs from 'dayjs';
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] text-gray-400 mb-1.5">Planting date</label>
+                <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantingDate') }}</label>
                 <input [ngModel]="formDate()" (ngModelChange)="formDate.set($event)"
                        type="date"
                        class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
               </div>
               <div>
-                <label class="block text-[11px] text-gray-400 mb-1.5">How many plants?</label>
+                <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.howMany') }}</label>
                 <div class="flex items-center gap-3">
                   <button (click)="formCount.update(n => n > 1 ? n - 1 : 1)"
                           class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">−</button>
@@ -147,17 +148,17 @@ import dayjs from 'dayjs';
                   <button (click)="formCount.update(n => n + 1)"
                           class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
                 </div>
-                <p class="text-[11px] text-gray-400 mt-1.5">Used to personalise the plant voice</p>
+                <p class="text-[11px] text-gray-400 mt-1.5">{{ t('plants.countHint') }}</p>
               </div>
               <div class="flex gap-2 pt-1 pb-4">
                 <button (click)="addPlant()"
                         [disabled]="!canSubmit() || saving()"
                         class="flex-1 bg-gw-green text-white text-[13px] py-3 rounded-xl font-medium hover:bg-gw-green-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                  {{ saving() ? 'Adding…' : 'Add ' + (formName().trim() || 'plant') + ' to my greenhouse' }}
+                  {{ saving() ? t('plants.adding') : (formName().trim() ? t('plants.addToGreenhouse', { name: formName().trim() }) : t('plants.addPlantGeneric')) }}
                 </button>
                 <button (click)="cancelForm()"
                         class="px-4 text-[13px] text-gray-400 hover:text-gray-600 transition-colors">
-                  Cancel
+                  {{ t('common.cancel') }}
                 </button>
               </div>
             </div>
@@ -172,25 +173,25 @@ import dayjs from 'dayjs';
     <!-- Delete confirmation modal -->
     @if (deletePlant()) {
       <div class="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center px-4"
-           (click)="cancelDelete()">
+           (click)="cancelDelete()" *transloco="let t">
         <div class="w-full max-w-sm bg-white rounded-xl border-[0.5px] border-gray-200 p-6 text-center"
              (click)="$event.stopPropagation()">
           <div class="w-14 h-14 bg-gw-red-light rounded-full flex items-center justify-center mx-auto mb-4">
             <app-icon name="trash-simple" class="w-[22px] h-[22px] text-gw-red" />
           </div>
-          <h2 class="text-[16px] font-medium text-gray-900 mb-2">Remove {{ deletePlant()!.name }}?</h2>
+          <h2 class="text-[16px] font-medium text-gray-900 mb-2">{{ t('plants.removeTitle', { name: deletePlant()!.name }) }}</h2>
           <p class="text-[13px] text-gray-500 mb-6 leading-relaxed">
-            This will remove {{ deletePlant()!.name }} and all its history from your greenhouse.
+            {{ t('plants.removeBody', { name: deletePlant()!.name }) }}
           </p>
           <div class="flex gap-3">
             <button (click)="cancelDelete()"
                     class="flex-1 py-3 text-[13px] text-gray-700 bg-white border-[0.5px] border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-              Keep it
+              {{ t('plants.keepIt') }}
             </button>
             <button (click)="doDelete()"
                     [disabled]="deleting()"
                     class="flex-1 py-3 text-[13px] text-white bg-gw-red rounded-xl hover:bg-gw-red-dark disabled:opacity-40 transition-colors font-medium">
-              {{ deleting() ? 'Removing…' : 'Remove' }}
+              {{ deleting() ? t('plants.removing') : t('common.remove') }}
             </button>
           </div>
         </div>
