@@ -7,7 +7,7 @@ import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 
 const PLANT_EMOJI: Record<string, string> = {
@@ -189,6 +189,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
   weatherService = inject(WeatherService);
+  private transloco = inject(TranslocoService);
+  private localeKey = signal(this.transloco.getActiveLang());
   private sub?: Subscription;
   private weatherTimer?: ReturnType<typeof setInterval>;
 
@@ -202,6 +204,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Phase countdown ──────────────────────────────────────────────────────────
 
   phaseCountdown = computed<string>(() => {
+    this.localeKey();
     const w = this.weather();
     if (!w?.sunrise || !w?.sunset) return '';
     const now = new Date();
@@ -209,23 +212,24 @@ export class HomeComponent implements OnInit, OnDestroy {
     const sunset  = new Date(w.sunset);
 
     let target: Date;
-    let prefix: string;
+    let key: 'home.lightCycleStartsIn' | 'home.lightCycleEndsIn';
 
     if (now < sunrise) {
-      target = sunrise; prefix = 'Light cycle starts in';
+      target = sunrise; key = 'home.lightCycleStartsIn';
     } else if (now < sunset) {
-      target = sunset;  prefix = 'Light cycle ends in';
+      target = sunset;  key = 'home.lightCycleEndsIn';
     } else {
       // After today's sunset — calculate tomorrow's sunrise by adding 24h as approximation
       target = new Date(sunrise.getTime() + 24 * 60 * 60 * 1000);
-      prefix = 'Light cycle starts in';
+      key = 'home.lightCycleStartsIn';
     }
 
     const diff = target.getTime() - now.getTime();
     if (diff <= 0) return '';
     const h = Math.floor(diff / 3_600_000);
     const m = Math.floor((diff % 3_600_000) / 60_000);
-    return h > 0 ? `${prefix} ${h}h ${m}m` : `${prefix} ${m}m`;
+    const time = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    return this.transloco.translate(key, { time });
   });
 
   // ── Mood ─────────────────────────────────────────────────────────────────────
@@ -242,38 +246,41 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly SILENT_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2h
 
   mood = computed<MoodInfo>(() => {
+    this.localeKey();
+    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
     const live = this.latestData();
 
     // No live reading — split between "just waiting" and "truly silent for hours"
     if (!live) {
       const h = this.hourlyData()[0];
       if (!h) {
-        return { mood: 'waiting', label: 'Waiting for data', description: 'No live reading yet' };
+        return { mood: 'waiting', label: t('mood.waiting'), description: t('mood.waitingDesc') };
       }
       const ageMs = Date.now() - new Date(h.hour).getTime();
       if (ageMs > this.SILENT_THRESHOLD_MS) {
-        return { mood: 'offline', label: 'Sensor silent', description: `Last reading ${this.formatAge(ageMs)}` };
+        return { mood: 'offline', label: t('mood.sensorSilent'), description: t('mood.sensorSilentDesc', { ago: this.formatAge(ageMs) }) };
       }
-      return { mood: 'waiting', label: 'Waiting for data', description: 'No live reading yet' };
+      return { mood: 'waiting', label: t('mood.waiting'), description: t('mood.waitingDesc') };
     }
 
     const base = this.sensorService.getMood(live);
     const sr = this.weather()?.sunrise;
     const ss = this.weather()?.sunset;
     if (base.mood === 'stressed' && isNight(sr, ss))
-      return { mood: 'good', label: 'Resting', description: 'Low light is expected at night' };
+      return { mood: 'good', label: t('mood.resting'), description: t('mood.restingDesc') };
     if (base.mood === 'stressed' && isDawnOrDusk(sr, ss))
-      return { mood: 'good', label: 'Low light', description: 'Light levels are low for this time of day' };
+      return { mood: 'good', label: t('mood.lowLight'), description: t('mood.lowLightDesc') };
     return base;
   });
 
   private formatAge(ms: number): string {
+    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
     const minutes = Math.floor(ms / 60_000);
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 60) return t('home.minutesAgo', { n: minutes });
     const hours = Math.floor(ms / 3_600_000);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) return t('home.hoursAgo', { n: hours });
     const days = Math.floor(ms / 86_400_000);
-    return `${days}d ago`;
+    return t('home.daysAgo', { n: days });
   }
 
   moodBg = computed(() => {
@@ -293,26 +300,29 @@ export class HomeComponent implements OnInit, OnDestroy {
   });
 
   voiceMessage = computed(() => {
+    this.localeKey();
+    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
     const d = this.latestData();
     const plants = this.monitoredPlants();
     const w = this.weather();
     const names = plants.map(p => p.name).join(', ');
-    if (!d) return 'Waiting for sensor data.';
+    if (!d) return t('voice.waitingSensor');
     const s = d.lightStatus?.status;
     if (s === 'TOO_LOW') {
       const sr = w?.sunrise; const ss = w?.sunset;
-      if (isNight(sr, ss)) return 'Low light at night is expected.';
-      if (isDawnOrDusk(sr, ss)) return new Date().getHours() < 12 ? 'Light is low for early morning.' : 'Light dropping as expected.';
-      if (w && w.cloudCover >= 65) return `Heavy cloud cover (${w.cloudCover}%) limiting light for ${names}.`;
-      if (w && w.cloudCover >= 35) return `Partial cloud cover reducing light for ${names}.`;
-      return `Light below optimal for ${names}. Consider supplemental lighting.`;
+      if (isNight(sr, ss)) return t('voice.lowLightNight');
+      if (isDawnOrDusk(sr, ss)) return new Date().getHours() < 12 ? t('voice.lowLightMorning') : t('voice.lowLightDropping');
+      if (w && w.cloudCover >= 65) return t('voice.heavyCloudCover', { cover: w.cloudCover, plants: names });
+      if (w && w.cloudCover >= 35) return t('voice.partialCloudCover', { plants: names });
+      return t('voice.lightBelowOptimal', { plants: names });
     }
-    if (s === 'TOO_HIGH') return `Light exceeds optimal for ${names}. Consider shade.`;
+    if (s === 'TOO_HIGH') return t('voice.lightExceedsOptimal', { plants: names });
     if (s === 'OPTIMAL') {
-      const note = d.humidity != null && d.humidity < 50 ? ' Humidity below 50% — consider misting.' : '';
-      return `Light optimal for ${names}.${note}`;
+      return d.humidity != null && d.humidity < 50
+        ? t('voice.lightOptimalLowHum', { plants: names })
+        : t('voice.lightOptimal', { plants: names });
     }
-    return `Monitoring ${names}.`;
+    return t('voice.monitoring', { plants: names });
   });
 
   // ── Sensor values ─────────────────────────────────────────────────────────────
@@ -397,6 +407,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Activity feed ─────────────────────────────────────────────────────────────
 
   activityFeed = computed<ActivityEvent[]>(() => {
+    this.localeKey();
     const data = this.chronological();
     if (data.length < 2) return [];
 
@@ -410,17 +421,17 @@ export class HomeComponent implements OnInit, OnDestroy {
       // CO₂ threshold crossings
       if (prev.avgCo2 != null && curr.avgCo2 != null) {
         if (prev.avgCo2 <= 1500 && curr.avgCo2 > 1500)
-          events.push({ time, label: 'CO₂ rising trend detected', ok: false });
+          events.push({ time, label: this.transloco.translate('home.co2Rising'), ok: false });
         else if (prev.avgCo2 > 1500 && curr.avgCo2 <= 1500)
-          events.push({ time, label: 'CO₂ back to normal', ok: true });
+          events.push({ time, label: this.transloco.translate('home.co2Normal'), ok: true });
       }
 
       // Light on/off transitions
       if (prev.avgLight != null && curr.avgLight != null) {
         if (prev.avgLight < 50 && curr.avgLight >= 50)
-          events.push({ time, label: 'Light cycle started', ok: true });
+          events.push({ time, label: this.transloco.translate('home.lightCycleStarted'), ok: true });
         else if (prev.avgLight >= 50 && curr.avgLight < 50)
-          events.push({ time, label: 'Light cycle ended', ok: true });
+          events.push({ time, label: this.transloco.translate('home.lightCycleEnded'), ok: true });
       }
     }
 
@@ -429,7 +440,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       const first = data[0];
       const allOk = (first.avgCo2 == null || first.avgCo2 <= 1500) &&
                     (first.avgTemperature == null || (first.avgTemperature >= 15 && first.avgTemperature <= 30));
-      events.push({ time: this.fmtHour(first.hour), label: allOk ? 'All sensors in range' : 'Monitoring started', ok: allOk });
+      events.push({ time: this.fmtHour(first.hour), label: allOk ? this.transloco.translate('home.allInRange') : this.transloco.translate('home.monitoringStarted'), ok: allOk });
     }
 
     return events.sort((a, b) => b.time.localeCompare(a.time)).slice(0, 5);
@@ -453,13 +464,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   plantStatus(plant: Plant): string {
     if (plant.monitored) {
       const m = this.mood().mood;
-      if (m === 'thriving') return 'Thriving';
-      if (m === 'good') return 'Healthy';
-      if (m === 'stressed') return 'Stressed';
-      if (m === 'critical') return 'Critical';
+      if (m === 'thriving') return this.transloco.translate('mood.thriving');
+      if (m === 'good') return this.transloco.translate('mood.healthy');
+      if (m === 'stressed') return this.transloco.translate('mood.stressed');
+      if (m === 'critical') return this.transloco.translate('mood.critical');
     }
     const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
-    return `Day ${days}`;
+    return this.transloco.translate('home.dayCounter', { n: days });
   }
 
   plantStatusClass(plant: Plant): string {
@@ -474,6 +485,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
   ngOnInit() {
+    this.transloco.langChanges$.subscribe(l => this.localeKey.set(l));
     this.sensorService.getLatestSensorData().subscribe(d => this.latestData.set(d));
     this.sub = this.sensorService.subscribeToSensorData().subscribe(d => { if (d) this.latestData.set(d); });
     this.sensorService.getHourlyData(24).subscribe(d => this.hourlyData.set(d));

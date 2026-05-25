@@ -3,6 +3,7 @@ import { ApolloClient, gql } from '@apollo/client/core';
 import { Observable, retry, timer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 import { UserSettingsService } from './user-settings.service';
+import { TranslocoService } from '@jsverse/transloco';
 
 export const PLANT_LIGHT_RANGES: Record<string, { min: number; max: number; label: string }> = {
   TOMATO:     { min: 20000, max: 50000, label: 'Tomato' },
@@ -82,6 +83,7 @@ export interface MoodInfo {
 export class SensorService {
   private apolloClient: ApolloClient;
   private userSettings = inject(UserSettingsService);
+  private transloco = inject(TranslocoService);
 
   constructor(gqlClient: GraphQLClientService) {
     this.apolloClient = gqlClient.client;
@@ -206,7 +208,8 @@ export class SensorService {
   }
 
   getMood(data: SensorData | null): MoodInfo {
-    if (!data) return { mood: 'waiting', label: 'Waiting for data', description: 'No live reading yet' };
+    const t = (key: string) => this.transloco.translate(key);
+    if (!data) return { mood: 'waiting', label: t('mood.waiting'), description: t('mood.waitingDesc') };
 
     const status = data.lightStatus?.status;
     const humidityOk = data.humidity == null || (data.humidity >= 40 && data.humidity <= 80);
@@ -215,14 +218,14 @@ export class SensorService {
     const tempOk = data.temperature == null || (data.temperature >= tempMin && data.temperature <= tempMax);
 
     if (status === 'OPTIMAL' && humidityOk && tempOk) {
-      return { mood: 'thriving', label: 'Optimal', description: 'All conditions within range' };
+      return { mood: 'thriving', label: t('mood.optimal'), description: t('mood.optimalDesc') };
     }
     if (status === 'TOO_LOW' || !humidityOk || !tempOk) {
-      return { mood: 'stressed', label: 'Attention needed', description: 'One or more conditions are outside the optimal range' };
+      return { mood: 'stressed', label: t('mood.attentionNeeded'), description: t('mood.attentionDesc') };
     }
     if (status === 'TOO_HIGH') {
-      return { mood: 'good', label: 'Acceptable', description: 'Light is above optimal — monitor closely' };
+      return { mood: 'good', label: t('mood.acceptable'), description: t('mood.acceptableHighDesc') };
     }
-    return { mood: 'good', label: 'Acceptable', description: 'Conditions are within acceptable range' };
+    return { mood: 'good', label: t('mood.acceptable'), description: t('mood.acceptableDesc') };
   }
 }
