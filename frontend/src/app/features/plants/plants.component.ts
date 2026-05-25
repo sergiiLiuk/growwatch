@@ -1,7 +1,7 @@
 import { Component, signal, inject, computed, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { PlantService, Plant, PlantType, PLANT_TYPE_OPTIONS } from '../../core/services/plant.service';
+import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
@@ -125,9 +125,9 @@ import dayjs from 'dayjs';
                         class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors bg-white">
                   <option value="">{{ t('plants.selectType') }}</option>
                   @for (group of typeGroups; track group.name) {
-                    <optgroup [label]="group.name">
+                    <optgroup [label]="t('plantTypeGroups.' + group.name)">
                       @for (opt of group.options; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
+                        <option [value]="opt.value">{{ t('plantTypes.' + opt.value) }}</option>
                       }
                     </optgroup>
                   }
@@ -249,7 +249,7 @@ export class PlantsComponent {
   }
 
   getTypeLabel(type: PlantType): string {
-    return PLANT_TYPE_OPTIONS.find(o => o.value === type)?.label ?? type;
+    return this.plantService.getTypeLabel(type);
   }
 
   addPlant() {

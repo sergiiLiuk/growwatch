@@ -1,6 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
 import { Observable } from 'rxjs';
+import { TranslocoService } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 import { GraphQLClientService } from './graphql-client.service';
 
@@ -93,12 +94,18 @@ interface RawPlant { id: string; name: string; type: string; plantedDate: string
 @Injectable({ providedIn: 'root' })
 export class PlantService {
   private client: ApolloClient;
+  private transloco = inject(TranslocoService);
   plants = signal<Plant[]>([]);
   plantsLoading = signal(true);
 
   constructor(gqlClient: GraphQLClientService) {
     this.client = gqlClient.client;
     this.loadPlants();
+  }
+
+  /** Localised plant type label, e.g. TOMATO → "Tomato" / "Tomat". */
+  getTypeLabel(type: PlantType | string): string {
+    return this.transloco.translate(`plantTypes.${type}`);
   }
 
   private loadPlants() {
@@ -192,20 +199,20 @@ export class PlantService {
 
   getAgeLabel(plant: Plant): string {
     const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
-    if (days < 7) return `${days} day${days !== 1 ? 's' : ''} old`;
+    if (days < 7) return days === 1 ? this.transloco.translate('age.dayOneOld') : this.transloco.translate('age.daysOld', { n: days });
     const weeks = Math.floor(days / 7);
-    if (weeks < 8) return `${weeks} week${weeks !== 1 ? 's' : ''} old`;
+    if (weeks < 8) return weeks === 1 ? this.transloco.translate('age.weekOneOld') : this.transloco.translate('age.weeksOld', { n: weeks });
     const months = Math.floor(days / 30);
-    return `${months} month${months !== 1 ? 's' : ''} old`;
+    return months === 1 ? this.transloco.translate('age.monthOneOld') : this.transloco.translate('age.monthsOld', { n: months });
   }
 
   getAgeShort(plant: Plant): string {
     const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
-    if (days < 7) return `${days} day${days !== 1 ? 's' : ''}`;
+    if (days < 7) return days === 1 ? this.transloco.translate('age.dayOne') : this.transloco.translate('age.days', { n: days });
     const weeks = Math.floor(days / 7);
-    if (weeks < 8) return `${weeks} week${weeks !== 1 ? 's' : ''}`;
+    if (weeks < 8) return weeks === 1 ? this.transloco.translate('age.weekOne') : this.transloco.translate('age.weeks', { n: weeks });
     const months = Math.floor(days / 30);
-    return `${months} month${months !== 1 ? 's' : ''}`;
+    return months === 1 ? this.transloco.translate('age.monthOne') : this.transloco.translate('age.months', { n: months });
   }
 
   readonly typeGroups = Array.from(

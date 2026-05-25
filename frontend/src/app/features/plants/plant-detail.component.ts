@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PlantService, Plant, PlantType, PLANT_TYPE_OPTIONS } from '../../core/services/plant.service';
+import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
@@ -136,7 +136,7 @@ export class PlantDetailComponent {
   }
 
   getTypeLabel(type: PlantType): string {
-    return PLANT_TYPE_OPTIONS.find(o => o.value === type)?.label ?? type;
+    return this.plantService.getTypeLabel(type);
   }
 
   getPlantedLabel(plant: Plant): string {

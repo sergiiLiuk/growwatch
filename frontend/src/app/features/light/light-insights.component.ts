@@ -7,7 +7,7 @@ import { WeatherService } from '../../core/services/weather.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
 import { isNight, isDawnOrDusk, isOffPeak } from '../../core/utils/time';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 interface DayBar {
   dateStr: string;
@@ -171,15 +171,15 @@ interface DayBar {
             </div>
             <!-- Week total -->
             <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-              <span class="text-[11px] text-gray-400">Week total</span>
+              <span class="text-[11px] text-gray-400">{{ t('insights.weekTotal') }}</span>
               <span class="text-[12px] font-medium text-gray-700">{{ weekTotalStr() }}</span>
             </div>
           } @else {
             <div class="py-10 text-center">
               <div class="text-3xl mb-3">☀️</div>
-              <p class="text-[13px] text-gray-500 font-medium">No data for this week</p>
+              <p class="text-[13px] text-gray-500 font-medium">{{ t('insights.noWeekData') }}</p>
               <p class="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                Hourly snapshots accumulate over time.<br>Check back after the sensor has been running.
+                {{ t('insights.noWeekDataHint') }}
               </p>
             </div>
           }
@@ -195,6 +195,8 @@ export class LightInsightsComponent implements OnDestroy {
   private plantService = inject(PlantService);
   private weatherService = inject(WeatherService);
   private router = inject(Router);
+  private transloco = inject(TranslocoService);
+  private localeKey = signal(this.transloco.getActiveLang());
   private weekSub?: Subscription;
   private liveSub?: Subscription;
   private tickTimer?: ReturnType<typeof setInterval>;
@@ -226,13 +228,13 @@ export class LightInsightsComponent implements OnDestroy {
   });
 
   lastSeenLabel = computed(() => {
-    this.tick(); // depend on tick so the label keeps refreshing while no new readings arrive
+    this.tick(); this.localeKey();
     const d = this.latestData();
     if (!d) return '—';
     const secs = Math.floor((Date.now() - new Date(d.timestamp).getTime()) / 1000);
-    if (secs < 10) return 'just now';
-    if (secs < 60) return `${secs}s ago`;
-    return `${Math.floor(secs / 60)}m ago`;
+    if (secs < 10) return this.transloco.translate('insights.justNow');
+    if (secs < 60) return this.transloco.translate('insights.secondsAgo', { n: secs });
+    return this.transloco.translate('insights.minutesAgo', { n: Math.floor(secs / 60) });
   });
 
   weekLabel = computed(() => {
@@ -328,6 +330,8 @@ export class LightInsightsComponent implements OnDestroy {
   });
 
   constructor() {
+    this.transloco.langChanges$.subscribe(l => this.localeKey.set(l));
+
     // Today's data — last 48 h is enough; todayTotal filters by date
     this.sensorService.getHourlyData(48).subscribe(d => this.todayHourlyData.set(d));
 
@@ -400,21 +404,23 @@ export class LightInsightsComponent implements OnDestroy {
   isOffPeak(): boolean { const { sr, ss } = this.solar(); return isOffPeak(sr, ss); }
 
   readingSubLabel = computed(() => {
+    this.localeKey();
     const d = this.latestData();
     if (!d) return '';
     const { sr, ss } = this.solar();
-    if (d.lightStatus.status === 'TOO_LOW' && isNight(sr, ss)) return 'Low light is expected at night';
-    if (d.lightStatus.status === 'TOO_LOW' && isDawnOrDusk(sr, ss)) return 'Light is low for this time of day';
+    if (d.lightStatus.status === 'TOO_LOW' && isNight(sr, ss)) return this.transloco.translate('insights.lowLightAtNight');
+    if (d.lightStatus.status === 'TOO_LOW' && isDawnOrDusk(sr, ss)) return this.transloco.translate('insights.lowLightForTime');
     return d.lightStatus.message;
   });
 
   displayBadgeLabel = computed(() => {
+    this.localeKey();
     const d = this.latestData();
     if (!d) return '';
     const s = d.lightStatus.status;
     const { sr, ss } = this.solar();
-    if (s === 'TOO_LOW' && isNight(sr, ss)) return 'Night';
-    if (s === 'TOO_LOW' && isDawnOrDusk(sr, ss)) return 'Low light';
+    if (s === 'TOO_LOW' && isNight(sr, ss)) return this.transloco.translate('insights.night');
+    if (s === 'TOO_LOW' && isDawnOrDusk(sr, ss)) return this.transloco.translate('insights.lowLightBadge');
     return this.statusLabel(s);
   });
 
@@ -438,9 +444,9 @@ export class LightInsightsComponent implements OnDestroy {
   });
 
   statusLabel(status: string): string {
-    if (status === 'OPTIMAL')  return 'Optimal';
-    if (status === 'TOO_LOW')  return 'Too low';
-    if (status === 'TOO_HIGH') return 'Too high';
+    if (status === 'OPTIMAL')  return this.transloco.translate('insights.optimal');
+    if (status === 'TOO_LOW')  return this.transloco.translate('insights.tooLow');
+    if (status === 'TOO_HIGH') return this.transloco.translate('insights.tooHigh');
     return status;
   }
 

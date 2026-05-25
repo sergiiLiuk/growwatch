@@ -31,9 +31,9 @@ import dayjs from 'dayjs';
                 <select [ngModel]="plant()!.type" disabled
                         class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none bg-gray-50 text-gray-400 cursor-not-allowed">
                   @for (group of typeGroups; track group.name) {
-                    <optgroup [label]="group.name">
+                    <optgroup [label]="t('plantTypeGroups.' + group.name)">
                       @for (opt of group.options; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
+                        <option [value]="opt.value">{{ t('plantTypes.' + opt.value) }}</option>
                       }
                     </optgroup>
                   }

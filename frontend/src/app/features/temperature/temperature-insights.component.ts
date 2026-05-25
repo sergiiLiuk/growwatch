@@ -5,6 +5,7 @@ import { SensorService, SensorData, HourlySensorData } from '../../core/services
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 // this.userSettings.effectiveTempMin() / this.userSettings.effectiveTempMax() now come from UserSettingsService.effectiveTempMin/Max
 // (defaults 15 / 30 if the user hasn't set a custom range)
@@ -35,23 +36,24 @@ interface OptimalLine {
 
 @Component({
   selector: 'app-temperature-insights',
-  imports: [PageContainerComponent, StatusBadgeComponent],
+  imports: [PageContainerComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
     <app-page-container>
+      <ng-container *transloco="let t">
 
       <button (click)="back()"
               class="flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-600 transition-colors mb-6">
-        ‹ Home
+        ‹ {{ t('nav.home') }}
       </button>
 
       <div class="mb-6">
-        <h1 class="text-[18px] font-medium text-gray-800">Temperature insights</h1>
-        <p class="text-[11px] text-gray-400 mt-0.5">Live reading and daily/weekly history</p>
+        <h1 class="text-[18px] font-medium text-gray-800">{{ t('insights.tempTitle') }}</h1>
+        <p class="text-[11px] text-gray-400 mt-0.5">{{ t('insights.tempSubtitle') }}</p>
       </div>
 
       <!-- Live reading -->
       <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Live reading</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('insights.liveReading') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
           @if (liveTemp() != null) {
             <div class="flex items-start justify-between mb-3">
@@ -67,11 +69,11 @@ interface OptimalLine {
               <app-status-badge [label]="badgeLabel()" [variant]="badgeVariant()"
                                 class="mt-1 shrink-0" />
             </div>
-            <div class="text-[11px] text-gray-400 mt-3">Updated {{ lastSeenLabel() }}</div>
+            <div class="text-[11px] text-gray-400 mt-3">{{ t('insights.updated') }} {{ lastSeenLabel() }}</div>
           } @else {
             <div class="flex items-center gap-3 py-2">
               <div class="w-2 h-2 rounded-full bg-gray-300 shrink-0 animate-pulse"></div>
-              <span class="text-[13px] text-gray-400">Waiting for sensor data…</span>
+              <span class="text-[13px] text-gray-400">{{ t('insights.waitingForData') }}</span>
             </div>
           }
         </div>
@@ -79,22 +81,22 @@ interface OptimalLine {
 
       <!-- Today's range -->
       <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">Today</div>
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('insights.today') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
-          @if (todayStats(); as t) {
+          @if (todayStats(); as tt) {
             <div class="flex items-baseline gap-1.5 mb-1">
               <span class="text-[28px] font-semibold text-gray-900 leading-none tabular-nums">
-                {{ t.avg.toFixed(1) }}
+                {{ tt.avg.toFixed(1) }}
               </span>
               <span class="text-[13px] text-gray-400">°C avg</span>
             </div>
             <div class="text-[12px] text-gray-400">
-              Min {{ t.min.toFixed(1) }}°C · Max {{ t.max.toFixed(1) }}°C ·
-              {{ t.hourCount }} {{ t.hourCount === 1 ? 'hour' : 'hours' }} logged
+              {{ t('settings.min') }} {{ tt.min.toFixed(1) }}°C · {{ t('settings.max') }} {{ tt.max.toFixed(1) }}°C ·
+              {{ tt.hourCount === 1 ? t('insights.hourLogged', { n: tt.hourCount }) : t('insights.hoursLogged', { n: tt.hourCount }) }}
             </div>
           } @else {
-            <p class="text-[13px] text-gray-400 py-1">No hourly data yet for today.</p>
-            <p class="text-[11px] text-gray-300 mt-0.5">Hourly snapshots are saved at the start of each hour.</p>
+            <p class="text-[13px] text-gray-400 py-1">{{ t('insights.noHourlyData') }}</p>
+            <p class="text-[11px] text-gray-300 mt-0.5">{{ t('insights.hourlySnapshotsHint') }}</p>
           }
         </div>
       </div>
@@ -102,7 +104,7 @@ interface OptimalLine {
       <!-- Week history chart -->
       <div>
         <div class="flex items-center justify-between mb-2">
-          <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wide">Week history</div>
+          <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{{ t('insights.weekHistory') }}</div>
           <div class="flex items-center gap-1">
             <button (click)="prevWeek()"
                     [disabled]="weekOffset() <= -12"
@@ -188,27 +190,28 @@ interface OptimalLine {
             </div>
             <!-- Week summary -->
             <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-y-1">
-              <span class="text-[11px] text-gray-400">Week avg</span>
+              <span class="text-[11px] text-gray-400">{{ t('insights.weekAvg') }}</span>
               <span class="text-[12px] font-medium text-gray-700">{{ weekAvgStr() }}</span>
             </div>
             @if (weekExtremes(); as e) {
               <div class="mt-1 flex items-center justify-between text-[11px] text-gray-400">
-                <span>Coldest {{ e.coldLabel }} · {{ e.coldStr }}</span>
-                <span>Hottest {{ e.hotLabel }} · {{ e.hotStr }}</span>
+                <span>{{ t('insights.coldest') }} {{ e.coldLabel }} · {{ e.coldStr }}</span>
+                <span>{{ t('insights.hottest') }} {{ e.hotLabel }} · {{ e.hotStr }}</span>
               </div>
             }
           } @else {
             <div class="py-10 text-center">
               <div class="text-3xl mb-3">🌡️</div>
-              <p class="text-[13px] text-gray-500 font-medium">No data for this week</p>
+              <p class="text-[13px] text-gray-500 font-medium">{{ t('insights.noWeekData') }}</p>
               <p class="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                Hourly snapshots accumulate over time.<br>Check back after the sensor has been running.
+                {{ t('insights.noWeekDataHint') }}
               </p>
             </div>
           }
         </div>
       </div>
 
+      </ng-container>
     </app-page-container>
   `,
 })
@@ -216,6 +219,8 @@ export class TemperatureInsightsComponent implements OnDestroy {
   private sensorService = inject(SensorService);
   private router = inject(Router);
   private userSettings = inject(UserSettingsService);
+  private transloco = inject(TranslocoService);
+  private localeKey = signal(this.transloco.getActiveLang());
   private weekSub?: Subscription;
   private liveSub?: Subscription;
   private tickTimer?: ReturnType<typeof setInterval>;
@@ -241,29 +246,33 @@ export class TemperatureInsightsComponent implements OnDestroy {
   });
 
   badgeLabel = computed(() => {
+    this.localeKey();
     const t = this.liveTemp();
     if (t == null) return '';
-    if (t < this.userSettings.effectiveTempMin()) return 'Too cold';
-    if (t > this.userSettings.effectiveTempMax()) return 'Too warm';
-    return 'Optimal';
+    if (t < this.userSettings.effectiveTempMin()) return this.transloco.translate('insights.tooCold');
+    if (t > this.userSettings.effectiveTempMax()) return this.transloco.translate('insights.tooWarm');
+    return this.transloco.translate('insights.optimal');
   });
 
   readingSubLabel = computed(() => {
+    this.localeKey();
     const t = this.liveTemp();
     if (t == null) return '';
-    if (t < this.userSettings.effectiveTempMin()) return `Below ${this.userSettings.effectiveTempMin()}°C optimal floor`;
-    if (t > this.userSettings.effectiveTempMax()) return `Above ${this.userSettings.effectiveTempMax()}°C optimal ceiling`;
-    return `Within ${this.userSettings.effectiveTempMin()}–${this.userSettings.effectiveTempMax()}°C optimal range`;
+    const min = this.userSettings.effectiveTempMin();
+    const max = this.userSettings.effectiveTempMax();
+    if (t < min) return this.transloco.translate('insights.belowFloor', { min });
+    if (t > max) return this.transloco.translate('insights.aboveCeiling', { max });
+    return this.transloco.translate('insights.withinRange', { min, max });
   });
 
   lastSeenLabel = computed(() => {
-    this.tick(); // depend on tick so the label keeps refreshing while no new readings arrive
+    this.tick(); this.localeKey();
     const d = this.latestData();
     if (!d) return '—';
     const secs = Math.floor((Date.now() - new Date(d.timestamp).getTime()) / 1000);
-    if (secs < 10) return 'just now';
-    if (secs < 60) return `${secs}s ago`;
-    return `${Math.floor(secs / 60)}m ago`;
+    if (secs < 10) return this.transloco.translate('insights.justNow');
+    if (secs < 60) return this.transloco.translate('insights.secondsAgo', { n: secs });
+    return this.transloco.translate('insights.minutesAgo', { n: Math.floor(secs / 60) });
   });
 
   // ── Today's range ────────────────────────────────────────────────────────────
@@ -357,8 +366,13 @@ export class TemperatureInsightsComponent implements OnDestroy {
       }
 
       const tooltip = r.hasData && !r.isFuture && r.min != null && r.max != null && r.avg != null
-        ? `${r.day.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}: avg ${r.avg.toFixed(1)}°C, range ${r.min.toFixed(1)}–${r.max.toFixed(1)}°C`
-        : r.isFuture ? 'Upcoming' : 'No data';
+        ? this.transloco.translate('insights.dayTooltip', {
+            day: r.day.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }),
+            avg: r.avg.toFixed(1),
+            min: r.min.toFixed(1),
+            max: r.max.toFixed(1),
+          })
+        : r.isFuture ? this.transloco.translate('insights.upcoming') : this.transloco.translate('insights.noData');
 
       return {
         dateStr: r.day.toISOString().split('T')[0],
@@ -398,6 +412,7 @@ export class TemperatureInsightsComponent implements OnDestroy {
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
   constructor() {
+    this.transloco.langChanges$.subscribe(l => this.localeKey.set(l));
     this.sensorService.getHourlyData(48).subscribe(d => this.todayHourlyData.set(d));
 
     this.sensorService.getLatestSensorData().subscribe(d => this.latestData.set(d));
