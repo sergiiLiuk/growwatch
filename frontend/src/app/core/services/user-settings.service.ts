@@ -25,6 +25,8 @@ export class UserSettingsService {
 
   readonly DEFAULT_TEMP_MIN = 15;
   readonly DEFAULT_TEMP_MAX = 30;
+  readonly DEFAULT_HUMIDITY_MIN = 40;
+  readonly DEFAULT_HUMIDITY_MAX = 80;
   readonly DEFAULT_DIGEST_TIME = '20:00';
   readonly DEFAULT_DIGEST_ENABLED = true;
   readonly DEFAULT_ALERTS_ENABLED = true;
@@ -32,6 +34,8 @@ export class UserSettingsService {
 
   tempMin = signal<number | null>(null);
   tempMax = signal<number | null>(null);
+  humidityMin = signal<number | null>(null);
+  humidityMax = signal<number | null>(null);
   digestTime = signal<string | null>(null);
   digestEnabled = signal<boolean | null>(null);
   alertsEnabled = signal<boolean | null>(null);
@@ -39,6 +43,8 @@ export class UserSettingsService {
 
   effectiveTempMin = computed(() => this.tempMin() ?? this.DEFAULT_TEMP_MIN);
   effectiveTempMax = computed(() => this.tempMax() ?? this.DEFAULT_TEMP_MAX);
+  effectiveHumidityMin = computed(() => this.humidityMin() ?? this.DEFAULT_HUMIDITY_MIN);
+  effectiveHumidityMax = computed(() => this.humidityMax() ?? this.DEFAULT_HUMIDITY_MAX);
   effectiveDigestTime = computed(() => this.digestTime() ?? this.DEFAULT_DIGEST_TIME);
   effectiveDigestEnabled = computed(() => this.digestEnabled() ?? this.DEFAULT_DIGEST_ENABLED);
   effectiveAlertsEnabled = computed(() => this.alertsEnabled() ?? this.DEFAULT_ALERTS_ENABLED);
@@ -58,6 +64,8 @@ export class UserSettingsService {
       } else {
         this.tempMin.set(null);
         this.tempMax.set(null);
+        this.humidityMin.set(null);
+        this.humidityMax.set(null);
         this.digestTime.set(null);
         this.digestEnabled.set(null);
         this.alertsEnabled.set(null);
@@ -80,6 +88,8 @@ export class UserSettingsService {
         myUserSettings: {
           tempMin: number | null;
           tempMax: number | null;
+          humidityMin: number | null;
+          humidityMax: number | null;
           digestTime: string | null;
           digestEnabled: boolean | null;
           alertsEnabled: boolean | null;
@@ -88,7 +98,7 @@ export class UserSettingsService {
       }>({
         query: gql`
           query MyUserSettings {
-            myUserSettings { tempMin tempMax digestTime digestEnabled alertsEnabled locale }
+            myUserSettings { tempMin tempMax humidityMin humidityMax digestTime digestEnabled alertsEnabled locale }
           }
         `,
         fetchPolicy: 'network-only',
@@ -97,6 +107,8 @@ export class UserSettingsService {
       if (s) {
         this.tempMin.set(s.tempMin);
         this.tempMax.set(s.tempMax);
+        this.humidityMin.set(s.humidityMin);
+        this.humidityMax.set(s.humidityMax);
         this.digestTime.set(s.digestTime);
         this.digestEnabled.set(s.digestEnabled);
         this.alertsEnabled.set(s.alertsEnabled);
@@ -109,6 +121,8 @@ export class UserSettingsService {
 
   setTempMin(value: number | null) { this.tempMin.set(value); return this.persist({ tempMin: value }); }
   setTempMax(value: number | null) { this.tempMax.set(value); return this.persist({ tempMax: value }); }
+  setHumidityMin(value: number | null) { this.humidityMin.set(value); return this.persist({ humidityMin: value }); }
+  setHumidityMax(value: number | null) { this.humidityMax.set(value); return this.persist({ humidityMax: value }); }
   setDigestTime(value: string | null) { this.digestTime.set(value); return this.persist({ digestTime: value }); }
   setDigestEnabled(value: boolean | null) { this.digestEnabled.set(value); return this.persist({ digestEnabled: value }); }
   setAlertsEnabled(value: boolean | null) { this.alertsEnabled.set(value); return this.persist({ alertsEnabled: value }); }
@@ -120,6 +134,12 @@ export class UserSettingsService {
     return this.persist({ tempMin: null, tempMax: null });
   }
 
+  async resetHumidityRange(): Promise<void> {
+    this.humidityMin.set(null);
+    this.humidityMax.set(null);
+    return this.persist({ humidityMin: null, humidityMax: null });
+  }
+
   isTempOutOfRange(temp: number): boolean {
     return temp < this.effectiveTempMin() || temp > this.effectiveTempMax();
   }
@@ -127,6 +147,8 @@ export class UserSettingsService {
   private async persist(args: {
     tempMin?: number | null;
     tempMax?: number | null;
+    humidityMin?: number | null;
+    humidityMax?: number | null;
     digestTime?: string | null;
     digestEnabled?: boolean | null;
     alertsEnabled?: boolean | null;
@@ -137,6 +159,8 @@ export class UserSettingsService {
         updateUserSettings: {
           tempMin: number | null;
           tempMax: number | null;
+          humidityMin: number | null;
+          humidityMax: number | null;
           digestTime: string | null;
           digestEnabled: boolean | null;
           alertsEnabled: boolean | null;
@@ -146,14 +170,16 @@ export class UserSettingsService {
         mutation: gql`
           mutation UpdateUserSettings(
             $tempMin: Float, $tempMax: Float,
+            $humidityMin: Float, $humidityMax: Float,
             $digestTime: String, $digestEnabled: Boolean, $alertsEnabled: Boolean,
             $locale: String
           ) {
             updateUserSettings(
               tempMin: $tempMin, tempMax: $tempMax,
+              humidityMin: $humidityMin, humidityMax: $humidityMax,
               digestTime: $digestTime, digestEnabled: $digestEnabled, alertsEnabled: $alertsEnabled,
               locale: $locale
-            ) { tempMin tempMax digestTime digestEnabled alertsEnabled locale }
+            ) { tempMin tempMax humidityMin humidityMax digestTime digestEnabled alertsEnabled locale }
           }
         `,
         variables: args,
@@ -163,6 +189,8 @@ export class UserSettingsService {
       if (s) {
         this.tempMin.set(s.tempMin);
         this.tempMax.set(s.tempMax);
+        this.humidityMin.set(s.humidityMin);
+        this.humidityMax.set(s.humidityMax);
         this.digestTime.set(s.digestTime);
         this.digestEnabled.set(s.digestEnabled);
         this.alertsEnabled.set(s.alertsEnabled);

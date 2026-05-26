@@ -272,7 +272,11 @@ export class TemperatureInsightsComponent implements OnDestroy {
     const secs = Math.floor((Date.now() - new Date(d.timestamp).getTime()) / 1000);
     if (secs < 10) return this.transloco.translate('insights.justNow');
     if (secs < 60) return this.transloco.translate('insights.secondsAgo', { n: secs });
-    return this.transloco.translate('insights.minutesAgo', { n: Math.floor(secs / 60) });
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return this.transloco.translate('insights.minutesAgo', { n: mins });
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return this.transloco.translate('insights.hoursAgo', { n: hours });
+    return this.transloco.translate('insights.daysAgo', { n: Math.floor(hours / 24) });
   });
 
   // ── Today's range ────────────────────────────────────────────────────────────

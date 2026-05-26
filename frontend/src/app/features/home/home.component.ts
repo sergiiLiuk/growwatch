@@ -5,6 +5,7 @@ import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.c
 import { SensorService, SensorData, HourlySensorData, MoodInfo, PLANT_LIGHT_RANGES } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
+import { UserSettingsService } from '../../core/services/user-settings.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -119,7 +120,8 @@ interface ActivityEvent {
             [status]="humidStatus()"
             [sparkValues]="humidSpark()"
             [rangeMin]="humidRange().min"
-            [rangeMax]="humidRange().max" />
+            [rangeMax]="humidRange().max"
+            link="/humidity" />
           <app-sensor-card
             [label]="t('home.co2')"
             [value]="co2Value()"
@@ -189,6 +191,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
   weatherService = inject(WeatherService);
+  private userSettings = inject(UserSettingsService);
   private transloco = inject(TranslocoService);
   private localeKey = signal(this.transloco.getActiveLang());
   private sub?: Subscription;
@@ -359,7 +362,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   humidStatus = computed<'ok' | 'warn' | 'missing'>(() => {
     const h = this.latestData()?.humidity ?? this.hourlyData()[0]?.avgHumidity;
     if (h == null) return 'missing';
-    return h < 40 || h > 80 ? 'warn' : 'ok';
+    return h < this.userSettings.effectiveHumidityMin() || h > this.userSettings.effectiveHumidityMax() ? 'warn' : 'ok';
   });
 
   co2Value = computed(() => {
@@ -384,7 +387,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Range labels (calibration cue under sparkline — shows optimal range, not historical) ──
 
   tempRange  = computed(() => ({ min: '15°', max: '30°' }));
-  humidRange = computed(() => ({ min: '40%', max: '80%' }));
+  humidRange = computed(() => ({
+    min: `${this.userSettings.effectiveHumidityMin()}%`,
+    max: `${this.userSettings.effectiveHumidityMax()}%`,
+  }));
   co2Range   = computed(() => ({ min: '0', max: '1500' }));
 
   // Light range depends on which plants are being monitored. With multiple plants,

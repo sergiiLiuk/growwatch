@@ -128,6 +128,57 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
       </div>
 
+      <!-- Humidity range -->
+      <div class="mb-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.humidityRange') }}</div>
+        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+          <div class="flex items-center justify-center gap-3">
+
+            <!-- Min -->
+            <div class="flex-1 flex flex-col items-center">
+              <span class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">{{ t('settings.min') }}</span>
+              <div class="relative">
+                <select [ngModel]="settings.effectiveHumidityMin()" (ngModelChange)="onHumidityMinChange($event)"
+                        class="appearance-none w-20 text-center text-[15px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
+                  @for (h of humidityOptions; track h) {
+                    <option [ngValue]="h">{{ h }}%</option>
+                  }
+                </select>
+                <app-icon name="chevron-down" strokeWidth="2"
+                          class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <span class="text-gray-300 text-[14px] pt-5">–</span>
+
+            <!-- Max -->
+            <div class="flex-1 flex flex-col items-center">
+              <span class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">{{ t('settings.max') }}</span>
+              <div class="relative">
+                <select [ngModel]="settings.effectiveHumidityMax()" (ngModelChange)="onHumidityMaxChange($event)"
+                        class="appearance-none w-20 text-center text-[15px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
+                  @for (h of humidityOptions; track h) {
+                    <option [ngValue]="h">{{ h }}%</option>
+                  }
+                </select>
+                <app-icon name="chevron-down" strokeWidth="2"
+                          class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="flex items-center justify-between mt-2 px-1">
+          <p class="text-[11px] text-gray-400 leading-relaxed flex-1">
+            {{ t('settings.humidityAlertsTriggerOutside') }}
+          </p>
+          <button (click)="resetHumidityRange()"
+                  class="text-[11px] text-gw-green-dark hover:underline ml-3 shrink-0">
+            {{ t('settings.resetTo') }} ({{ settings.DEFAULT_HUMIDITY_MIN }}–{{ settings.DEFAULT_HUMIDITY_MAX }}%)
+          </button>
+        </div>
+      </div>
+
       <!-- About -->
       <div>
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.about') }}</div>
@@ -271,6 +322,7 @@ export class SettingsComponent implements OnInit {
   }
 
   readonly tempOptions = Array.from({ length: 41 }, (_, i) => i); // 0..40
+  readonly humidityOptions = Array.from({ length: 21 }, (_, i) => i * 5); // 0,5,...,100
 
   readonly localeOptions = [
     { code: 'en', label: 'English',  flag: '🇬🇧' },
@@ -294,6 +346,20 @@ export class SettingsComponent implements OnInit {
 
   resetTempRange() {
     this.settings.resetTempRange();
+  }
+
+  onHumidityMinChange(value: number | null) {
+    const v = typeof value === 'number' && Number.isFinite(value) ? value : null;
+    this.settings.setHumidityMin(v);
+  }
+
+  onHumidityMaxChange(value: number | null) {
+    const v = typeof value === 'number' && Number.isFinite(value) ? value : null;
+    this.settings.setHumidityMax(v);
+  }
+
+  resetHumidityRange() {
+    this.settings.resetHumidityRange();
   }
 
   ngOnInit() {

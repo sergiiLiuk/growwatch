@@ -22,6 +22,8 @@
     "min": "Min",
     "max": "Max",
     "alertsTriggerOutside": "Alerts trigger when temperature falls outside this range.",
+    "humidityRange": "Humidity range",
+    "humidityAlertsTriggerOutside": "Alerts trigger when humidity is outside this range.",
     "resetTo": "Reset",
     "about": "About",
     "app": "App",
@@ -374,11 +376,23 @@
     "tooHigh": "Too high",
     "secondsAgo": "{{ n }}s ago",
     "minutesAgo": "{{ n }}m ago",
+    "hoursAgo": "{{ n }}h ago",
+    "daysAgo": "{{ n }}d ago",
     "belowFloor": "Below {{ min }}°C optimal floor",
     "aboveCeiling": "Above {{ max }}°C optimal ceiling",
     "withinRange": "Within {{ min }}–{{ max }}°C optimal range",
     "dayTooltip": "{{ day }}: avg {{ avg }}°C, range {{ min }}–{{ max }}°C",
     "upcoming": "Upcoming",
-    "noData": "No data"
+    "noData": "No data",
+    "humidityTitle": "Humidity insights",
+    "humiditySubtitle": "Live reading and daily/weekly history",
+    "tooDry": "Too dry",
+    "tooHumid": "Too humid",
+    "belowHumidityFloor": "Below {{ min }}% optimal floor",
+    "aboveHumidityCeiling": "Above {{ max }}% optimal ceiling",
+    "withinHumidityRange": "Within {{ min }}–{{ max }}% optimal range",
+    "humidityDayTooltip": "{{ day }}: avg {{ avg }}%, range {{ min }}–{{ max }}%",
+    "driest": "Driest",
+    "wettest": "Wettest"
   }
 }

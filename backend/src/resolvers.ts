@@ -349,6 +349,8 @@ export const resolvers = {
             return {
                 tempMin: settings?.tempMin ?? null,
                 tempMax: settings?.tempMax ?? null,
+                humidityMin: settings?.humidityMin ?? null,
+                humidityMax: settings?.humidityMax ?? null,
                 digestTime: settings?.digestTime ?? null,
                 digestEnabled: settings?.digestEnabled ?? null,
                 alertsEnabled: settings?.alertsEnabled ?? null,
@@ -452,6 +454,8 @@ export const resolvers = {
             args: {
                 tempMin?: number | null;
                 tempMax?: number | null;
+                humidityMin?: number | null;
+                humidityMax?: number | null;
                 digestTime?: string | null;
                 digestEnabled?: boolean | null;
                 alertsEnabled?: boolean | null;
@@ -472,6 +476,8 @@ export const resolvers = {
 
             apply('tempMin', args.tempMin, (v) => typeof v === 'number');
             apply('tempMax', args.tempMax, (v) => typeof v === 'number');
+            apply('humidityMin', args.humidityMin, (v) => typeof v === 'number');
+            apply('humidityMax', args.humidityMax, (v) => typeof v === 'number');
             apply('digestTime', args.digestTime, (v) => typeof v === 'string');
             apply('digestEnabled', args.digestEnabled, (v) => typeof v === 'boolean');
             apply('alertsEnabled', args.alertsEnabled, (v) => typeof v === 'boolean');
@@ -489,6 +495,8 @@ export const resolvers = {
             return {
                 tempMin: settings?.tempMin ?? null,
                 tempMax: settings?.tempMax ?? null,
+                humidityMin: settings?.humidityMin ?? null,
+                humidityMax: settings?.humidityMax ?? null,
                 digestTime: settings?.digestTime ?? null,
                 digestEnabled: settings?.digestEnabled ?? null,
                 alertsEnabled: settings?.alertsEnabled ?? null,

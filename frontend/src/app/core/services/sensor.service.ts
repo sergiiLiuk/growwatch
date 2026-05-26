@@ -212,7 +212,9 @@ export class SensorService {
     if (!data) return { mood: 'waiting', label: t('mood.waiting'), description: t('mood.waitingDesc') };
 
     const status = data.lightStatus?.status;
-    const humidityOk = data.humidity == null || (data.humidity >= 40 && data.humidity <= 80);
+    const humidityOk = data.humidity == null
+      || (data.humidity >= this.userSettings.effectiveHumidityMin()
+          && data.humidity <= this.userSettings.effectiveHumidityMax());
     const tempMin = this.userSettings.effectiveTempMin();
     const tempMax = this.userSettings.effectiveTempMax();
     const tempOk = data.temperature == null || (data.temperature >= tempMin && data.temperature <= tempMax);

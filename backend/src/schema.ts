@@ -92,6 +92,8 @@ export const typeDefs = gql`
   type UserSettings {
     tempMin: Float
     tempMax: Float
+    humidityMin: Float
+    humidityMax: Float
     digestTime: String
     digestEnabled: Boolean
     alertsEnabled: Boolean
@@ -138,6 +140,8 @@ export const typeDefs = gql`
     updateUserSettings(
       tempMin: Float
       tempMax: Float
+      humidityMin: Float
+      humidityMax: Float
       digestTime: String
       digestEnabled: Boolean
       alertsEnabled: Boolean

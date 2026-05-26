@@ -22,6 +22,8 @@
     "min": "Min",
     "max": "Maks",
     "alertsTriggerOutside": "Beskeder udløses når temperaturen falder uden for dette interval.",
+    "humidityRange": "Fugtighedsinterval",
+    "humidityAlertsTriggerOutside": "Advarsler udløses, når fugtigheden er uden for dette interval.",
     "resetTo": "Nulstil",
     "about": "Om",
     "app": "App",
@@ -374,11 +376,23 @@
     "tooHigh": "For højt",
     "secondsAgo": "{{ n }}s siden",
     "minutesAgo": "{{ n }}m siden",
+    "hoursAgo": "{{ n }}t siden",
+    "daysAgo": "{{ n }}d siden",
     "belowFloor": "Under {{ min }}°C optimal grænse",
     "aboveCeiling": "Over {{ max }}°C optimal grænse",
     "withinRange": "Inden for {{ min }}–{{ max }}°C optimal interval",
     "dayTooltip": "{{ day }}: gns. {{ avg }}°C, interval {{ min }}–{{ max }}°C",
     "upcoming": "Kommende",
-    "noData": "Ingen data"
+    "noData": "Ingen data",
+    "humidityTitle": "Fugtighedsindsigt",
+    "humiditySubtitle": "Aktuel måling og daglig/ugentlig historik",
+    "tooDry": "For tørt",
+    "tooHumid": "For fugtigt",
+    "belowHumidityFloor": "Under optimalt gulv på {{ min }}%",
+    "aboveHumidityCeiling": "Over optimalt loft på {{ max }}%",
+    "withinHumidityRange": "Inden for optimalt interval {{ min }}–{{ max }}%",
+    "humidityDayTooltip": "{{ day }}: gns. {{ avg }}%, interval {{ min }}–{{ max }}%",
+    "driest": "Tørreste",
+    "wettest": "Mest fugtige"
   }
 }

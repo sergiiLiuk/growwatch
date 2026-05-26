@@ -34,6 +34,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/temperature/temperature-insights.component').then(m => m.TemperatureInsightsComponent),
       },
       {
+        path: 'humidity',
+        loadComponent: () => import('./features/humidity/humidity-insights.component').then(m => m.HumidityInsightsComponent),
+      },
+      {
         path: 'digest',
         loadComponent: () => import('./features/digest/digest.component').then(m => m.DigestComponent),
       },
