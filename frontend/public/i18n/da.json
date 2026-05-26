@@ -340,7 +340,10 @@
     "summaryGood": "En god dag for {{ plants }}. Alle forhold var inden for behagelig rækkevidde.",
     "summaryOneWarning": "Mest en god dag, men én ting kræver din opmærksomhed. Tjek detaljerne nedenfor.",
     "summaryManyWarnings": "{{ n }} forhold lå uden for det ideelle interval i dag. {{ plants }} ville sætte pris på nogle justeringer i morgen.",
-    "yourPlants": "dine planter"
+    "yourPlants": "dine planter",
+    "plusMore": "+{{ n }} mere",
+    "showAllPlants": "Vis alle {{ n }} planter",
+    "showLess": "Vis færre"
   },
   "insights": {
     "lightTitle": "Lys-indsigt",

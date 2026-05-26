@@ -340,7 +340,10 @@
     "summaryGood": "A good day for {{ plants }}. All conditions were within comfortable range.",
     "summaryOneWarning": "Mostly a good day, but one thing needs your attention. Check the details below.",
     "summaryManyWarnings": "{{ n }} conditions were outside the ideal range today. {{ plants }} would appreciate some adjustments tomorrow.",
-    "yourPlants": "your plants"
+    "yourPlants": "your plants",
+    "plusMore": "+{{ n }} more",
+    "showAllPlants": "Show all {{ n }} plants",
+    "showLess": "Show less"
   },
   "insights": {
     "lightTitle": "Light insights",

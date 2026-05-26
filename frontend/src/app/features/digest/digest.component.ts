@@ -46,9 +46,17 @@ interface DigestItem {
       } @else {
 
         <!-- Summary bubble -->
-        <div class="bg-gw-green-light p-4 mb-5 rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-[2px]">
+        <div class="bg-gw-green-light p-4 rounded-tl-xl rounded-tr-xl rounded-br-xl rounded-bl-[2px]">
           <p class="text-[13px] text-gw-green-dark leading-relaxed">{{ summaryMessage() }}</p>
         </div>
+        @if (hiddenPlantCount() > 0 || showAllPlants()) {
+          <button (click)="showAllPlants.set(!showAllPlants())"
+                  class="text-[11px] text-gw-green-dark/80 hover:text-gw-green-dark hover:underline mt-1.5 mb-5 ml-1">
+            {{ showAllPlants() ? t('digest.showLess') : t('digest.showAllPlants', { n: monitoredPlantCount() }) }}
+          </button>
+        } @else {
+          <div class="mb-5"></div>
+        }
 
         <!-- Digest items -->
         <div class="flex flex-col gap-3">
@@ -88,6 +96,10 @@ export class DigestComponent implements OnInit {
   hourlyData = signal<HourlySensorData[]>([]);
   plants = this.plantService.plants;
   private monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
+  private readonly MAX_PLANT_NAMES = 3;
+  showAllPlants = signal(false);
+  hiddenPlantCount = computed(() => Math.max(0, this.monitoredPlants().length - this.MAX_PLANT_NAMES));
+  monitoredPlantCount = computed(() => this.monitoredPlants().length);
 
   digestItems = computed<DigestItem[]>(() => {
     this.localeKey(); // dependency so computed re-runs on language change
@@ -168,12 +180,19 @@ export class DigestComponent implements OnInit {
     this.localeKey();
     const items = this.digestItems();
     const plants = this.monitoredPlants();
-    const plantNames = plants.length > 0
-      ? plants.map(p => p.name).join(' · ')
-      : this.transloco.translate('digest.yourPlants');
-    const warnings = items.filter(i => i.status === 'warn').length;
+    const visible = this.showAllPlants() ? plants : plants.slice(0, this.MAX_PLANT_NAMES);
+    const hidden = plants.length - visible.length;
     const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
 
+    let plantNames: string;
+    if (plants.length === 0) {
+      plantNames = t('digest.yourPlants');
+    } else {
+      plantNames = visible.map(p => p.name).join(' · ');
+      if (hidden > 0) plantNames += ` ${t('digest.plusMore', { n: hidden })}`;
+    }
+
+    const warnings = items.filter(i => i.status === 'warn').length;
     if (warnings === 0) return t('digest.summaryGood', { plants: plantNames });
     if (warnings === 1) return t('digest.summaryOneWarning');
     return t('digest.summaryManyWarnings', { n: warnings, plants: plantNames });
