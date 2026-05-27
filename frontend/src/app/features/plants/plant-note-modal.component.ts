@@ -7,8 +7,8 @@ import { TranslocoDirective } from '@jsverse/transloco';
   imports: [FormsModule, TranslocoDirective],
   template: `
     @if (open) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30" (click)="cancel()">
-        <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5"
+      <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30" (click)="cancel()">
+        <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 pb-24 sm:pb-5 max-h-[85vh] overflow-y-auto"
              (click)="$event.stopPropagation()" *transloco="let t">
           <h2 class="text-[16px] font-medium text-gray-800 mb-3">{{ t('plantDetail.note.title') }}</h2>
           <textarea [(ngModel)]="text" rows="4"
