@@ -1,6 +1,6 @@
 import { Component, signal, inject, computed, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
@@ -12,7 +12,7 @@ import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plants',
-  imports: [FormsModule, PlantEditModalComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, PlantEditModalComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -97,6 +97,30 @@ import dayjs from 'dayjs';
                 class="w-full mt-3 py-4 text-[13px] text-gray-400 hover:text-gray-600 border-t border-dashed border-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ t('plants.addAnotherPlant') }}
         </button>
+      }
+
+      <!-- Archived plants -->
+      @if (archivedPlants().length > 0) {
+        <div class="mt-5 border-t border-gray-100 pt-4">
+          <button (click)="showArchived.set(!showArchived())"
+                  class="text-[11px] text-gray-400 hover:text-gray-600 transition-colors mb-2">
+            {{ showArchived() ? t('plants.hideArchived') : t('plants.showArchived', { n: archivedPlants().length }) }}
+          </button>
+          @if (showArchived()) {
+            <div class="flex flex-col gap-2">
+              @for (plant of archivedPlants(); track plant.id) {
+                <a [routerLink]="['/plants', plant.id]"
+                   class="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-3 flex items-center gap-3 hover:border-gray-300 transition-colors">
+                  <span class="text-xl opacity-60">{{ getEmoji(plant.type) }}</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[13px] font-medium text-gray-600 truncate">{{ plant.name }}</div>
+                    <div class="text-[11px] text-gray-400">{{ t('common.archived') }}</div>
+                  </div>
+                </a>
+              }
+            </div>
+          }
+        </div>
       }
     </div>
 
@@ -204,6 +228,12 @@ export class PlantsComponent {
   private router = inject(Router);
   plants = this.plantService.plants;
   plantsLoading = this.plantService.plantsLoading;
+  archivedPlants = this.plantService.archivedPlants;
+  showArchived = signal(false);
+
+  getEmoji(type: PlantType): string {
+    return PLANT_TYPE_STYLE[type]?.emoji ?? '🌿';
+  }
 
   // Add form
   showForm = signal(false);

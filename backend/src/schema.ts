@@ -78,7 +78,31 @@ export const typeDefs = gql`
     plantedDate: String!
     count: Int!
     monitored: Boolean!
+    archived: Boolean!
     dailyLightHours: Int!
+  }
+
+  enum PlantActionType {
+    water
+    fertilize
+    prune
+    note
+  }
+
+  type PlantAction {
+    id: String!
+    plantId: String!
+    type: PlantActionType!
+    note: String
+    createdAt: String!
+  }
+
+  type SmartTip {
+    id: String!
+    plantId: String!
+    text: String!
+    source: String!
+    generatedAt: String!
   }
 
   type Device {
@@ -117,7 +141,9 @@ export const typeDefs = gql`
     latestSensorData: SensorData
     hourlyData(limit: Int): [HourlySensorData!]!
     hourlyDataRange(from: String!, to: String!): [HourlySensorData!]!
-    plants: [Plant!]!
+    plants(includeArchived: Boolean): [Plant!]!
+    plantActions(plantId: String!, limit: Int): [PlantAction!]!
+    smartTip(plantId: String!): SmartTip
     myDevices: [Device!]!
     myUserSettings: UserSettings!
     allUsers: [User!]!
@@ -136,6 +162,10 @@ export const typeDefs = gql`
     updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!
     removePlant(id: String!): Boolean!
     setPlantMonitored(id: String!, monitored: Boolean!): Plant!
+    setPlantArchived(id: String!, archived: Boolean!): Plant!
+    logPlantAction(plantId: String!, type: PlantActionType!, note: String): PlantAction!
+    removePlantAction(id: String!): Boolean!
+    refreshSmartTip(plantId: String!): SmartTip!
     openDeviceClaim: String!
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!

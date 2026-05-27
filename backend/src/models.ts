@@ -30,6 +30,7 @@ export interface IPlant extends Document {
     plantedDate: Date;
     count: number;
     monitored: boolean;
+    archived: boolean;
     dailyLightHours: number;
     userId?: string;
 }
@@ -41,6 +42,7 @@ const plantSchema = new Schema<IPlant>(
         plantedDate: { type: Date, required: true },
         count: { type: Number, required: true, default: 1 },
         monitored: { type: Boolean, required: true, default: true },
+        archived: { type: Boolean, required: true, default: false },
         dailyLightHours: { type: Number, required: true, default: 12 },
         userId: { type: String, index: true },
     },
@@ -48,6 +50,58 @@ const plantSchema = new Schema<IPlant>(
 );
 
 export const Plant = mongoose.model<IPlant>('Plant', plantSchema);
+
+// ── PlantAction ─────────────────────────────────────────────────────────────
+
+export type PlantActionType = 'water' | 'fertilize' | 'prune' | 'note';
+
+export interface IPlantAction extends Document {
+    plantId: string;
+    userId: string;
+    type: PlantActionType;
+    note?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const plantActionSchema = new Schema<IPlantAction>(
+    {
+        plantId: { type: String, required: true, index: true },
+        userId: { type: String, required: true, index: true },
+        type: { type: String, required: true, enum: ['water', 'fertilize', 'prune', 'note'] },
+        note: { type: String },
+    },
+    { timestamps: true }
+);
+
+plantActionSchema.index({ userId: 1, plantId: 1, createdAt: -1 });
+
+export const PlantAction = mongoose.model<IPlantAction>('PlantAction', plantActionSchema);
+
+// ── SmartTip ────────────────────────────────────────────────────────────────
+
+export interface ISmartTip extends Document {
+    plantId: string;
+    userId: string;
+    text: string;
+    source: string;
+    generatedAt: Date;
+}
+
+const smartTipSchema = new Schema<ISmartTip>(
+    {
+        plantId: { type: String, required: true },
+        userId: { type: String, required: true },
+        text: { type: String, required: true },
+        source: { type: String, required: true },
+        generatedAt: { type: Date, required: true },
+    },
+    { timestamps: true }
+);
+
+smartTipSchema.index({ userId: 1, plantId: 1 }, { unique: true });
+
+export const SmartTip = mongoose.model<ISmartTip>('SmartTip', smartTipSchema);
 
 // ── HourlySensorData ────────────────────────────────────────────────────────
 

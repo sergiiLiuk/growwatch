@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings } from './models';
+import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType } from './models';
+import { SmartTipService, StubLlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
 import { signToken, verifyPassword, JwtPayload } from './auth';
 
@@ -265,6 +266,41 @@ function mapDevice(doc: any) {
     };
 }
 
+function mapPlant(doc: any) {
+    return {
+        id: doc._id.toString(),
+        name: doc.name,
+        type: doc.type,
+        plantedDate: dateAsString(doc.plantedDate),
+        count: doc.count ?? 1,
+        monitored: doc.monitored ?? true,
+        archived: doc.archived ?? false,
+        dailyLightHours: doc.dailyLightHours ?? 12,
+    };
+}
+
+function mapPlantAction(doc: any) {
+    return {
+        id: doc._id.toString(),
+        plantId: doc.plantId,
+        type: doc.type,
+        note: doc.note ?? null,
+        createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : String(doc.createdAt ?? new Date().toISOString()),
+    };
+}
+
+function mapSmartTip(doc: any) {
+    return {
+        id: doc._id.toString(),
+        plantId: doc.plantId,
+        text: doc.text,
+        source: doc.source,
+        generatedAt: doc.generatedAt instanceof Date ? doc.generatedAt.toISOString() : String(doc.generatedAt ?? new Date().toISOString()),
+    };
+}
+
+const smartTipService = new SmartTipService(new StubLlmProvider());
+
 type Ctx = { user: JwtPayload | null };
 
 export const resolvers = {
@@ -325,18 +361,27 @@ export const resolvers = {
                 return [];
             }
         },
-        plants: async (_: any, __: any, ctx: Ctx) => {
+        plants: async (_: any, { includeArchived }: { includeArchived?: boolean }, ctx: Ctx) => {
             if (!ctx.user) return [];
-            const docs = await Plant.find({ userId: ctx.user.userId }).sort({ createdAt: 1 }).lean();
-            return docs.map((d: any) => ({
-                id: d._id.toString(),
-                name: d.name,
-                type: d.type,
-                plantedDate: dateAsString(d.plantedDate),
-                count: d.count ?? 1,
-                monitored: d.monitored ?? true,
-                dailyLightHours: d.dailyLightHours ?? 12,
-            }));
+            const query: any = { userId: ctx.user.userId };
+            if (!includeArchived) query.archived = { $ne: true };
+            const docs = await Plant.find(query).sort({ createdAt: 1 }).lean();
+            return docs.map(mapPlant);
+        },
+        plantActions: async (_: any, { plantId, limit }: { plantId: string; limit?: number }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const docs = await PlantAction.find({ plantId, userId: ctx.user.userId })
+                .sort({ createdAt: -1 })
+                .limit(limit ?? 100)
+                .lean();
+            return docs.map(mapPlantAction);
+        },
+        smartTip: async (_: any, { plantId }: { plantId: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const settings = await UserSettings.findOne({ userId: ctx.user.userId }).lean();
+            const locale = (settings?.locale === 'da' ? 'da' : 'en') as 'en' | 'da';
+            const doc = await smartTipService.getOrGenerate(plantId, ctx.user.userId, locale, null);
+            return mapSmartTip(doc);
         },
         myDevices: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) return [];
@@ -398,7 +443,7 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours, userId: ctx.user.userId });
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: dateAsString(doc.plantedDate), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
+            return mapPlant(doc);
         },
         updatePlant: async (_: any, { id, name, type, plantedDate, count, dailyLightHours = 12 }: { id: string; name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -409,7 +454,7 @@ export const resolvers = {
             );
             if (!doc) throw new Error('Plant not found');
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: dateAsString(doc.plantedDate), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours };
+            return mapPlant(doc);
         },
         setPlantMonitored: async (_: any, { id, monitored }: { id: string; monitored: boolean }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -420,13 +465,45 @@ export const resolvers = {
             );
             if (!doc) throw new Error('Plant not found');
             await refreshPrimaryPlant();
-            return { id: doc._id.toString(), name: doc.name, type: doc.type, plantedDate: dateAsString(doc.plantedDate), count: doc.count, monitored: doc.monitored, dailyLightHours: doc.dailyLightHours ?? 12 };
+            return mapPlant(doc);
+        },
+        setPlantArchived: async (_: any, { id, archived }: { id: string; archived: boolean }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const doc = await Plant.findOneAndUpdate(
+                { _id: id, userId: ctx.user.userId },
+                { archived },
+                { new: true }
+            );
+            if (!doc) throw new Error('Plant not found');
+            await refreshPrimaryPlant();
+            return mapPlant(doc);
         },
         removePlant: async (_: any, { id }: { id: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             const result = await Plant.findOneAndDelete({ _id: id, userId: ctx.user.userId });
+            // Cascade: also remove the action log and any cached tip for this plant
+            await PlantAction.deleteMany({ plantId: id, userId: ctx.user.userId });
             await refreshPrimaryPlant();
             return result !== null;
+        },
+        logPlantAction: async (_: any, { plantId, type, note }: { plantId: string; type: PlantActionType; note?: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const plant = await Plant.findOne({ _id: plantId, userId: ctx.user.userId });
+            if (!plant) throw new Error('Plant not found');
+            const doc = await PlantAction.create({ plantId, userId: ctx.user.userId, type, note: note ?? undefined });
+            return mapPlantAction(doc);
+        },
+        removePlantAction: async (_: any, { id }: { id: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const result = await PlantAction.findOneAndDelete({ _id: id, userId: ctx.user.userId });
+            return result !== null;
+        },
+        refreshSmartTip: async (_: any, { plantId }: { plantId: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const settings = await UserSettings.findOne({ userId: ctx.user.userId }).lean();
+            const locale = (settings?.locale === 'da' ? 'da' : 'en') as 'en' | 'da';
+            const doc = await smartTipService.refresh(plantId, ctx.user.userId, locale, null);
+            return mapSmartTip(doc);
         },
         openDeviceClaim: (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');

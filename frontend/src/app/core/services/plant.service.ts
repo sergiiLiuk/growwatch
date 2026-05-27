@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
 import { Observable } from 'rxjs';
 import { TranslocoService } from '@jsverse/transloco';
@@ -50,27 +50,36 @@ export interface Plant {
   plantedDate: Date;
   count: number;
   monitored: boolean;
+  archived: boolean;
   dailyLightHours: number;
 }
-
-const PLANTS_QUERY = gql`
-  query GetPlants {
-    plants { id name type plantedDate count monitored dailyLightHours }
-  }
-`;
 
 const SET_MONITORED = gql`
   mutation SetPlantMonitored($id: String!, $monitored: Boolean!) {
     setPlantMonitored(id: $id, monitored: $monitored) {
-      id name type plantedDate count monitored dailyLightHours
+      id name type plantedDate count monitored archived dailyLightHours
     }
+  }
+`;
+
+const SET_ARCHIVED = gql`
+  mutation SetPlantArchived($id: String!, $archived: Boolean!) {
+    setPlantArchived(id: $id, archived: $archived) {
+      id name type plantedDate count monitored archived dailyLightHours
+    }
+  }
+`;
+
+const PLANTS_QUERY_ALL = gql`
+  query GetAllPlants {
+    plants(includeArchived: true) { id name type plantedDate count monitored archived dailyLightHours }
   }
 `;
 
 const ADD_PLANT = gql`
   mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
     addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) {
-      id name type plantedDate count monitored dailyLightHours
+      id name type plantedDate count monitored archived dailyLightHours
     }
   }
 `;
@@ -78,7 +87,7 @@ const ADD_PLANT = gql`
 const UPDATE_PLANT = gql`
   mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
     updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) {
-      id name type plantedDate count monitored dailyLightHours
+      id name type plantedDate count monitored archived dailyLightHours
     }
   }
 `;
@@ -89,14 +98,18 @@ const REMOVE_PLANT = gql`
   }
 `;
 
-interface RawPlant { id: string; name: string; type: string; plantedDate: string; count: number; monitored: boolean; dailyLightHours: number; }
+interface RawPlant { id: string; name: string; type: string; plantedDate: string; count: number; monitored: boolean; archived: boolean; dailyLightHours: number; }
 
 @Injectable({ providedIn: 'root' })
 export class PlantService {
   private client: ApolloClient;
   private transloco = inject(TranslocoService);
-  plants = signal<Plant[]>([]);
+  private allPlants = signal<Plant[]>([]);
   plantsLoading = signal(true);
+
+  // Default `plants` excludes archived for backwards compatibility with all existing callers
+  plants = computed(() => this.allPlants().filter(p => !p.archived));
+  archivedPlants = computed(() => this.allPlants().filter(p => p.archived));
 
   constructor(gqlClient: GraphQLClientService) {
     this.client = gqlClient.client;
@@ -110,8 +123,8 @@ export class PlantService {
 
   private loadPlants() {
     this.client
-      .query<{ plants: RawPlant[] }>({ query: PLANTS_QUERY, fetchPolicy: 'network-only' })
-      .then(result => this.plants.set(this.mapPlants(result.data?.plants ?? [])))
+      .query<{ plants: RawPlant[] }>({ query: PLANTS_QUERY_ALL, fetchPolicy: 'network-only' })
+      .then(result => this.allPlants.set(this.mapPlants(result.data?.plants ?? [])))
       .catch(err => console.error('Failed to load plants:', err))
       .finally(() => this.plantsLoading.set(false));
   }
@@ -125,6 +138,7 @@ export class PlantService {
         plantedDate: parsed.isValid() ? parsed.toDate() : new Date(),
         count: p.count ?? 1,
         monitored: p.monitored ?? true,
+        archived: p.archived ?? false,
         dailyLightHours: p.dailyLightHours ?? 12,
       };
     });
@@ -139,7 +153,7 @@ export class PlantService {
         })
         .then(result => {
           const mapped = this.mapPlants([result.data!.addPlant])[0];
-          this.plants.update(ps => [...ps, mapped]);
+          this.allPlants.update(ps => [...ps, mapped]);
           observer.next(mapped);
           observer.complete();
         })
@@ -156,7 +170,7 @@ export class PlantService {
         })
         .then(result => {
           const mapped = this.mapPlants([result.data!.updatePlant])[0];
-          this.plants.update(ps => ps.map(p => p.id === id ? mapped : p));
+          this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
           observer.next(mapped);
           observer.complete();
         })
@@ -172,7 +186,7 @@ export class PlantService {
           variables: { id },
         })
         .then(() => {
-          this.plants.update(ps => ps.filter(p => p.id !== id));
+          this.allPlants.update(ps => ps.filter(p => p.id !== id));
           observer.next(true);
           observer.complete();
         })
@@ -189,7 +203,24 @@ export class PlantService {
         })
         .then(result => {
           const mapped = this.mapPlants([result.data!.setPlantMonitored])[0];
-          this.plants.update(ps => ps.map(p => p.id === id ? mapped : p));
+          this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
+          observer.next(mapped);
+          observer.complete();
+        })
+        .catch(err => observer.error(err));
+    });
+  }
+
+  setArchived(id: string, archived: boolean): Observable<Plant> {
+    return new Observable(observer => {
+      this.client
+        .mutate<{ setPlantArchived: RawPlant }>({
+          mutation: SET_ARCHIVED,
+          variables: { id, archived },
+        })
+        .then(result => {
+          const mapped = this.mapPlants([result.data!.setPlantArchived])[0];
+          this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
           observer.next(mapped);
           observer.complete();
         })

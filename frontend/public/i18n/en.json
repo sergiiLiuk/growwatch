@@ -136,7 +136,63 @@
     "dailyLightTargetHint": "Hours of adequate light this plant needs per day",
     "saveChanges": "Save changes",
     "saving": "Saving…",
-    "plantNotFound": "Plant not found."
+    "plantNotFound": "Plant not found.",
+    "showArchived": "Show archived ({{ n }})",
+    "hideArchived": "Hide archived",
+    "archived": "Archived"
+  },
+  "plantDetail": {
+    "recommendations": "Recommendations",
+    "logAction": "Log action",
+    "history": "History",
+    "seeAllActions": "See all actions ›",
+    "today": "today",
+    "never": "Never",
+    "daysAgoShort": "{{ n }}d",
+    "rec": {
+      "waterNeededTitle": "{{ name }} likely needs water",
+      "waterNeededBody": "It's been {{ days }} days since you last watered.",
+      "waterNeededBodyDry": "It's been {{ days }} days since you last watered and greenhouse humidity has dropped to {{ humidity }}%.",
+      "waterNeverBody": "{{ name }} has never been watered — log a watering once you've done it.",
+      "fertilizeNeededTitle": "Time to feed {{ name }}",
+      "fertilizeNeededBody": "It's been {{ days }} days since you last fertilized.",
+      "fertilizeNeverBody": "{{ name }} hasn't been fertilized yet — consider a feeding soon."
+    },
+    "action": {
+      "water": "Water",
+      "fertilize": "Fertilize",
+      "prune": "Prune",
+      "note": "Note",
+      "add": "Add"
+    },
+    "history": {
+      "watered": "Watered",
+      "fertilized": "Fertilized with fertilizer",
+      "pruned": "Pruned",
+      "note": "Note"
+    },
+    "smartTip": {
+      "title": "Smart tip for {{ name }} this week",
+      "beta": "BETA",
+      "refresh": "Refresh",
+      "loading": "Generating tip…",
+      "error": "Couldn't generate a tip right now."
+    },
+    "archive": {
+      "prompt": "Season over? Archive and keep the history.",
+      "button": "Archive",
+      "unarchive": "Unarchive",
+      "confirmTitle": "Archive {{ name }}?",
+      "confirmBody": "Archived plants are hidden from the main list but their history is preserved.",
+      "confirm": "Archive"
+    },
+    "note": {
+      "title": "Add a note",
+      "placeholder": "e.g. First bloom! · Repotted · Spotted aphids on leaf",
+      "save": "Save note",
+      "cancel": "Cancel"
+    },
+    "deleteAction": "Remove this entry"
   },
   "common": {
     "cancel": "Cancel",

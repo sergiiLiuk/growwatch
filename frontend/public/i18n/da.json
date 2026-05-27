@@ -136,7 +136,63 @@
     "dailyLightTargetHint": "Timer med tilstrækkeligt lys denne plante har brug for pr. dag",
     "saveChanges": "Gem ændringer",
     "saving": "Gemmer…",
-    "plantNotFound": "Plante ikke fundet."
+    "plantNotFound": "Plante ikke fundet.",
+    "showArchived": "Vis arkiverede ({{ n }})",
+    "hideArchived": "Skjul arkiverede",
+    "archived": "Arkiveret"
+  },
+  "plantDetail": {
+    "recommendations": "Anbefalinger",
+    "logAction": "Log handling",
+    "history": "Historik",
+    "seeAllActions": "Se alle handlinger ›",
+    "today": "i dag",
+    "never": "Aldrig",
+    "daysAgoShort": "{{ n }} dage",
+    "rec": {
+      "waterNeededTitle": "{{ name }} trænger sandsynligvis til vand",
+      "waterNeededBody": "Det er {{ days }} dage siden, du sidst vandede.",
+      "waterNeededBodyDry": "Det er {{ days }} dage siden, du sidst vandede, og fugtigheden i drivhuset er faldet til {{ humidity }} %.",
+      "waterNeverBody": "{{ name }} er aldrig blevet vandet — log en vanding, når du har gjort det.",
+      "fertilizeNeededTitle": "Tid til at gøde {{ name }}",
+      "fertilizeNeededBody": "Det er {{ days }} dage siden, du sidst gødede.",
+      "fertilizeNeverBody": "{{ name }} er ikke blevet gødet endnu — overvej en gødning snart."
+    },
+    "action": {
+      "water": "Vand",
+      "fertilize": "Gødning",
+      "prune": "Beskær",
+      "note": "Note",
+      "add": "Tilføj"
+    },
+    "history": {
+      "watered": "Vandet",
+      "fertilized": "Gødet med gødning",
+      "pruned": "Beskåret",
+      "note": "Note"
+    },
+    "smartTip": {
+      "title": "Smart tip til {{ name }} denne uge",
+      "beta": "BETA",
+      "refresh": "Opdatér",
+      "loading": "Genererer tip…",
+      "error": "Kunne ikke generere et tip lige nu."
+    },
+    "archive": {
+      "prompt": "Sæsonen slut? Arkivér og bevar historikken.",
+      "button": "Arkivér",
+      "unarchive": "Afarkivér",
+      "confirmTitle": "Arkivér {{ name }}?",
+      "confirmBody": "Arkiverede planter er skjult fra hovedlisten, men deres historik bevares.",
+      "confirm": "Arkivér"
+    },
+    "note": {
+      "title": "Tilføj en note",
+      "placeholder": "f.eks. Første blomst! · Omplantet · Set bladlus",
+      "save": "Gem note",
+      "cancel": "Annullér"
+    },
+    "deleteAction": "Fjern dette punkt"
   },
   "common": {
     "cancel": "Annullér",
