@@ -94,6 +94,9 @@ export const typeDefs = gql`
     tempMax: Float
     humidityMin: Float
     humidityMax: Float
+    frostThreshold: Float
+    heatThreshold: Float
+    windThreshold: Float
     digestTime: String
     digestEnabled: Boolean
     alertsEnabled: Boolean
@@ -142,6 +145,9 @@ export const typeDefs = gql`
       tempMax: Float
       humidityMin: Float
       humidityMax: Float
+      frostThreshold: Float
+      heatThreshold: Float
+      windThreshold: Float
       digestTime: String
       digestEnabled: Boolean
       alertsEnabled: Boolean

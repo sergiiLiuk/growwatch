@@ -24,6 +24,11 @@
     "alertsTriggerOutside": "Alerts trigger when temperature falls outside this range.",
     "humidityRange": "Humidity range",
     "humidityAlertsTriggerOutside": "Alerts trigger when humidity is outside this range.",
+    "weatherWarnings": "Weather warnings",
+    "weatherWarningsHint": "Forecast warnings trigger when the outside forecast crosses these thresholds.",
+    "frostThreshold": "Frost ≤",
+    "heatThreshold": "Heat ≥",
+    "windThreshold": "Wind ≥",
     "resetTo": "Reset",
     "about": "About",
     "app": "App",
@@ -397,5 +402,47 @@
     "humidityDayTooltip": "{{ day }}: avg {{ avg }}%, range {{ min }}–{{ max }}%",
     "driest": "Driest",
     "wettest": "Wettest"
+  },
+  "forecast": {
+    "title": "3-day forecast",
+    "subtitle": "Outside weather and risks for your greenhouse",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "lowHigh": "Low {{ low }}° · High {{ high }}°",
+    "windTo": "Wind to {{ wind }} km/h",
+    "noRisks": "✓ No risks expected",
+    "loading": "Loading forecast…",
+    "noData": "Forecast unavailable. Check your connection.",
+    "risk": {
+      "frostWarn": "Lows of {{ min }}°C are at the edge of damage for cold-sensitive plants.",
+      "frostSevere": "Forecast min {{ min }}°C — direct damage risk for warm-season crops.",
+      "heatWarn": "Highs of {{ max }}°C will stress most crops, especially in a closed greenhouse.",
+      "heatSevere": "Severe heat forecast at {{ max }}°C — plants may wilt or scorch without immediate action.",
+      "windWarn": "Gusts up to {{ wind }} km/h may damage greenhouse cover or knock over plants.",
+      "windSevere": "Severe wind forecast at {{ wind }} km/h — high risk of structural damage."
+    },
+    "action": {
+      "frost": "→ Close vents tonight and protect cold-sensitive plants (tomatoes, peppers, basil).",
+      "heat": "→ Open vents fully, add shade cloth, and water early in the morning.",
+      "wind": "→ Secure loose panels and shade cloth. Move pots away from exposed areas."
+    },
+    "alert": {
+      "frostTitle": "Frost risk tonight",
+      "heatTitle": "Heat wave incoming",
+      "windTitle": "Strong wind expected"
+    },
+    "digest": {
+      "frostLabel": "Frost risk tonight",
+      "heatLabel": "Heat wave today",
+      "windLabel": "Strong wind expected",
+      "frostDetail": "forecast min {{ min }}°C",
+      "heatDetail": "forecast max {{ max }}°C",
+      "windDetail": "gusts to {{ wind }} km/h"
+    },
+    "badge": {
+      "frost": "Frost",
+      "heat": "Heat",
+      "wind": "Wind"
+    }
   }
 }

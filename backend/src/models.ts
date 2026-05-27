@@ -133,6 +133,9 @@ export interface IUserSettings extends Document {
     tempMax?: number;
     humidityMin?: number;
     humidityMax?: number;
+    frostThreshold?: number;
+    heatThreshold?: number;
+    windThreshold?: number;
     digestTime?: string;       // 'HH:MM' (24h)
     digestEnabled?: boolean;
     alertsEnabled?: boolean;
@@ -148,6 +151,9 @@ const userSettingsSchema = new Schema<IUserSettings>(
         tempMax: { type: Number },
         humidityMin: { type: Number },
         humidityMax: { type: Number },
+        frostThreshold: { type: Number },
+        heatThreshold: { type: Number },
+        windThreshold: { type: Number },
         digestTime: { type: String },
         digestEnabled: { type: Boolean },
         alertsEnabled: { type: Boolean },

@@ -4,6 +4,8 @@ import { Subscription } from 'rxjs';
 import { SensorService, SensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
+import { WeatherService } from '../../core/services/weather.service';
+import { analyzeForecast } from '../../core/utils/weather-risk';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -26,14 +28,14 @@ export interface Alert {
           <h1 class="text-[18px] font-medium text-gray-800">{{ t('alerts.title') }}</h1>
           <p class="text-[11px] text-gray-400 mt-0.5">{{ t('alerts.todayCount', { n: todayCount() }) }}</p>
         </div>
-        @if (alerts().length > 0) {
+        @if (allAlerts().length > 0) {
           <button (click)="clearAll()" class="text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
             {{ t('alerts.clearAll') }}
           </button>
         }
       </div>
 
-      @if (alerts().length === 0) {
+      @if (allAlerts().length === 0) {
         <app-empty-state emoji="🔔" [title]="t('alerts.noAlerts')"
                          [subtitle]="t('alerts.noAlertsHint')" />
       } @else {
@@ -81,23 +83,48 @@ export class AlertsComponent implements OnInit, OnDestroy {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
   private userSettings = inject(UserSettingsService);
+  private weatherService = inject(WeatherService);
   private transloco = inject(TranslocoService);
   private sub?: Subscription;
   private lastData: SensorData | null = null;
   private readonly STORAGE_KEY = 'growwatch-alerts';
+  private localeKey = signal(this.transloco.getActiveLang());
 
   alerts = signal<Alert[]>(this.loadAlerts());
   plants = this.plantService.plants;
   private monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
 
+  weatherAlerts = computed<Alert[]>(() => {
+    this.localeKey();
+    const forecast = this.weatherService.forecast();
+    if (!forecast || forecast.length === 0) return [];
+    const risks = analyzeForecast(forecast, {
+      frost: this.userSettings.effectiveFrostThreshold(),
+      heat: this.userSettings.effectiveHeatThreshold(),
+      wind: this.userSettings.effectiveWindThreshold(),
+    });
+    const today = risks[0];
+    if (!today || today.messages.length === 0) return [];
+    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
+    return today.messages.map(m => ({
+      id: `weather-${today.date}-${m.type}`,
+      type: (m.severity === 'severe' ? 'danger' : 'warn') as Alert['type'],
+      title: t(`forecast.alert.${m.type}Title`),
+      message: t(m.bodyKey, m.bodyParams) + ' ' + t(m.actionKey),
+      timestamp: new Date(),
+    }));
+  });
+
+  allAlerts = computed<Alert[]>(() => [...this.weatherAlerts(), ...this.alerts()]);
+
   todayAlerts = computed(() => {
     const today = new Date().toDateString();
-    return this.alerts().filter(a => a.timestamp.toDateString() === today);
+    return this.allAlerts().filter(a => a.timestamp.toDateString() === today);
   });
 
   earlierAlerts = computed(() => {
     const today = new Date().toDateString();
-    return this.alerts().filter(a => a.timestamp.toDateString() !== today);
+    return this.allAlerts().filter(a => a.timestamp.toDateString() !== today);
   });
 
   todayCount = computed(() => this.todayAlerts().length);
@@ -172,6 +199,8 @@ export class AlertsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.transloco.langChanges$.subscribe(l => this.localeKey.set(l));
+    if (!this.weatherService.forecast()) this.weatherService.fetchForecast();
     this.sub = this.sensorService.subscribeToSensorData().subscribe(data => {
       if (!data) return;
       if (!this.userSettings.effectiveAlertsEnabled()) return;

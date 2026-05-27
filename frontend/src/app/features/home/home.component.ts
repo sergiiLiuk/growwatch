@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.component';
+import { ForecastStripComponent } from '../../shared/components/atoms/forecast-strip.component';
 import { SensorService, SensorData, HourlySensorData, MoodInfo, PLANT_LIGHT_RANGES } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
@@ -27,7 +28,7 @@ interface ActivityEvent {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, SensorCardComponent, IconComponent, TranslocoDirective],
+  imports: [RouterLink, SensorCardComponent, ForecastStripComponent, IconComponent, TranslocoDirective],
   template: `
     <div class="max-w-4xl mx-auto px-4 py-6" *transloco="let t">
 
@@ -140,6 +141,11 @@ interface ActivityEvent {
             [rangeMax]="lightRange().max"
             link="/light" />
         </div>
+      </div>
+
+      <!-- 3-day forecast strip -->
+      <div class="mb-5">
+        <app-forecast-strip />
       </div>
 
       <!-- Bottom: Activity + Plants — stacked on mobile/tablet, two columns on lg+ -->
@@ -496,7 +502,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.sub = this.sensorService.subscribeToSensorData().subscribe(d => { if (d) this.latestData.set(d); });
     this.sensorService.getHourlyData(24).subscribe(d => this.hourlyData.set(d));
     this.weatherService.fetchWeather();
-    this.weatherTimer = setInterval(() => this.weatherService.fetchWeather(), 30 * 60 * 1000);
+    this.weatherService.fetchForecast();
+    this.weatherTimer = setInterval(() => {
+      this.weatherService.fetchWeather();
+      this.weatherService.fetchForecast();
+    }, 30 * 60 * 1000);
   }
 
   ngOnDestroy() {

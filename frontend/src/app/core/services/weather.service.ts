@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { DailyForecast } from '../utils/weather-risk';
 
 export interface WeatherData {
   temperature: number;
@@ -39,7 +40,9 @@ const LOCATION_KEY = 'growwatch-location';
 @Injectable({ providedIn: 'root' })
 export class WeatherService {
   weather = signal<WeatherData | null>(null);
+  forecast = signal<DailyForecast[] | null>(null);
   loading = signal(false);
+  forecastLoading = signal(false);
 
   private async getLocation(): Promise<StoredLocation> {
     const raw = localStorage.getItem(LOCATION_KEY);
@@ -116,6 +119,37 @@ export class WeatherService {
       console.error('Weather fetch failed:', err);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async fetchForecast(): Promise<void> {
+    this.forecastLoading.set(true);
+    try {
+      const { lat, lng } = await this.getLocation();
+      const res = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+        `&daily=temperature_2m_min,temperature_2m_max,wind_speed_10m_max,weather_code` +
+        `&forecast_days=3&timezone=auto`
+      );
+      const data = await res.json();
+      const days: DailyForecast[] = (data.daily?.time ?? []).map((date: string, i: number) => {
+        const code = data.daily.weather_code[i];
+        const { label, icon } = weatherInfo(code);
+        return {
+          date,
+          weatherCode: code,
+          conditionLabel: label,
+          conditionIcon: icon,
+          tempMin: data.daily.temperature_2m_min[i],
+          tempMax: data.daily.temperature_2m_max[i],
+          windMax: data.daily.wind_speed_10m_max[i],
+        };
+      });
+      this.forecast.set(days);
+    } catch (err) {
+      console.error('Forecast fetch failed:', err);
+    } finally {
+      this.forecastLoading.set(false);
     }
   }
 }

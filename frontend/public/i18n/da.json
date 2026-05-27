@@ -24,6 +24,11 @@
     "alertsTriggerOutside": "Beskeder udløses når temperaturen falder uden for dette interval.",
     "humidityRange": "Fugtighedsinterval",
     "humidityAlertsTriggerOutside": "Advarsler udløses, når fugtigheden er uden for dette interval.",
+    "weatherWarnings": "Vejradvarsler",
+    "weatherWarningsHint": "Vejrudsigtens advarsler udløses, når prognosen krydser disse tærskler.",
+    "frostThreshold": "Frost ≤",
+    "heatThreshold": "Varme ≥",
+    "windThreshold": "Vind ≥",
     "resetTo": "Nulstil",
     "about": "Om",
     "app": "App",
@@ -397,5 +402,47 @@
     "humidityDayTooltip": "{{ day }}: gns. {{ avg }}%, interval {{ min }}–{{ max }}%",
     "driest": "Tørreste",
     "wettest": "Mest fugtige"
+  },
+  "forecast": {
+    "title": "3-dages vejrudsigt",
+    "subtitle": "Udendørs vejr og risici for dit drivhus",
+    "today": "I dag",
+    "tomorrow": "I morgen",
+    "lowHigh": "Lav {{ low }}° · Høj {{ high }}°",
+    "windTo": "Vind op til {{ wind }} km/t",
+    "noRisks": "✓ Ingen risici forventet",
+    "loading": "Henter vejrudsigt…",
+    "noData": "Vejrudsigt ikke tilgængelig. Tjek din forbindelse.",
+    "risk": {
+      "frostWarn": "Lavpunkter på {{ min }}°C ligger på grænsen til skade for kuldefølsomme planter.",
+      "frostSevere": "Forventet minimum {{ min }}°C — direkte risiko for skade på varmekrævende afgrøder.",
+      "heatWarn": "Højpunkter på {{ max }}°C vil stresse de fleste afgrøder, især i et lukket drivhus.",
+      "heatSevere": "Alvorlig varme på {{ max }}°C — planter kan visne eller blive svedet uden hurtig handling.",
+      "windWarn": "Vindstød op til {{ wind }} km/t kan beskadige drivhusdække eller vælte planter.",
+      "windSevere": "Alvorlig vind forventet på {{ wind }} km/t — høj risiko for skader."
+    },
+    "action": {
+      "frost": "→ Luk ventilation i nat og beskyt kuldefølsomme planter (tomater, peberfrugt, basilikum).",
+      "heat": "→ Åbn ventilation fuldt, tilføj skyggenet og vand tidligt om morgenen.",
+      "wind": "→ Fastgør løse paneler og skyggenet. Flyt potter væk fra udsatte områder."
+    },
+    "alert": {
+      "frostTitle": "Frostrisiko i nat",
+      "heatTitle": "Hedebølge på vej",
+      "windTitle": "Stærk vind forventet"
+    },
+    "digest": {
+      "frostLabel": "Frostrisiko i nat",
+      "heatLabel": "Hedebølge i dag",
+      "windLabel": "Stærk vind forventet",
+      "frostDetail": "forventet minimum {{ min }}°C",
+      "heatDetail": "forventet maksimum {{ max }}°C",
+      "windDetail": "vindstød op til {{ wind }} km/t"
+    },
+    "badge": {
+      "frost": "Frost",
+      "heat": "Varme",
+      "wind": "Vind"
+    }
   }
 }

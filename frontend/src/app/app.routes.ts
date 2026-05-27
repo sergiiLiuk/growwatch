@@ -38,6 +38,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/humidity/humidity-insights.component').then(m => m.HumidityInsightsComponent),
       },
       {
+        path: 'forecast',
+        loadComponent: () => import('./features/forecast/forecast.component').then(m => m.ForecastComponent),
+      },
+      {
         path: 'digest',
         loadComponent: () => import('./features/digest/digest.component').then(m => m.DigestComponent),
       },

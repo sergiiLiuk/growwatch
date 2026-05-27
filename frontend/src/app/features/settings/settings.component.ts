@@ -179,6 +179,65 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
       </div>
 
+      <!-- Weather warnings -->
+      <div class="mb-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.weatherWarnings') }}</div>
+        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex flex-col gap-3">
+
+          <div class="flex items-center gap-3">
+            <span class="text-[13px] text-gray-600 flex-1">🥶 {{ t('settings.frostThreshold') }}</span>
+            <div class="relative">
+              <select [ngModel]="settings.effectiveFrostThreshold()" (ngModelChange)="onFrostChange($event)"
+                      class="appearance-none w-20 text-center text-[14px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
+                @for (f of frostOptions; track f) {
+                  <option [ngValue]="f">{{ f }}°C</option>
+                }
+              </select>
+              <app-icon name="chevron-down" strokeWidth="2"
+                        class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="text-[13px] text-gray-600 flex-1">🥵 {{ t('settings.heatThreshold') }}</span>
+            <div class="relative">
+              <select [ngModel]="settings.effectiveHeatThreshold()" (ngModelChange)="onHeatChange($event)"
+                      class="appearance-none w-20 text-center text-[14px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
+                @for (h of heatOptions; track h) {
+                  <option [ngValue]="h">{{ h }}°C</option>
+                }
+              </select>
+              <app-icon name="chevron-down" strokeWidth="2"
+                        class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="text-[13px] text-gray-600 flex-1">💨 {{ t('settings.windThreshold') }}</span>
+            <div class="relative">
+              <select [ngModel]="settings.effectiveWindThreshold()" (ngModelChange)="onWindChange($event)"
+                      class="appearance-none w-24 text-center text-[14px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
+                @for (w of windOptions; track w) {
+                  <option [ngValue]="w">{{ w }} km/h</option>
+                }
+              </select>
+              <app-icon name="chevron-down" strokeWidth="2"
+                        class="w-3 h-3 text-gw-green-dark/60 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
+        </div>
+        <div class="flex items-center justify-between mt-2 px-1">
+          <p class="text-[11px] text-gray-400 leading-relaxed flex-1">
+            {{ t('settings.weatherWarningsHint') }}
+          </p>
+          <button (click)="resetWeatherThresholds()"
+                  class="text-[11px] text-gw-green-dark hover:underline ml-3 shrink-0">
+            {{ t('settings.resetTo') }}
+          </button>
+        </div>
+      </div>
+
       <!-- About -->
       <div>
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.about') }}</div>
@@ -323,6 +382,9 @@ export class SettingsComponent implements OnInit {
 
   readonly tempOptions = Array.from({ length: 41 }, (_, i) => i); // 0..40
   readonly humidityOptions = Array.from({ length: 21 }, (_, i) => i * 5); // 0,5,...,100
+  readonly frostOptions = Array.from({ length: 11 }, (_, i) => i - 5); // -5..5
+  readonly heatOptions = Array.from({ length: 11 }, (_, i) => 28 + i); // 28..38
+  readonly windOptions = Array.from({ length: 9 }, (_, i) => 30 + i * 10); // 30..110
 
   readonly localeOptions = [
     { code: 'en', label: 'English',  flag: '🇬🇧' },
@@ -360,6 +422,25 @@ export class SettingsComponent implements OnInit {
 
   resetHumidityRange() {
     this.settings.resetHumidityRange();
+  }
+
+  onFrostChange(value: number | null) {
+    const v = typeof value === 'number' && Number.isFinite(value) ? value : null;
+    this.settings.setFrostThreshold(v);
+  }
+
+  onHeatChange(value: number | null) {
+    const v = typeof value === 'number' && Number.isFinite(value) ? value : null;
+    this.settings.setHeatThreshold(v);
+  }
+
+  onWindChange(value: number | null) {
+    const v = typeof value === 'number' && Number.isFinite(value) ? value : null;
+    this.settings.setWindThreshold(v);
+  }
+
+  resetWeatherThresholds() {
+    this.settings.resetWeatherThresholds();
   }
 
   ngOnInit() {

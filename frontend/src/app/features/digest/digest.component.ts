@@ -3,6 +3,8 @@ import { DatePipe } from '@angular/common';
 import { SensorService, HourlySensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
+import { WeatherService } from '../../core/services/weather.service';
+import { analyzeForecast } from '../../core/utils/weather-risk';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -83,6 +85,7 @@ export class DigestComponent implements OnInit {
   private sensorService = inject(SensorService);
   private plantService = inject(PlantService);
   private userSettings = inject(UserSettingsService);
+  private weatherService = inject(WeatherService);
   private transloco = inject(TranslocoService);
   // Reactive locale signal so computeds re-run when language changes
   private localeKey = signal(this.transloco.getActiveLang());
@@ -173,6 +176,25 @@ export class DigestComponent implements OnInit {
       });
     }
 
+    // Weather warnings — append risks for today only
+    const forecast = this.weatherService.forecast();
+    if (forecast && forecast.length > 0) {
+      const risks = analyzeForecast(forecast, {
+        frost: this.userSettings.effectiveFrostThreshold(),
+        heat: this.userSettings.effectiveHeatThreshold(),
+        wind: this.userSettings.effectiveWindThreshold(),
+      });
+      for (const m of risks[0]?.messages ?? []) {
+        items.push({
+          icon: m.icon,
+          label: t(`forecast.digest.${m.type}Label`),
+          status: 'warn',
+          message: t(m.bodyKey, m.bodyParams) + ' ' + t(m.actionKey),
+          detail: t(`forecast.digest.${m.type}Detail`, m.bodyParams),
+        });
+      }
+    }
+
     return items;
   });
 
@@ -199,6 +221,7 @@ export class DigestComponent implements OnInit {
   });
 
   ngOnInit() {
+    if (!this.weatherService.forecast()) this.weatherService.fetchForecast();
     this.sensorService.getHourlyData(24).subscribe(data => {
       const todayStr = new Date().toDateString();
       this.hourlyData.set(data.filter(d => new Date(d.hour).toDateString() === todayStr));

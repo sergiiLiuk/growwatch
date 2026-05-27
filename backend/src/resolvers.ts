@@ -351,6 +351,9 @@ export const resolvers = {
                 tempMax: settings?.tempMax ?? null,
                 humidityMin: settings?.humidityMin ?? null,
                 humidityMax: settings?.humidityMax ?? null,
+                frostThreshold: settings?.frostThreshold ?? null,
+                heatThreshold: settings?.heatThreshold ?? null,
+                windThreshold: settings?.windThreshold ?? null,
                 digestTime: settings?.digestTime ?? null,
                 digestEnabled: settings?.digestEnabled ?? null,
                 alertsEnabled: settings?.alertsEnabled ?? null,
@@ -456,6 +459,9 @@ export const resolvers = {
                 tempMax?: number | null;
                 humidityMin?: number | null;
                 humidityMax?: number | null;
+                frostThreshold?: number | null;
+                heatThreshold?: number | null;
+                windThreshold?: number | null;
                 digestTime?: string | null;
                 digestEnabled?: boolean | null;
                 alertsEnabled?: boolean | null;
@@ -478,6 +484,9 @@ export const resolvers = {
             apply('tempMax', args.tempMax, (v) => typeof v === 'number');
             apply('humidityMin', args.humidityMin, (v) => typeof v === 'number');
             apply('humidityMax', args.humidityMax, (v) => typeof v === 'number');
+            apply('frostThreshold', args.frostThreshold, (v) => typeof v === 'number');
+            apply('heatThreshold', args.heatThreshold, (v) => typeof v === 'number');
+            apply('windThreshold', args.windThreshold, (v) => typeof v === 'number');
             apply('digestTime', args.digestTime, (v) => typeof v === 'string');
             apply('digestEnabled', args.digestEnabled, (v) => typeof v === 'boolean');
             apply('alertsEnabled', args.alertsEnabled, (v) => typeof v === 'boolean');
@@ -497,6 +506,9 @@ export const resolvers = {
                 tempMax: settings?.tempMax ?? null,
                 humidityMin: settings?.humidityMin ?? null,
                 humidityMax: settings?.humidityMax ?? null,
+                frostThreshold: settings?.frostThreshold ?? null,
+                heatThreshold: settings?.heatThreshold ?? null,
+                windThreshold: settings?.windThreshold ?? null,
                 digestTime: settings?.digestTime ?? null,
                 digestEnabled: settings?.digestEnabled ?? null,
                 alertsEnabled: settings?.alertsEnabled ?? null,
