@@ -55,6 +55,11 @@ interface ActivityEvent {
           }
         </div>
 
+        <!-- Forecast strip — mobile only, sits between weather and phase -->
+        <div class="md:hidden">
+          <app-forecast-strip />
+        </div>
+
         <!-- Phase / mood card -->
         <div class="rounded-2xl p-4 border border-transparent flex flex-col" [class]="moodBg()">
           <div class="flex items-start justify-between gap-2 mb-1">
@@ -78,6 +83,11 @@ interface ActivityEvent {
           <div class="mt-3 h-px opacity-20 rounded-full" [class]="moodIconColor() === 'text-gw-green-dark' ? 'bg-gw-green-dark' : 'bg-gw-amber-dark'"></div>
         </div>
 
+      </div>
+
+      <!-- 3-day forecast strip — desktop only (mobile version sits in the hero row) -->
+      <div class="hidden md:block mb-5">
+        <app-forecast-strip />
       </div>
 
       <!-- Onboarding -->
@@ -141,11 +151,6 @@ interface ActivityEvent {
             [rangeMax]="lightRange().max"
             link="/light" />
         </div>
-      </div>
-
-      <!-- 3-day forecast strip -->
-      <div class="mb-5">
-        <app-forecast-strip />
       </div>
 
       <!-- Bottom: Activity + Plants — stacked on mobile/tablet, two columns on lg+ -->
