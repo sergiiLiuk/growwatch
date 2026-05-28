@@ -144,7 +144,7 @@
   "plantDetail": {
     "recommendations": "Anbefalinger",
     "logAction": "Log handling",
-    "history": "Historik",
+    "historyTitle": "Historik",
     "seeAllActions": "Se alle handlinger ›",
     "today": "i dag",
     "never": "Aldrig",

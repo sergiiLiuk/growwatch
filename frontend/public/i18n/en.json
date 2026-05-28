@@ -144,7 +144,7 @@
   "plantDetail": {
     "recommendations": "Recommendations",
     "logAction": "Log action",
-    "history": "History",
+    "historyTitle": "History",
     "seeAllActions": "See all actions ›",
     "today": "today",
     "never": "Never",

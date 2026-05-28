@@ -65,10 +65,18 @@ export class SmartTipService {
 
         const actions = await PlantAction.find({ plantId, userId }).sort({ createdAt: -1 }).limit(5).lean();
         const now = Date.now();
-        const ageWeeks = Math.max(1, Math.floor((now - new Date(plant.plantedDate).getTime()) / (7 * 24 * 60 * 60 * 1000)));
+        // Defensive parse: some legacy rows store plantedDate as { $date: '...' }
+        const raw: any = plant.plantedDate;
+        const plantedMs = raw instanceof Date
+            ? raw.getTime()
+            : raw && typeof raw === 'object' && '$date' in raw
+                ? new Date(raw.$date).getTime()
+                : new Date(raw).getTime();
+        const plantedDate = isNaN(plantedMs) ? new Date(now) : new Date(plantedMs);
+        const ageWeeks = Math.max(1, Math.floor((now - plantedDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
 
         const ctx: TipContext = {
-            plant: { type: plant.type, name: plant.name, plantedDate: new Date(plant.plantedDate), ageWeeks },
+            plant: { type: plant.type, name: plant.name, plantedDate, ageWeeks },
             latestReading,
             recentActions: actions.map((a: any) => ({
                 type: a.type,

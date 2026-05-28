@@ -158,7 +158,7 @@ import dayjs from 'dayjs';
 
           <!-- History -->
           <div class="mb-4">
-            <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.history') }}</div>
+            <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.historyTitle') }}</div>
             <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
               @if (recentActions().length === 0) {
                 <p class="text-[12px] text-gray-400 p-4 text-center">{{ t('plantDetail.never') }}</p>
@@ -203,7 +203,7 @@ import dayjs from 'dayjs';
           <!-- Archived history is still visible (read-only) -->
           @if (recentActions().length > 0) {
             <div class="mt-4">
-              <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.history') }}</div>
+              <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.historyTitle') }}</div>
               <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
                 @for (a of recentActions(); track a.id) {
                   <div class="flex items-center gap-3 p-3">
