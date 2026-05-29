@@ -24,6 +24,11 @@
     "alertsTriggerOutside": "Beskeder udløses når temperaturen falder uden for dette interval.",
     "humidityRange": "Fugtighedsinterval",
     "humidityAlertsTriggerOutside": "Advarsler udløses, når fugtigheden er uden for dette interval.",
+    "smartTips": "Smarte tips",
+    "smartTipsEnabled": "Aktivér smarte tips",
+    "morningTipTime": "Morgentip",
+    "eveningTipTime": "Aftentip",
+    "smartTipsHint": "Et AI-brief genereres på hvert tidspunkt og dækker drivhuset og hver plante.",
     "weatherWarnings": "Vejradvarsler",
     "weatherWarningsHint": "Vejrudsigtens advarsler udløses, når prognosen krydser disse tærskler.",
     "frostThreshold": "Frost ≤",
@@ -225,6 +230,9 @@
     "loginFailed": "Login mislykkedes"
   },
   "home": {
+    "todaysBrief": "Dagens brief",
+    "morningBrief": "Morgenbrief",
+    "eveningBrief": "Aftenbrief",
     "currentPhase": "Nuværende fase",
     "co2Elevated": "Forhøjet CO₂",
     "addYourFirstPlant": "Tilføj din første plante",

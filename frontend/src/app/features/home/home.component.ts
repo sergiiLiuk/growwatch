@@ -7,6 +7,7 @@ import { SensorService, SensorData, HourlySensorData, MoodInfo, PLANT_LIGHT_RANG
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
+import { PlantActionService, DailyBriefing } from '../../core/services/plant-action.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -84,6 +85,22 @@ interface ActivityEvent {
         </div>
 
       </div>
+
+      <!-- Today's brief -->
+      @if (briefing(); as b) {
+        <div class="mb-5 rounded-2xl bg-gw-green-light border border-gw-green/30 p-4">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-base leading-none">✨</span>
+              <span class="text-[10px] font-semibold tracking-widest uppercase text-gw-green-dark/70">
+                {{ b.cycle === 'morning' ? t('home.morningBrief') : t('home.eveningBrief') }}
+              </span>
+            </div>
+            <span class="text-[10px] text-gw-green-dark/50 tabular-nums">{{ formatBriefingTime(b.generatedAt) }}</span>
+          </div>
+          <p class="text-[13px] text-gw-green-dark leading-relaxed">{{ b.overview }}</p>
+        </div>
+      }
 
       <!-- 3-day forecast strip — desktop only (mobile version sits in the hero row) -->
       <div class="hidden md:block mb-5">
@@ -203,7 +220,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   private plantService = inject(PlantService);
   weatherService = inject(WeatherService);
   private userSettings = inject(UserSettingsService);
+  private plantActions = inject(PlantActionService);
   private transloco = inject(TranslocoService);
+  briefing = signal<DailyBriefing | null>(null);
+
+  formatBriefingTime(d: Date): string {
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
   private localeKey = signal(this.transloco.getActiveLang());
   private sub?: Subscription;
   private weatherTimer?: ReturnType<typeof setInterval>;
@@ -508,6 +531,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.sensorService.getHourlyData(24).subscribe(d => this.hourlyData.set(d));
     this.weatherService.fetchWeather();
     this.weatherService.fetchForecast();
+    this.plantActions.getDailyBriefing().subscribe(b => this.briefing.set(b));
     this.weatherTimer = setInterval(() => {
       this.weatherService.fetchWeather();
       this.weatherService.fetchForecast();

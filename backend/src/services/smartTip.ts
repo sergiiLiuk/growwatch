@@ -1,97 +1,176 @@
-import { SmartTip, PlantAction, Plant } from '../models';
+import { SmartTip, PlantAction, Plant, DailyBriefing, BriefingCycle, UserSettings } from '../models';
+import { fetchWeatherContext } from './weatherFetch';
 
-export interface TipContext {
-    plant: { type: string; name: string; plantedDate: Date; ageWeeks: number };
-    latestReading: { temperature?: number; humidity?: number; lightLevel?: number } | null;
-    recentActions: { type: string; daysAgo: number }[];
-    locale: 'en' | 'da';
+// ── Briefing context types ──────────────────────────────────────────────────
+
+export interface DailyForecastSnapshot {
+    date: string;
+    tempMin: number;
+    tempMax: number;
+    windMax: number;
+    conditionLabel: string;
 }
+
+export interface CurrentWeatherSnapshot {
+    temperature: number;
+    humidity: number;
+    conditionLabel: string;
+    city: string;
+}
+
+export interface BriefingPlant {
+    id: string;
+    name: string;
+    type: string;
+    ageWeeks: number;
+    recentActions: { type: string; daysAgo: number; note?: string }[];
+}
+
+export interface BriefingContext {
+    cycle: BriefingCycle;
+    locale: 'en' | 'da';
+    weather: { current: CurrentWeatherSnapshot | null; forecast3d: DailyForecastSnapshot[] };
+    sensors: { temperature?: number; humidity?: number; co2?: number; lightLevel?: number } | null;
+    plants: BriefingPlant[];
+}
+
+export interface Briefing {
+    overview: string;
+    plantTips: Record<string, string>;
+}
+
+// ── Provider interface ──────────────────────────────────────────────────────
 
 export interface LlmProvider {
     readonly source: string;
-    generate(context: TipContext): Promise<string>;
+    generateBriefing(ctx: BriefingContext): Promise<Briefing>;
 }
 
-// Templated tips per plant type. Keys default to TOMATO when unknown.
-const STUB_TEMPLATES_EN: Record<string, (ctx: TipContext) => string> = {
-    TOMATO: (c) => `Tomatoes in week ${c.plant.ageWeeks} often need staking and side-shoot pinching. Humidity is ${c.latestReading?.humidity ?? '—'}% today — watch for early blight if it stays above 80%.`,
-    PEPPER: (c) => `Peppers in week ${c.plant.ageWeeks} benefit from a calcium-rich feed. Keep humidity steady around 60% to avoid blossom drop.`,
-    CUCUMBER: (c) => `Cucumbers in week ${c.plant.ageWeeks} are heavy drinkers — keep soil consistently moist. Train new vines to the trellis weekly.`,
-    LETTUCE: (c) => `Lettuce in week ${c.plant.ageWeeks} prefers cool roots — mulch the bed and water in the morning.`,
-    BASIL: (c) => `Pinch basil tips above the second leaf pair to keep it bushy. Don't let it flower yet — that turns leaves bitter.`,
-    STRAWBERRY: (c) => `Strawberries in week ${c.plant.ageWeeks}: remove runners to push energy into fruiting. Mulch under berries to keep them clean.`,
-    DEFAULT: (c) => `${c.plant.name} is in week ${c.plant.ageWeeks}. Check the soil moisture before watering — your last reading was ${c.latestReading?.humidity ?? '—'}% air humidity.`,
+// ── StubLlmProvider ─────────────────────────────────────────────────────────
+// Used when ANTHROPIC_API_KEY is absent. Returns templated text.
+
+const STUB_OVERVIEW = (ctx: BriefingContext): string => {
+    const t = ctx.sensors?.temperature;
+    const h = ctx.sensors?.humidity;
+    if (ctx.locale === 'da') {
+        const w = ctx.weather.current ? `${ctx.weather.current.conditionLabel} ude` : 'ingen vejrdata';
+        return ctx.cycle === 'morning'
+            ? `God morgen! Drivhuset er ${t != null ? t.toFixed(1) + '°C' : '—'} og ${h != null ? h + '%' : '—'} fugtigt. ${w}. Plan din pasning i overensstemmelse hermed.`
+            : `Aften-status: drivhuset endte på ${t != null ? t.toFixed(1) + '°C' : '—'} og ${h != null ? h + '%' : '—'} fugtigt. ${w}. Tjek planterne inden natten.`;
+    }
+    const w = ctx.weather.current ? `${ctx.weather.current.conditionLabel} outside` : 'no weather data';
+    return ctx.cycle === 'morning'
+        ? `Good morning! Greenhouse is ${t != null ? t.toFixed(1) + '°C' : '—'} and ${h != null ? h + '%' : '—'} humid. ${w}. Plan today's care accordingly.`
+        : `Evening check-in: greenhouse ended at ${t != null ? t.toFixed(1) + '°C' : '—'} and ${h != null ? h + '%' : '—'} humid. ${w}. Look in on the plants before nightfall.`;
 };
 
-const STUB_TEMPLATES_DA: Record<string, (ctx: TipContext) => string> = {
-    TOMATO: (c) => `Tomater i uge ${c.plant.ageWeeks} skal ofte opbindes og have knebet sideskud. Fugtigheden er ${c.latestReading?.humidity ?? '—'}% i dag — hold øje med tomatpest, hvis den bliver over 80%.`,
-    PEPPER: (c) => `Peberfrugter i uge ${c.plant.ageWeeks} har gavn af kalkholdig gødning. Hold fugtigheden stabil omkring 60% for at undgå blomsterfald.`,
-    CUCUMBER: (c) => `Agurker i uge ${c.plant.ageWeeks} drikker meget — hold jorden jævnt fugtig. Bind nye ranker til opbindingen ugentligt.`,
-    LETTUCE: (c) => `Salat i uge ${c.plant.ageWeeks} foretrækker kølige rødder — dæk bedet med halm og vand om morgenen.`,
-    BASIL: (c) => `Knib basilikum over det andet bladpar for at holde den buskagtig. Lad den ikke blomstre endnu — det gør bladene bitre.`,
-    STRAWBERRY: (c) => `Jordbær i uge ${c.plant.ageWeeks}: fjern udløbere for at sende energi til frugterne. Læg halm under bærrene for at holde dem rene.`,
-    DEFAULT: (c) => `${c.plant.name} er i uge ${c.plant.ageWeeks}. Tjek jordfugtigheden før du vander — sidste måling var ${c.latestReading?.humidity ?? '—'}% luftfugtighed.`,
+const STUB_PLANT_TIP = (ctx: BriefingContext, p: BriefingPlant): string => {
+    const wateredDays = p.recentActions.find(a => a.type === 'water')?.daysAgo;
+    if (ctx.locale === 'da') {
+        return ctx.cycle === 'morning'
+            ? `${p.name} (uge ${p.ageWeeks}) — ${wateredDays != null ? `vandet for ${wateredDays} dage siden. ` : ''}Tjek jordens fugtighed inden vanding.`
+            : `${p.name} (uge ${p.ageWeeks}) — ${wateredDays != null ? `vandet for ${wateredDays} dage siden. ` : ''}Hold øje med blade og knopper inden natten.`;
+    }
+    return ctx.cycle === 'morning'
+        ? `${p.name} (week ${p.ageWeeks}) — ${wateredDays != null ? `watered ${wateredDays} day(s) ago. ` : ''}Check soil moisture before watering.`
+        : `${p.name} (week ${p.ageWeeks}) — ${wateredDays != null ? `watered ${wateredDays} day(s) ago. ` : ''}Watch leaves and buds before night.`;
 };
 
 export class StubLlmProvider implements LlmProvider {
     readonly source = 'stub';
-    async generate(ctx: TipContext): Promise<string> {
-        const table = ctx.locale === 'da' ? STUB_TEMPLATES_DA : STUB_TEMPLATES_EN;
-        const fn = table[ctx.plant.type] ?? table.DEFAULT;
-        return fn(ctx);
+    async generateBriefing(ctx: BriefingContext): Promise<Briefing> {
+        const plantTips: Record<string, string> = {};
+        for (const p of ctx.plants) plantTips[p.id] = STUB_PLANT_TIP(ctx, p);
+        return { overview: STUB_OVERVIEW(ctx), plantTips };
     }
 }
 
-const TIP_TTL_MS = 24 * 60 * 60 * 1000;
+// ── SmartTipService ─────────────────────────────────────────────────────────
 
 export class SmartTipService {
     constructor(private provider: LlmProvider) {}
 
-    async getOrGenerate(plantId: string, userId: string, locale: 'en' | 'da' = 'en', latestReading: TipContext['latestReading'] = null) {
-        const existing = await SmartTip.findOne({ plantId, userId });
-        if (existing && Date.now() - existing.generatedAt.getTime() < TIP_TTL_MS) {
-            return existing;
+    /**
+     * Generate a briefing for a single user, persist the overview + per-plant
+     * tips, and return the result. Caller is responsible for choosing the
+     * cycle (morning/evening) and updating UserSettings.lastSmartTipRun.
+     */
+    async regenerateForUser(userId: string, cycle: BriefingCycle): Promise<Briefing> {
+        const ctx = await this.buildContext(userId, cycle);
+        if (ctx.plants.length === 0) {
+            // No monitored plants — still write an overview-only briefing
+            const briefing = await this.provider.generateBriefing(ctx);
+            await this.persistBriefing(userId, cycle, briefing);
+            return briefing;
         }
-        return this.regenerate(plantId, userId, locale, latestReading);
+        const briefing = await this.provider.generateBriefing(ctx);
+        await this.persistBriefing(userId, cycle, briefing);
+        return briefing;
     }
 
-    async refresh(plantId: string, userId: string, locale: 'en' | 'da' = 'en', latestReading: TipContext['latestReading'] = null) {
-        return this.regenerate(plantId, userId, locale, latestReading);
-    }
+    private async buildContext(userId: string, cycle: BriefingCycle): Promise<BriefingContext> {
+        const settings = await UserSettings.findOne({ userId }).lean();
+        const locale = (settings?.locale === 'da' ? 'da' : 'en') as 'en' | 'da';
+        const location = settings?.location;
 
-    private async regenerate(plantId: string, userId: string, locale: 'en' | 'da', latestReading: TipContext['latestReading']) {
-        const plant = await Plant.findOne({ _id: plantId, userId }).lean();
-        if (!plant) throw new Error('Plant not found');
+        const weather = await fetchWeatherContext(location?.lat, location?.lng, location?.city);
 
-        const actions = await PlantAction.find({ plantId, userId }).sort({ createdAt: -1 }).limit(5).lean();
+        const sensors = await this.latestSensors(userId);
+
+        const plants = await Plant.find({ userId, monitored: true, archived: { $ne: true } }).sort({ createdAt: 1 }).lean();
+        const briefingPlants: BriefingPlant[] = [];
         const now = Date.now();
-        // Defensive parse: some legacy rows store plantedDate as { $date: '...' }
-        const raw: any = plant.plantedDate;
-        const plantedMs = raw instanceof Date
-            ? raw.getTime()
-            : raw && typeof raw === 'object' && '$date' in raw
-                ? new Date(raw.$date).getTime()
+        for (const p of plants) {
+            const actions = await PlantAction.find({ plantId: p._id.toString(), userId }).sort({ createdAt: -1 }).limit(10).lean();
+            const raw: any = p.plantedDate;
+            const plantedMs = raw instanceof Date ? raw.getTime()
+                : raw && typeof raw === 'object' && '$date' in raw ? new Date(raw.$date).getTime()
                 : new Date(raw).getTime();
-        const plantedDate = isNaN(plantedMs) ? new Date(now) : new Date(plantedMs);
-        const ageWeeks = Math.max(1, Math.floor((now - plantedDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+            const safePlantedMs = isNaN(plantedMs) ? now : plantedMs;
+            const ageWeeks = Math.max(1, Math.floor((now - safePlantedMs) / (7 * 24 * 60 * 60 * 1000)));
+            briefingPlants.push({
+                id: p._id.toString(),
+                name: p.name,
+                type: p.type,
+                ageWeeks,
+                recentActions: actions.map((a: any) => ({
+                    type: a.type,
+                    daysAgo: Math.floor((now - new Date(a.createdAt).getTime()) / (24 * 60 * 60 * 1000)),
+                    note: a.note,
+                })),
+            });
+        }
 
-        const ctx: TipContext = {
-            plant: { type: plant.type, name: plant.name, plantedDate, ageWeeks },
-            latestReading,
-            recentActions: actions.map((a: any) => ({
-                type: a.type,
-                daysAgo: Math.floor((now - new Date(a.createdAt).getTime()) / (24 * 60 * 60 * 1000)),
-            })),
-            locale,
+        return { cycle, locale, weather, sensors, plants: briefingPlants };
+    }
+
+    private async latestSensors(userId: string): Promise<BriefingContext['sensors']> {
+        // Access the in-memory sensor store via a lazy import to avoid circular deps.
+        const { getLatestForUser } = await import('../sensorStore');
+        const latest = getLatestForUser(userId);
+        if (!latest) return null;
+        return {
+            temperature: latest.temperature,
+            humidity: latest.humidity,
+            co2: latest.co2,
+            lightLevel: latest.lightLevel,
         };
+    }
 
-        const text = await this.provider.generate(ctx);
-        const generatedAt = new Date();
-        const doc = await SmartTip.findOneAndUpdate(
-            { plantId, userId },
-            { $set: { text, source: this.provider.source, generatedAt }, $setOnInsert: { plantId, userId } },
-            { upsert: true, new: true }
+    private async persistBriefing(userId: string, cycle: BriefingCycle, briefing: Briefing): Promise<void> {
+        const now = new Date();
+        const source = this.provider.source;
+        await DailyBriefing.findOneAndUpdate(
+            { userId },
+            { $set: { cycle, overview: briefing.overview, source, generatedAt: now } },
+            { upsert: true }
         );
-        return doc!;
+        for (const [plantId, text] of Object.entries(briefing.plantTips)) {
+            await SmartTip.findOneAndUpdate(
+                { userId, plantId },
+                { $set: { text, source, cycle, generatedAt: now }, $setOnInsert: { userId, plantId } },
+                { upsert: true }
+            );
+        }
     }
 }

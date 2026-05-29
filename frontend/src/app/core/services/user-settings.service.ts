@@ -31,6 +31,9 @@ export class UserSettingsService {
   readonly DEFAULT_HEAT_THRESHOLD = 32;
   readonly DEFAULT_WIND_THRESHOLD = 50;
   readonly DEFAULT_DIGEST_TIME = '20:00';
+  readonly DEFAULT_MORNING_TIP_TIME = '07:00';
+  readonly DEFAULT_EVENING_TIP_TIME = '20:00';
+  readonly DEFAULT_SMART_TIPS_ENABLED = true;
   readonly DEFAULT_DIGEST_ENABLED = true;
   readonly DEFAULT_ALERTS_ENABLED = true;
   readonly SUPPORTED_LOCALES = ['en', 'da'] as const;
@@ -46,6 +49,10 @@ export class UserSettingsService {
   digestEnabled = signal<boolean | null>(null);
   alertsEnabled = signal<boolean | null>(null);
   locale = signal<string | null>(null);
+  smartTipsEnabled = signal<boolean | null>(null);
+  morningTipTime = signal<string | null>(null);
+  eveningTipTime = signal<string | null>(null);
+  location = signal<{ lat: number; lng: number; city?: string | null } | null>(null);
 
   effectiveTempMin = computed(() => this.tempMin() ?? this.DEFAULT_TEMP_MIN);
   effectiveTempMax = computed(() => this.tempMax() ?? this.DEFAULT_TEMP_MAX);
@@ -55,6 +62,9 @@ export class UserSettingsService {
   effectiveHeatThreshold = computed(() => this.heatThreshold() ?? this.DEFAULT_HEAT_THRESHOLD);
   effectiveWindThreshold = computed(() => this.windThreshold() ?? this.DEFAULT_WIND_THRESHOLD);
   effectiveDigestTime = computed(() => this.digestTime() ?? this.DEFAULT_DIGEST_TIME);
+  effectiveMorningTipTime = computed(() => this.morningTipTime() ?? this.DEFAULT_MORNING_TIP_TIME);
+  effectiveEveningTipTime = computed(() => this.eveningTipTime() ?? this.DEFAULT_EVENING_TIP_TIME);
+  effectiveSmartTipsEnabled = computed(() => this.smartTipsEnabled() ?? this.DEFAULT_SMART_TIPS_ENABLED);
   effectiveDigestEnabled = computed(() => this.digestEnabled() ?? this.DEFAULT_DIGEST_ENABLED);
   effectiveAlertsEnabled = computed(() => this.alertsEnabled() ?? this.DEFAULT_ALERTS_ENABLED);
   effectiveLocale = computed(() => {
@@ -78,6 +88,10 @@ export class UserSettingsService {
         this.frostThreshold.set(null);
         this.heatThreshold.set(null);
         this.windThreshold.set(null);
+        this.smartTipsEnabled.set(null);
+        this.morningTipTime.set(null);
+        this.eveningTipTime.set(null);
+        this.location.set(null);
         this.digestTime.set(null);
         this.digestEnabled.set(null);
         this.alertsEnabled.set(null);
@@ -109,11 +123,21 @@ export class UserSettingsService {
           digestEnabled: boolean | null;
           alertsEnabled: boolean | null;
           locale: string | null;
+          smartTipsEnabled: boolean | null;
+          morningTipTime: string | null;
+          eveningTipTime: string | null;
+          location: { lat: number; lng: number; city: string | null } | null;
         };
       }>({
         query: gql`
           query MyUserSettings {
-            myUserSettings { tempMin tempMax humidityMin humidityMax frostThreshold heatThreshold windThreshold digestTime digestEnabled alertsEnabled locale }
+            myUserSettings {
+              tempMin tempMax humidityMin humidityMax
+              frostThreshold heatThreshold windThreshold
+              digestTime digestEnabled alertsEnabled locale
+              smartTipsEnabled morningTipTime eveningTipTime
+              location { lat lng city }
+            }
           }
         `,
         fetchPolicy: 'network-only',
@@ -131,11 +155,20 @@ export class UserSettingsService {
         this.digestEnabled.set(s.digestEnabled);
         this.alertsEnabled.set(s.alertsEnabled);
         this.locale.set(s.locale);
+        this.smartTipsEnabled.set(s.smartTipsEnabled);
+        this.morningTipTime.set(s.morningTipTime);
+        this.eveningTipTime.set(s.eveningTipTime);
+        this.location.set(s.location);
       }
     } catch (err) {
       console.error('Failed to load user settings:', err);
     }
   }
+
+  setSmartTipsEnabled(value: boolean | null) { this.smartTipsEnabled.set(value); return this.persist({ smartTipsEnabled: value }); }
+  setMorningTipTime(value: string | null) { this.morningTipTime.set(value); return this.persist({ morningTipTime: value }); }
+  setEveningTipTime(value: string | null) { this.eveningTipTime.set(value); return this.persist({ eveningTipTime: value }); }
+  setLocation(value: { lat: number; lng: number; city?: string | null } | null) { this.location.set(value); return this.persist({ location: value }); }
 
   setTempMin(value: number | null) { this.tempMin.set(value); return this.persist({ tempMin: value }); }
   setTempMax(value: number | null) { this.tempMax.set(value); return this.persist({ tempMax: value }); }
@@ -184,6 +217,10 @@ export class UserSettingsService {
     digestEnabled?: boolean | null;
     alertsEnabled?: boolean | null;
     locale?: string | null;
+    smartTipsEnabled?: boolean | null;
+    morningTipTime?: string | null;
+    eveningTipTime?: string | null;
+    location?: { lat: number; lng: number; city?: string | null } | null;
   }): Promise<void> {
     try {
       const result = await this.apolloClient.mutate<{
@@ -199,6 +236,10 @@ export class UserSettingsService {
           digestEnabled: boolean | null;
           alertsEnabled: boolean | null;
           locale: string | null;
+          smartTipsEnabled: boolean | null;
+          morningTipTime: string | null;
+          eveningTipTime: string | null;
+          location: { lat: number; lng: number; city: string | null } | null;
         };
       }>({
         mutation: gql`
@@ -207,15 +248,25 @@ export class UserSettingsService {
             $humidityMin: Float, $humidityMax: Float,
             $frostThreshold: Float, $heatThreshold: Float, $windThreshold: Float,
             $digestTime: String, $digestEnabled: Boolean, $alertsEnabled: Boolean,
-            $locale: String
+            $locale: String,
+            $smartTipsEnabled: Boolean, $morningTipTime: String, $eveningTipTime: String,
+            $location: UserLocationInput
           ) {
             updateUserSettings(
               tempMin: $tempMin, tempMax: $tempMax,
               humidityMin: $humidityMin, humidityMax: $humidityMax,
               frostThreshold: $frostThreshold, heatThreshold: $heatThreshold, windThreshold: $windThreshold,
               digestTime: $digestTime, digestEnabled: $digestEnabled, alertsEnabled: $alertsEnabled,
-              locale: $locale
-            ) { tempMin tempMax humidityMin humidityMax frostThreshold heatThreshold windThreshold digestTime digestEnabled alertsEnabled locale }
+              locale: $locale,
+              smartTipsEnabled: $smartTipsEnabled, morningTipTime: $morningTipTime, eveningTipTime: $eveningTipTime,
+              location: $location
+            ) {
+              tempMin tempMax humidityMin humidityMax
+              frostThreshold heatThreshold windThreshold
+              digestTime digestEnabled alertsEnabled locale
+              smartTipsEnabled morningTipTime eveningTipTime
+              location { lat lng city }
+            }
           }
         `,
         variables: args,
@@ -234,6 +285,10 @@ export class UserSettingsService {
         this.digestEnabled.set(s.digestEnabled);
         this.alertsEnabled.set(s.alertsEnabled);
         this.locale.set(s.locale);
+        this.smartTipsEnabled.set(s.smartTipsEnabled);
+        this.morningTipTime.set(s.morningTipTime);
+        this.eveningTipTime.set(s.eveningTipTime);
+        this.location.set(s.location);
       }
     } catch (err) {
       console.error('Failed to save user settings:', err);

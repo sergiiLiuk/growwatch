@@ -102,6 +102,7 @@ export const typeDefs = gql`
     plantId: String!
     text: String!
     source: String!
+    cycle: String
     generatedAt: String!
   }
 
@@ -111,6 +112,18 @@ export const typeDefs = gql`
     name: String!
     lastSeenAt: String
     createdAt: String!
+  }
+
+  type UserLocation {
+    lat: Float!
+    lng: Float!
+    city: String
+  }
+
+  input UserLocationInput {
+    lat: Float!
+    lng: Float!
+    city: String
   }
 
   type UserSettings {
@@ -125,6 +138,18 @@ export const typeDefs = gql`
     digestEnabled: Boolean
     alertsEnabled: Boolean
     locale: String
+    smartTipsEnabled: Boolean
+    morningTipTime: String
+    eveningTipTime: String
+    location: UserLocation
+  }
+
+  type DailyBriefing {
+    id: String!
+    cycle: String!
+    overview: String!
+    source: String!
+    generatedAt: String!
   }
 
   type User {
@@ -144,6 +169,7 @@ export const typeDefs = gql`
     plants(includeArchived: Boolean): [Plant!]!
     plantActions(plantId: String!, limit: Int): [PlantAction!]!
     smartTip(plantId: String!): SmartTip
+    dailyBriefing: DailyBriefing
     myDevices: [Device!]!
     myUserSettings: UserSettings!
     allUsers: [User!]!
@@ -165,7 +191,7 @@ export const typeDefs = gql`
     setPlantArchived(id: String!, archived: Boolean!): Plant!
     logPlantAction(plantId: String!, type: PlantActionType!, note: String): PlantAction!
     removePlantAction(id: String!): Boolean!
-    refreshSmartTip(plantId: String!): SmartTip!
+    regenerateBriefing: DailyBriefing
     openDeviceClaim: String!
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!
@@ -182,6 +208,10 @@ export const typeDefs = gql`
       digestEnabled: Boolean
       alertsEnabled: Boolean
       locale: String
+      smartTipsEnabled: Boolean
+      morningTipTime: String
+      eveningTipTime: String
+      location: UserLocationInput
     ): UserSettings!
   }
 

@@ -1,13 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType } from './models';
-import { SmartTipService, StubLlmProvider } from './services/smartTip';
+import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing } from './models';
+import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
 import { signToken, verifyPassword, JwtPayload } from './auth';
+import { pushReading, getAll as getAllReadings, getAllForUser as getReadingsForUser } from './sensorStore';
 
-// In-memory storage for sensor readings
-let sensorDataStore: (SensorData & { userId?: string })[] = [];
 let lastSavedHour: number = -1;
 
 // Set by index.ts after superuser is seeded. Used as the default user when the hourly
@@ -182,7 +181,7 @@ export async function handleSensorData(data: any): Promise<SensorData | null> {
         userId: owner.userId,
     };
 
-    sensorDataStore.push(sensorData);
+    pushReading(sensorData);
     hourAccum.light.push(data.lightLevel);
     if (data.temperature != null) hourAccum.temperature.push(data.temperature);
     if (data.humidity    != null) hourAccum.humidity.push(data.humidity);
@@ -196,10 +195,6 @@ export async function handleSensorData(data: any): Promise<SensorData | null> {
     // Persist the current partial-hour snapshot so reload-after-restart shows data immediately
     upsertCurrentHour(owner.userId, owner.deviceId || undefined)
         .catch(err => console.error('❌ snapshot upsert failed:', err));
-
-    if (sensorDataStore.length > 100) {
-        sensorDataStore = sensorDataStore.slice(-100);
-    }
 
     return sensorData;
 }
@@ -295,11 +290,41 @@ function mapSmartTip(doc: any) {
         plantId: doc.plantId,
         text: doc.text,
         source: doc.source,
+        cycle: doc.cycle ?? null,
         generatedAt: doc.generatedAt instanceof Date ? doc.generatedAt.toISOString() : String(doc.generatedAt ?? new Date().toISOString()),
     };
 }
 
-const smartTipService = new SmartTipService(new StubLlmProvider());
+// Set by index.ts at boot — chooses Claude vs stub based on ANTHROPIC_API_KEY.
+let smartTipService: SmartTipService = new SmartTipService(new StubLlmProvider());
+export function setLlmProvider(provider: LlmProvider) {
+    smartTipService = new SmartTipService(provider);
+}
+export function getSmartTipService(): SmartTipService {
+    return smartTipService;
+}
+
+function mapBriefing(doc: any) {
+    return {
+        id: doc._id.toString(),
+        cycle: doc.cycle,
+        overview: doc.overview,
+        source: doc.source,
+        generatedAt: doc.generatedAt instanceof Date ? doc.generatedAt.toISOString() : String(doc.generatedAt ?? new Date().toISOString()),
+    };
+}
+
+function currentCycle(settings: any): 'morning' | 'evening' {
+    // Pick whichever configured time is closer to "now" and not in the future.
+    const morning = settings?.morningTipTime ?? '07:00';
+    const evening = settings?.eveningTipTime ?? '20:00';
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    if (hhmm >= evening) return 'evening';
+    if (hhmm >= morning) return 'morning';
+    // Before morning time today → show last night's evening brief framing
+    return 'evening';
+}
 
 type Ctx = { user: JwtPayload | null };
 
@@ -307,13 +332,11 @@ export const resolvers = {
     Query: {
         sensorData: (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) return [];
-            return sensorDataStore
-                .filter(d => d.userId === ctx.user!.userId)
-                .slice(-10);
+            return getReadingsForUser(ctx.user.userId).slice(-10);
         },
         latestSensorData: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) return null;
-            const mine = sensorDataStore.filter(d => d.userId === ctx.user!.userId);
+            const mine = getReadingsForUser(ctx.user.userId);
             if (mine.length > 0) return mine[mine.length - 1];
             // In-memory empty (e.g. just after backend restart) — fall back to latest hourly snapshot
             try {
@@ -378,10 +401,15 @@ export const resolvers = {
         },
         smartTip: async (_: any, { plantId }: { plantId: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
-            const settings = await UserSettings.findOne({ userId: ctx.user.userId }).lean();
-            const locale = (settings?.locale === 'da' ? 'da' : 'en') as 'en' | 'da';
-            const doc = await smartTipService.getOrGenerate(plantId, ctx.user.userId, locale, null);
-            return mapSmartTip(doc);
+            // Read-only: latest stored tip for this plant. Generation is driven by the briefing scheduler.
+            const { SmartTip } = await import('./models');
+            const doc = await SmartTip.findOne({ plantId, userId: ctx.user.userId }).lean();
+            return doc ? mapSmartTip(doc) : null;
+        },
+        dailyBriefing: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const doc = await DailyBriefing.findOne({ userId: ctx.user.userId }).lean();
+            return doc ? mapBriefing(doc) : null;
         },
         myDevices: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) return [];
@@ -403,6 +431,12 @@ export const resolvers = {
                 digestEnabled: settings?.digestEnabled ?? null,
                 alertsEnabled: settings?.alertsEnabled ?? null,
                 locale: settings?.locale ?? null,
+                smartTipsEnabled: settings?.smartTipsEnabled ?? null,
+                morningTipTime: settings?.morningTipTime ?? null,
+                eveningTipTime: settings?.eveningTipTime ?? null,
+                location: settings?.location
+                    ? { lat: settings.location.lat, lng: settings.location.lng, city: settings.location.city ?? null }
+                    : null,
             };
         },
         allUsers: async (_: any, __: any, ctx: Ctx) => {
@@ -498,12 +532,13 @@ export const resolvers = {
             const result = await PlantAction.findOneAndDelete({ _id: id, userId: ctx.user.userId });
             return result !== null;
         },
-        refreshSmartTip: async (_: any, { plantId }: { plantId: string }, ctx: Ctx) => {
+        regenerateBriefing: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             const settings = await UserSettings.findOne({ userId: ctx.user.userId }).lean();
-            const locale = (settings?.locale === 'da' ? 'da' : 'en') as 'en' | 'da';
-            const doc = await smartTipService.refresh(plantId, ctx.user.userId, locale, null);
-            return mapSmartTip(doc);
+            const cycle = currentCycle(settings);
+            await smartTipService.regenerateForUser(ctx.user.userId, cycle);
+            const doc = await DailyBriefing.findOne({ userId: ctx.user.userId }).lean();
+            return doc ? mapBriefing(doc) : null;
         },
         openDeviceClaim: (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -543,6 +578,10 @@ export const resolvers = {
                 digestEnabled?: boolean | null;
                 alertsEnabled?: boolean | null;
                 locale?: string | null;
+                smartTipsEnabled?: boolean | null;
+                morningTipTime?: string | null;
+                eveningTipTime?: string | null;
+                location?: { lat: number; lng: number; city?: string | null } | null;
             },
             ctx: Ctx
         ) => {
@@ -568,6 +607,10 @@ export const resolvers = {
             apply('digestEnabled', args.digestEnabled, (v) => typeof v === 'boolean');
             apply('alertsEnabled', args.alertsEnabled, (v) => typeof v === 'boolean');
             apply('locale', args.locale, (v) => typeof v === 'string');
+            apply('smartTipsEnabled', args.smartTipsEnabled, (v) => typeof v === 'boolean');
+            apply('morningTipTime', args.morningTipTime, (v) => typeof v === 'string' && /^\d{2}:\d{2}$/.test(v));
+            apply('eveningTipTime', args.eveningTipTime, (v) => typeof v === 'string' && /^\d{2}:\d{2}$/.test(v));
+            apply('location', args.location, (v) => v && typeof v.lat === 'number' && typeof v.lng === 'number');
 
             const update: any = { $setOnInsert: { userId: ctx.user.userId } };
             if (Object.keys($set).length) update.$set = $set;
@@ -590,6 +633,12 @@ export const resolvers = {
                 digestEnabled: settings?.digestEnabled ?? null,
                 alertsEnabled: settings?.alertsEnabled ?? null,
                 locale: settings?.locale ?? null,
+                smartTipsEnabled: settings?.smartTipsEnabled ?? null,
+                morningTipTime: settings?.morningTipTime ?? null,
+                eveningTipTime: settings?.eveningTipTime ?? null,
+                location: settings?.location
+                    ? { lat: settings.location.lat, lng: settings.location.lng, city: settings.location.city ?? null }
+                    : null,
             };
         },
     },

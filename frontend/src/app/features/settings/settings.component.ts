@@ -238,6 +238,34 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
       </div>
 
+      <!-- Smart tips -->
+      <div class="mb-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.smartTips') }}</div>
+        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+          <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+            <div class="text-[13px] text-gray-500 flex-1">{{ t('settings.smartTipsEnabled') }}</div>
+            <input type="checkbox" [checked]="settings.effectiveSmartTipsEnabled()"
+                   (change)="onSmartTipsEnabledChange(!settings.effectiveSmartTipsEnabled())"
+                   class="w-5 h-5 accent-gw-green cursor-pointer" />
+          </div>
+          <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+            <div class="text-[13px] text-gray-500 flex-1">🌅 {{ t('settings.morningTipTime') }}</div>
+            <input type="time" [ngModel]="settings.effectiveMorningTipTime()"
+                   (ngModelChange)="onMorningTipTimeChange($event)"
+                   [disabled]="!settings.effectiveSmartTipsEnabled()"
+                   class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors disabled:opacity-40" />
+          </div>
+          <div class="flex items-center gap-3 p-4">
+            <div class="text-[13px] text-gray-500 flex-1">🌇 {{ t('settings.eveningTipTime') }}</div>
+            <input type="time" [ngModel]="settings.effectiveEveningTipTime()"
+                   (ngModelChange)="onEveningTipTimeChange($event)"
+                   [disabled]="!settings.effectiveSmartTipsEnabled()"
+                   class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors disabled:opacity-40" />
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed mt-2 px-1">{{ t('settings.smartTipsHint') }}</p>
+      </div>
+
       <!-- About -->
       <div>
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.about') }}</div>
@@ -441,6 +469,20 @@ export class SettingsComponent implements OnInit {
 
   resetWeatherThresholds() {
     this.settings.resetWeatherThresholds();
+  }
+
+  onSmartTipsEnabledChange(value: boolean) {
+    this.settings.setSmartTipsEnabled(value);
+  }
+
+  onMorningTipTimeChange(value: string | null) {
+    const v = typeof value === 'string' && /^\d{2}:\d{2}$/.test(value) ? value : null;
+    this.settings.setMorningTipTime(v);
+  }
+
+  onEveningTipTimeChange(value: string | null) {
+    const v = typeof value === 'string' && /^\d{2}:\d{2}$/.test(value) ? value : null;
+    this.settings.setEveningTipTime(v);
   }
 
   ngOnInit() {

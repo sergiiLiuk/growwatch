@@ -24,6 +24,11 @@
     "alertsTriggerOutside": "Alerts trigger when temperature falls outside this range.",
     "humidityRange": "Humidity range",
     "humidityAlertsTriggerOutside": "Alerts trigger when humidity is outside this range.",
+    "smartTips": "Smart tips",
+    "smartTipsEnabled": "Enable smart tips",
+    "morningTipTime": "Morning tip",
+    "eveningTipTime": "Evening tip",
+    "smartTipsHint": "An AI briefing is generated at each time covering your greenhouse and each plant.",
     "weatherWarnings": "Weather warnings",
     "weatherWarningsHint": "Forecast warnings trigger when the outside forecast crosses these thresholds.",
     "frostThreshold": "Frost ≤",
@@ -225,6 +230,9 @@
     "loginFailed": "Login failed"
   },
   "home": {
+    "todaysBrief": "Today's brief",
+    "morningBrief": "Morning brief",
+    "eveningBrief": "Evening brief",
     "currentPhase": "Current phase",
     "co2Elevated": "CO₂ elevated",
     "addYourFirstPlant": "Add your first plant",

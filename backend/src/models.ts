@@ -85,6 +85,7 @@ export interface ISmartTip extends Document {
     userId: string;
     text: string;
     source: string;
+    cycle?: BriefingCycle;
     generatedAt: Date;
 }
 
@@ -94,6 +95,7 @@ const smartTipSchema = new Schema<ISmartTip>(
         userId: { type: String, required: true },
         text: { type: String, required: true },
         source: { type: String, required: true },
+        cycle: { type: String, enum: ['morning', 'evening'] },
         generatedAt: { type: Date, required: true },
     },
     { timestamps: true }
@@ -194,6 +196,11 @@ export interface IUserSettings extends Document {
     digestEnabled?: boolean;
     alertsEnabled?: boolean;
     locale?: string;           // 'en' | 'da' (extensible)
+    smartTipsEnabled?: boolean;
+    morningTipTime?: string;   // 'HH:MM'
+    eveningTipTime?: string;   // 'HH:MM'
+    location?: { lat: number; lng: number; city?: string };
+    lastSmartTipRun?: { morning?: Date; evening?: Date };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -212,8 +219,45 @@ const userSettingsSchema = new Schema<IUserSettings>(
         digestEnabled: { type: Boolean },
         alertsEnabled: { type: Boolean },
         locale: { type: String },
+        smartTipsEnabled: { type: Boolean },
+        morningTipTime: { type: String },
+        eveningTipTime: { type: String },
+        location: {
+            lat: { type: Number },
+            lng: { type: Number },
+            city: { type: String },
+        },
+        lastSmartTipRun: {
+            morning: { type: Date },
+            evening: { type: Date },
+        },
     },
     { timestamps: true }
 );
 
 export const UserSettings = mongoose.model<IUserSettings>('UserSettings', userSettingsSchema);
+
+// ── DailyBriefing ───────────────────────────────────────────────────────────
+
+export type BriefingCycle = 'morning' | 'evening';
+
+export interface IDailyBriefing extends Document {
+    userId: string;
+    cycle: BriefingCycle;
+    overview: string;
+    source: string;
+    generatedAt: Date;
+}
+
+const dailyBriefingSchema = new Schema<IDailyBriefing>(
+    {
+        userId: { type: String, required: true, unique: true, index: true },
+        cycle: { type: String, required: true, enum: ['morning', 'evening'] },
+        overview: { type: String, required: true },
+        source: { type: String, required: true },
+        generatedAt: { type: Date, required: true },
+    },
+    { timestamps: true }
+);
+
+export const DailyBriefing = mongoose.model<IDailyBriefing>('DailyBriefing', dailyBriefingSchema);

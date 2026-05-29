@@ -1,5 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { DailyForecast } from '../utils/weather-risk';
+import { UserSettingsService } from './user-settings.service';
 
 export interface WeatherData {
   temperature: number;
@@ -39,6 +40,7 @@ const LOCATION_KEY = 'growwatch-location';
 
 @Injectable({ providedIn: 'root' })
 export class WeatherService {
+  private userSettings = inject(UserSettingsService);
   weather = signal<WeatherData | null>(null);
   forecast = signal<DailyForecast[] | null>(null);
   loading = signal(false);
@@ -91,6 +93,13 @@ export class WeatherService {
       if (!city) {
         city = await this.resolveCity(lat, lng);
         localStorage.setItem(LOCATION_KEY, JSON.stringify({ lat, lng, city }));
+      }
+
+      // Mirror location to UserSettings so the backend smart-tip scheduler
+      // can fetch weather for the user without depending on the browser.
+      const existing = this.userSettings.location();
+      if (!existing || existing.lat !== lat || existing.lng !== lng || existing.city !== city) {
+        this.userSettings.setLocation({ lat, lng, city }).catch(() => {/* non-fatal */});
       }
 
       const res = await fetch(

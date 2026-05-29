@@ -18,6 +18,7 @@ export interface SmartTip {
   plantId: string;
   text: string;
   source: string;
+  cycle: 'morning' | 'evening' | null;
   generatedAt: Date;
 }
 
@@ -46,21 +47,29 @@ const REMOVE_ACTION = gql`
 const SMART_TIP_QUERY = gql`
   query SmartTip($plantId: String!) {
     smartTip(plantId: $plantId) {
-      id plantId text source generatedAt
+      id plantId text source cycle generatedAt
     }
   }
 `;
 
-const REFRESH_SMART_TIP = gql`
-  mutation RefreshSmartTip($plantId: String!) {
-    refreshSmartTip(plantId: $plantId) {
-      id plantId text source generatedAt
-    }
+const DAILY_BRIEFING_QUERY = gql`
+  query DailyBriefing {
+    dailyBriefing { id cycle overview source generatedAt }
+  }
+`;
+
+const REGENERATE_BRIEFING = gql`
+  mutation RegenerateBriefing {
+    regenerateBriefing { id cycle overview source generatedAt }
   }
 `;
 
 interface RawAction { id: string; plantId: string; type: PlantActionType; note: string | null; createdAt: string; }
-interface RawTip { id: string; plantId: string; text: string; source: string; generatedAt: string; }
+interface RawTip { id: string; plantId: string; text: string; source: string; cycle: 'morning' | 'evening' | null; generatedAt: string; }
+interface RawBriefing { id: string; cycle: 'morning' | 'evening'; overview: string; source: string; generatedAt: string; }
+
+export interface DailyBriefing { id: string; cycle: 'morning' | 'evening'; overview: string; source: string; generatedAt: Date; }
+function mapBriefing(r: RawBriefing): DailyBriefing { return { ...r, generatedAt: new Date(r.generatedAt) }; }
 
 function mapAction(r: RawAction): PlantAction {
   return { ...r, createdAt: new Date(r.createdAt) };
@@ -137,15 +146,29 @@ export class PlantActionService {
     });
   }
 
-  refreshSmartTip(plantId: string): Observable<SmartTip> {
+  getDailyBriefing(): Observable<DailyBriefing | null> {
     return new Observable(observer => {
       this.client
-        .mutate<{ refreshSmartTip: RawTip }>({
-          mutation: REFRESH_SMART_TIP,
-          variables: { plantId },
+        .query<{ dailyBriefing: RawBriefing | null }>({
+          query: DAILY_BRIEFING_QUERY,
+          fetchPolicy: 'network-only',
         })
         .then(r => {
-          observer.next(mapTip(r.data!.refreshSmartTip));
+          observer.next(r.data?.dailyBriefing ? mapBriefing(r.data.dailyBriefing) : null);
+          observer.complete();
+        })
+        .catch(err => observer.error(err));
+    });
+  }
+
+  regenerateBriefing(): Observable<DailyBriefing | null> {
+    return new Observable(observer => {
+      this.client
+        .mutate<{ regenerateBriefing: RawBriefing | null }>({
+          mutation: REGENERATE_BRIEFING,
+        })
+        .then(r => {
+          observer.next(r.data?.regenerateBriefing ? mapBriefing(r.data.regenerateBriefing) : null);
           observer.complete();
         })
         .catch(err => observer.error(err));

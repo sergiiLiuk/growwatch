@@ -124,6 +124,13 @@ import dayjs from 'dayjs';
                       </button>
                     </div>
                   </div>
+                  @if (smartTip(); as tip) {
+                    @if (tip.cycle) {
+                      <div class="text-[10px] text-gw-green-dark/50 mt-0.5">
+                        {{ tip.cycle === 'morning' ? t('home.morningBrief') : t('home.eveningBrief') }}
+                      </div>
+                    }
+                  }
                   <div class="text-[12px] text-gw-green-dark/80 mt-1 leading-relaxed italic">
                     @if (smartTipLoading()) {
                       {{ t('plantDetail.smartTip.loading') }}
@@ -361,8 +368,14 @@ export class PlantDetailComponent implements OnInit {
     const p = this.plant();
     if (!p) return;
     this.smartTipLoading.set(true);
-    this.actions.refreshSmartTip(p.id).subscribe({
-      next: tip => { this.smartTip.set(tip); this.smartTipLoading.set(false); },
+    this.actions.regenerateBriefing().subscribe({
+      next: () => {
+        // Fetch the refreshed per-plant tip
+        this.actions.getSmartTip(p.id).subscribe({
+          next: tip => { this.smartTip.set(tip); this.smartTipLoading.set(false); },
+          error: () => this.smartTipLoading.set(false),
+        });
+      },
       error: () => this.smartTipLoading.set(false),
     });
   }

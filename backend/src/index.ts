@@ -5,7 +5,10 @@ import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { createServer } from 'http';
 import { typeDefs } from './schema';
-import { resolvers, handleSensorData, startHourlyAggregation, saveHourlyData, initPlantCache, setSuperuserId } from './resolvers';
+import { resolvers, handleSensorData, startHourlyAggregation, saveHourlyData, initPlantCache, setSuperuserId, setLlmProvider } from './resolvers';
+import { StubLlmProvider } from './services/smartTip';
+import { ClaudeLlmProvider } from './services/claudeLlmProvider';
+import { startSmartTipScheduler } from './services/smartTipScheduler';
 import { ESP32Message } from './types';
 import { connectDB } from './db';
 import { User, Plant, HourlySensorData } from './models';
@@ -59,6 +62,17 @@ async function startServer() {
     setSuperuserId(superuserId);
 
     startHourlyAggregation();
+
+    // ─── Smart tips: choose provider + start scheduler ─────────────────────
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (apiKey) {
+        setLlmProvider(new ClaudeLlmProvider({ apiKey }));
+        console.log(`✨ Smart tips using Claude (claude-haiku-4-5)`);
+    } else {
+        setLlmProvider(new StubLlmProvider());
+        console.log('✨ Smart tips using stub provider (set ANTHROPIC_API_KEY for Claude)');
+    }
+    startSmartTipScheduler();
 
     const app: Express = express();
     const httpServer = createServer(app);
