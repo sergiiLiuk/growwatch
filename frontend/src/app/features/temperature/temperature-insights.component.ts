@@ -12,6 +12,12 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 const CHART_HEIGHT_PX = 96;
 const Y_AXIS_DEFAULT_MAX = 40;
 
+// Guards against historical bad readings already in MongoDB (e.g. -65.9°C sensor disconnects).
+const PLAUSIBLE_MIN_C = -30;
+const PLAUSIBLE_MAX_C = 70;
+const plausibleC = (v: number | null | undefined): v is number =>
+  v != null && isFinite(v) && v >= PLAUSIBLE_MIN_C && v <= PLAUSIBLE_MAX_C;
+
 interface DayBar {
   dateStr: string;
   label: string;
@@ -292,8 +298,10 @@ export class TemperatureInsightsComponent implements OnDestroy {
     });
     if (hours.length === 0) return null;
     const avg = hours.reduce((s, h) => s + (h.avgTemperature ?? 0), 0) / hours.length;
-    const min = Math.min(...hours.map(h => h.minTemperature ?? h.avgTemperature ?? Infinity));
-    const max = Math.max(...hours.map(h => h.maxTemperature ?? h.avgTemperature ?? -Infinity));
+    const mins = hours.map(h => h.minTemperature ?? h.avgTemperature).filter(plausibleC);
+    const maxs = hours.map(h => h.maxTemperature ?? h.avgTemperature).filter(plausibleC);
+    const min = mins.length > 0 ? Math.min(...mins) : avg;
+    const max = maxs.length > 0 ? Math.max(...maxs) : avg;
     return { avg, min, max, hourCount: hours.length };
   });
 
@@ -320,8 +328,10 @@ export class TemperatureInsightsComponent implements OnDestroy {
       });
       const hasData = dayHours.length > 0;
       const avg = hasData ? dayHours.reduce((s, h) => s + (h.avgTemperature ?? 0), 0) / dayHours.length : null;
-      const min = hasData ? Math.min(...dayHours.map(h => h.minTemperature ?? h.avgTemperature ?? Infinity)) : null;
-      const max = hasData ? Math.max(...dayHours.map(h => h.maxTemperature ?? h.avgTemperature ?? -Infinity)) : null;
+      const minCandidates = hasData ? dayHours.map(h => h.minTemperature ?? h.avgTemperature).filter(plausibleC) : [];
+      const maxCandidates = hasData ? dayHours.map(h => h.maxTemperature ?? h.avgTemperature).filter(plausibleC) : [];
+      const min = minCandidates.length > 0 ? Math.min(...minCandidates) : avg;
+      const max = maxCandidates.length > 0 ? Math.max(...maxCandidates) : avg;
       return {
         day, dayStart, hasData, avg, min, max,
         isToday: dayStart.getTime() === today.getTime(),

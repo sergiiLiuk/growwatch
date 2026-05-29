@@ -169,24 +169,30 @@ export async function handleSensorData(data: any): Promise<SensorData | null> {
         return null;
     }
 
+    // Drop physically implausible readings — sensor disconnects on the BME688
+    // sometimes surface as -65 / +85 sentinels that wreck min/max aggregates.
+    const sane = (v: any, lo: number, hi: number): number | undefined =>
+        typeof v === 'number' && isFinite(v) && v >= lo && v <= hi ? v : undefined;
+
     const sensorData: SensorData & { userId?: string } = {
         id: uuidv4(),
         lightLevel: data.lightLevel,
         timestamp: new Date(),
-        temperature: data.temperature ?? undefined,
-        humidity: data.humidity ?? undefined,
-        pressure: data.pressure ?? undefined,
-        co2: data.co2 ?? undefined,
+        temperature: sane(data.temperature, -30, 70),
+        humidity: sane(data.humidity, 0, 100),
+        pressure: sane(data.pressure, 800, 1200),
+        co2: sane(data.co2, 0, 10000),
         deviceId: owner.deviceId || undefined,
         userId: owner.userId,
     };
 
     pushReading(sensorData);
     hourAccum.light.push(data.lightLevel);
-    if (data.temperature != null) hourAccum.temperature.push(data.temperature);
-    if (data.humidity    != null) hourAccum.humidity.push(data.humidity);
-    if (data.pressure    != null) hourAccum.pressure.push(data.pressure);
-    if (data.co2         != null) hourAccum.co2.push(data.co2);
+    // Use the sanitized values so out-of-range readings can't pollute hourly aggregates.
+    if (sensorData.temperature != null) hourAccum.temperature.push(sensorData.temperature);
+    if (sensorData.humidity    != null) hourAccum.humidity.push(sensorData.humidity);
+    if (sensorData.pressure    != null) hourAccum.pressure.push(sensorData.pressure);
+    if (sensorData.co2         != null) hourAccum.co2.push(sensorData.co2);
 
     pubsub.publish(SENSOR_DATA_CHANNEL, {
         sensorDataUpdated: sensorData,
