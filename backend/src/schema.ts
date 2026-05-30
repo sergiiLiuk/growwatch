@@ -156,6 +156,7 @@ export const typeDefs = gql`
     id: String!
     email: String!
     role: String!
+    subscriptionTier: String!
     createdAt: String!
     deviceCount: Int!
     plantCount: Int!
@@ -173,6 +174,7 @@ export const typeDefs = gql`
     myDevices: [Device!]!
     myUserSettings: UserSettings!
     allUsers: [User!]!
+    me: AuthPayload!
   }
 
   type AuthPayload {
@@ -180,6 +182,7 @@ export const typeDefs = gql`
     email: String!
     role: String!
     userId: String!
+    subscriptionTier: String!
   }
 
   type Mutation {
@@ -192,6 +195,7 @@ export const typeDefs = gql`
     logPlantAction(plantId: String!, type: PlantActionType!, note: String): PlantAction!
     removePlantAction(id: String!): Boolean!
     regenerateBriefing: DailyBriefing
+    setSubscriptionTier(userId: String!, tier: String!): User!
     openDeviceClaim: String!
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!

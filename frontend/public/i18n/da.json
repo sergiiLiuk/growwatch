@@ -24,6 +24,9 @@
     "alertsTriggerOutside": "Beskeder udløses når temperaturen falder uden for dette interval.",
     "humidityRange": "Fugtighedsinterval",
     "humidityAlertsTriggerOutside": "Advarsler udløses, når fugtigheden er uden for dette interval.",
+    "subscription": "Abonnement",
+    "currentPlan": "Nuværende abonnement",
+    "viewPlans": "Se abonnementer",
     "smartTips": "Smarte tips",
     "smartTipsEnabled": "Aktivér smarte tips",
     "morningTipTime": "Morgentip",
@@ -146,6 +149,25 @@
     "hideArchived": "Skjul arkiverede",
     "archived": "Arkiveret"
   },
+  "upgrade": {
+    "title": "Vælg dit abonnement",
+    "free": "Gratis",
+    "plus": "Plus",
+    "pro": "Pro",
+    "freePrice": "0 kr",
+    "plusPrice": "29 kr / måned",
+    "proPrice": "Følger med hardware",
+    "freeFeatures": "Plantelog, handlingshistorik, arkiv",
+    "plusFeatures": "Alt i Gratis + AI smarte tips + 3-dages vejradvarsler",
+    "proFeatures": "Alt i Plus + live ESP32-sensor",
+    "current": "Nuværende abonnement",
+    "joinWaitlist": "Tilmeld venteliste",
+    "upgrade": "Opgradér",
+    "comingSoon": "Betalinger kommer snart — kontakt os for at opgradere manuelt."
+  },
+  "admin": {
+    "tier": "Abonnement"
+  },
   "plantDetail": {
     "recommendations": "Anbefalinger",
     "logAction": "Log handling",
@@ -230,6 +252,8 @@
     "loginFailed": "Login mislykkedes"
   },
   "home": {
+    "upgradeTitle": "Lås smarte tips og vejradvarsler op",
+    "upgradeBody": "Plus-abonnenter får et Claude-genereret brief to gange om dagen plus 3-dages vejradvarsler.",
     "todaysBrief": "Dagens brief",
     "morningBrief": "Morgenbrief",
     "eveningBrief": "Aftenbrief",

@@ -6,7 +6,11 @@
     "start": "ng serve",
     "build": "node scripts/set-env.js && ng build --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "generate-icons": "node scripts/generate-pwa-icons.mjs",
+    "build:cap": "npm run build && npx cap sync",
+    "cap:ios": "npx cap open ios",
+    "cap:android": "npx cap open android"
   },
   "private": true,
   "packageManager": "npm@11.13.0",
@@ -17,7 +21,12 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@angular/service-worker": "^21.2.11",
     "@apollo/client": "^4.1.9",
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
     "@jsverse/transloco": "^8.3.0",
     "apollo-angular": "^13.0.0",
     "chart.js": "^4.5.1",
@@ -35,6 +44,7 @@
     "jsdom": "^28.0.0",
     "postcss": "^8.5.3",
     "prettier": "^3.8.1",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.1.12",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"

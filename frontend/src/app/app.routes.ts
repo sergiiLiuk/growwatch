@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { ShellComponent } from './shared/components/shell/shell.component';
 import { authGuard } from './core/guards/auth.guard';
 import { superuserGuard } from './core/guards/superuser.guard';
+import { tierGuard } from './core/guards/tier.guard';
 
 export const routes: Routes = [
   {
@@ -27,19 +28,27 @@ export const routes: Routes = [
       },
       {
         path: 'light',
+        canActivate: [tierGuard('pro')],
         loadComponent: () => import('./features/light/light-insights.component').then(m => m.LightInsightsComponent),
       },
       {
         path: 'temperature',
+        canActivate: [tierGuard('pro')],
         loadComponent: () => import('./features/temperature/temperature-insights.component').then(m => m.TemperatureInsightsComponent),
       },
       {
         path: 'humidity',
+        canActivate: [tierGuard('pro')],
         loadComponent: () => import('./features/humidity/humidity-insights.component').then(m => m.HumidityInsightsComponent),
       },
       {
         path: 'forecast',
+        canActivate: [tierGuard('plus')],
         loadComponent: () => import('./features/forecast/forecast.component').then(m => m.ForecastComponent),
+      },
+      {
+        path: 'upgrade',
+        loadComponent: () => import('./features/upgrade/upgrade.component').then(m => m.UpgradeComponent),
       },
       {
         path: 'digest',

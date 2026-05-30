@@ -6,6 +6,7 @@ import { PlantService } from '../../core/services/plant.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { analyzeForecast } from '../../core/utils/weather-risk';
+import { TierService } from '../../core/services/tier.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -84,6 +85,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
   private plantService = inject(PlantService);
   private userSettings = inject(UserSettingsService);
   private weatherService = inject(WeatherService);
+  private tier = inject(TierService);
   private transloco = inject(TranslocoService);
   private sub?: Subscription;
   private lastData: SensorData | null = null;
@@ -96,6 +98,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   weatherAlerts = computed<Alert[]>(() => {
     this.localeKey();
+    if (!this.tier.canSeeWeatherWarnings()) return [];
     const forecast = this.weatherService.forecast();
     if (!forecast || forecast.length === 0) return [];
     const risks = analyzeForecast(forecast, {
@@ -200,7 +203,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.transloco.langChanges$.subscribe(l => this.localeKey.set(l));
-    if (!this.weatherService.forecast()) this.weatherService.fetchForecast();
+    if (this.tier.canSeeWeatherWarnings() && !this.weatherService.forecast()) this.weatherService.fetchForecast();
     this.sub = this.sensorService.subscribeToSensorData().subscribe(data => {
       if (!data) return;
       if (!this.userSettings.effectiveAlertsEnabled()) return;

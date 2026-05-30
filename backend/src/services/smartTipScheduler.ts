@@ -24,7 +24,17 @@ async function tick() {
         ],
     }).lean();
 
-    for (const s of candidates) {
+    // Filter to plus/pro tiers — free users never trigger Claude calls
+    const { User } = await import('../models');
+    const userIds = candidates.map(c => c.userId);
+    const paidUsers = await User.find({
+        _id: { $in: userIds },
+        subscriptionTier: { $in: ['plus', 'pro'] },
+    }).select('_id').lean();
+    const paidIds = new Set(paidUsers.map((u: any) => u._id.toString()));
+    const eligible = candidates.filter(c => paidIds.has(c.userId));
+
+    for (const s of eligible) {
         const morning = s.morningTipTime ?? DEFAULT_MORNING;
         const evening = s.eveningTipTime ?? DEFAULT_EVENING;
         const cycle: 'morning' | 'evening' | null = hhmm === morning ? 'morning' : hhmm === evening ? 'evening' : null;

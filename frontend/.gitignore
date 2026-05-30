@@ -46,3 +46,14 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Capacitor — keep platform projects, ignore build outputs
+ios/App/Pods/
+ios/App/build/
+ios/App/Podfile.lock
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/

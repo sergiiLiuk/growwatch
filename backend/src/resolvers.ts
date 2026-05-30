@@ -462,10 +462,23 @@ export const resolvers = {
                 id: u._id.toString(),
                 email: u.email,
                 role: u.role,
+                subscriptionTier: u.subscriptionTier ?? 'free',
                 createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
                 deviceCount: devicesByUser.get(u._id.toString()) ?? 0,
                 plantCount: plantsByUser.get(u._id.toString()) ?? 0,
             }));
+        },
+        me: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const user = await User.findById(ctx.user.userId).lean();
+            if (!user) throw new Error('Unauthorized');
+            return {
+                token: '',
+                email: user.email,
+                role: user.role,
+                userId: ctx.user.userId,
+                subscriptionTier: user.subscriptionTier ?? 'free',
+            };
         },
     },
 
@@ -477,7 +490,7 @@ export const resolvers = {
             }
             const userId = user._id.toString();
             const token = signToken({ userId, email: user.email, role: user.role });
-            return { token, email: user.email, role: user.role, userId };
+            return { token, email: user.email, role: user.role, userId, subscriptionTier: user.subscriptionTier ?? 'free' };
         },
         addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -540,11 +553,47 @@ export const resolvers = {
         },
         regenerateBriefing: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
+            const user = await User.findById(ctx.user.userId).lean();
+            if (!user || !['plus', 'pro'].includes(user.subscriptionTier ?? 'free')) {
+                throw new Error('Smart tips require a Plus subscription');
+            }
+
             const settings = await UserSettings.findOne({ userId: ctx.user.userId }).lean();
-            const cycle = currentCycle(settings);
-            await smartTipService.regenerateForUser(ctx.user.userId, cycle);
+            const last = settings?.lastManualRefreshAt;
+            const COOLDOWN_MS = 5 * 60 * 1000;
+            if (last && Date.now() - new Date(last).getTime() < COOLDOWN_MS) {
+                const waitSec = Math.ceil((COOLDOWN_MS - (Date.now() - new Date(last).getTime())) / 1000);
+                throw new Error(`Please wait ${waitSec}s before refreshing again`);
+            }
+
+            await smartTipService.regenerateForUser(ctx.user.userId, 'manual');
+            await UserSettings.updateOne(
+                { userId: ctx.user.userId },
+                { $set: { lastManualRefreshAt: new Date() } },
+            );
             const doc = await DailyBriefing.findOne({ userId: ctx.user.userId }).lean();
             return doc ? mapBriefing(doc) : null;
+        },
+        setSubscriptionTier: async (_: any, { userId, tier }: { userId: string; tier: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
+            if (!['free', 'plus', 'pro'].includes(tier)) throw new Error('Invalid tier');
+            const user = await User.findByIdAndUpdate(
+                userId,
+                { subscriptionTier: tier },
+                { new: true },
+            ).lean();
+            if (!user) throw new Error('User not found');
+            const u: any = user;
+            return {
+                id: u._id.toString(),
+                email: u.email,
+                role: u.role,
+                subscriptionTier: u.subscriptionTier ?? 'free',
+                createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
+                deviceCount: 0,
+                plantCount: 0,
+            };
         },
         openDeviceClaim: (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');

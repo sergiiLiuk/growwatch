@@ -1,6 +1,7 @@
 import { ApplicationConfig, inject, isDevMode, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideServiceWorker } from '@angular/service-worker';
 import { provideTransloco } from '@jsverse/transloco';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
@@ -24,6 +25,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideCharts(withDefaultRegisterables()),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     provideTransloco({
       config: {
         availableLangs: [...SUPPORTED_LOCALES],

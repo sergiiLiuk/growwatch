@@ -8,6 +8,7 @@ import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PlantActionService, DailyBriefing } from '../../core/services/plant-action.service';
+import { TierService } from '../../core/services/tier.service';
 import { isNight, isDawnOrDusk } from '../../core/utils/time';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -57,9 +58,11 @@ interface ActivityEvent {
         </div>
 
         <!-- Forecast strip — mobile only, sits between weather and phase -->
-        <div class="md:hidden">
-          <app-forecast-strip />
-        </div>
+        @if (tier.canSeeWeatherWarnings()) {
+          <div class="md:hidden">
+            <app-forecast-strip />
+          </div>
+        }
 
         <!-- Phase / mood card -->
         <div class="rounded-2xl p-4 border border-transparent flex flex-col" [class]="moodBg()">
@@ -87,7 +90,7 @@ interface ActivityEvent {
       </div>
 
       <!-- Today's brief -->
-      @if (briefing(); as b) {
+      @if (tier.canSeeAi() && briefing(); as b) {
         <div class="mb-5 rounded-2xl bg-gw-green-light border border-gw-green/30 p-4">
           <div class="flex items-center justify-between mb-1.5">
             <div class="flex items-center gap-2">
@@ -103,9 +106,11 @@ interface ActivityEvent {
       }
 
       <!-- 3-day forecast strip — desktop only (mobile version sits in the hero row) -->
-      <div class="hidden md:block mb-5">
-        <app-forecast-strip />
-      </div>
+      @if (tier.canSeeWeatherWarnings()) {
+        <div class="hidden md:block mb-5">
+          <app-forecast-strip />
+        </div>
+      }
 
       <!-- Onboarding -->
       @if (!plantsLoading() && plants().length === 0) {
@@ -128,7 +133,17 @@ interface ActivityEvent {
         </div>
       }
 
+      <!-- Free-tier CTA -->
+      @if (tier.isFree()) {
+        <a routerLink="/upgrade"
+           class="block mb-5 rounded-2xl border border-dashed border-gw-green/40 bg-gw-green-light/30 p-4 hover:border-gw-green transition-colors">
+          <p class="text-[13px] font-medium text-gw-green-dark">{{ t('home.upgradeTitle') }}</p>
+          <p class="text-[11px] text-gw-green-dark/70 mt-0.5">{{ t('home.upgradeBody') }}</p>
+        </a>
+      }
+
       <!-- Sensors section -->
+      @if (tier.canSeeSensors()) {
       <div class="mb-5">
         <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('home.sensors') }}</p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -169,6 +184,7 @@ interface ActivityEvent {
             link="/light" />
         </div>
       </div>
+      }
 
       <!-- Bottom: Activity + Plants — stacked on mobile/tablet, two columns on lg+ -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -222,6 +238,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private userSettings = inject(UserSettingsService);
   private plantActions = inject(PlantActionService);
   private transloco = inject(TranslocoService);
+  tier = inject(TierService);
   briefing = signal<DailyBriefing | null>(null);
 
   formatBriefingTime(d: Date): string {
@@ -530,8 +547,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.sub = this.sensorService.subscribeToSensorData().subscribe(d => { if (d) this.latestData.set(d); });
     this.sensorService.getHourlyData(24).subscribe(d => this.hourlyData.set(d));
     this.weatherService.fetchWeather();
-    this.weatherService.fetchForecast();
-    this.plantActions.getDailyBriefing().subscribe(b => this.briefing.set(b));
+    if (this.tier.canSeeWeatherWarnings()) this.weatherService.fetchForecast();
+    if (this.tier.canSeeAi()) this.plantActions.getDailyBriefing().subscribe(b => this.briefing.set(b));
     this.weatherTimer = setInterval(() => {
       this.weatherService.fetchWeather();
       this.weatherService.fetchForecast();

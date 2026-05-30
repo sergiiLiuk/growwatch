@@ -1,4 +1,4 @@
-import { SmartTip, PlantAction, Plant, DailyBriefing, BriefingCycle, UserSettings } from '../models';
+import { SmartTip, PlantAction, Plant, DailyBriefing, BriefingCycle, UserSettings, AiUsage } from '../models';
 import { fetchWeatherContext } from './weatherFetch';
 
 // ── Briefing context types ──────────────────────────────────────────────────
@@ -92,20 +92,34 @@ export class SmartTipService {
 
     /**
      * Generate a briefing for a single user, persist the overview + per-plant
-     * tips, and return the result. Caller is responsible for choosing the
-     * cycle (morning/evening) and updating UserSettings.lastSmartTipRun.
+     * tips, log usage to AiUsage, and return the result. Caller chooses cycle:
+     * 'morning' / 'evening' for scheduled runs, 'manual' for refresh button.
      */
-    async regenerateForUser(userId: string, cycle: BriefingCycle): Promise<Briefing> {
-        const ctx = await this.buildContext(userId, cycle);
-        if (ctx.plants.length === 0) {
-            // No monitored plants — still write an overview-only briefing
+    async regenerateForUser(userId: string, cycle: BriefingCycle | 'manual'): Promise<Briefing> {
+        const persistCycle: BriefingCycle = cycle === 'manual' ? 'morning' : cycle;
+        const ctx = await this.buildContext(userId, persistCycle);
+        try {
             const briefing = await this.provider.generateBriefing(ctx);
-            await this.persistBriefing(userId, cycle, briefing);
+            await this.persistBriefing(userId, persistCycle, briefing);
+            await AiUsage.create({
+                userId,
+                cycle,
+                source: this.provider.source,
+                plantCount: ctx.plants.length,
+                success: true,
+            });
             return briefing;
+        } catch (err: any) {
+            await AiUsage.create({
+                userId,
+                cycle,
+                source: this.provider.source,
+                plantCount: ctx.plants.length,
+                success: false,
+                error: String(err?.message ?? err).slice(0, 500),
+            });
+            throw err;
         }
-        const briefing = await this.provider.generateBriefing(ctx);
-        await this.persistBriefing(userId, cycle, briefing);
-        return briefing;
     }
 
     private async buildContext(userId: string, cycle: BriefingCycle): Promise<BriefingContext> {

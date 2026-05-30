@@ -5,6 +5,7 @@ import { PlantService } from '../../core/services/plant.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { analyzeForecast } from '../../core/utils/weather-risk';
+import { TierService } from '../../core/services/tier.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -86,6 +87,7 @@ export class DigestComponent implements OnInit {
   private plantService = inject(PlantService);
   private userSettings = inject(UserSettingsService);
   private weatherService = inject(WeatherService);
+  private tier = inject(TierService);
   private transloco = inject(TranslocoService);
   // Reactive locale signal so computeds re-run when language changes
   private localeKey = signal(this.transloco.getActiveLang());
@@ -176,8 +178,8 @@ export class DigestComponent implements OnInit {
       });
     }
 
-    // Weather warnings — append risks for today only
-    const forecast = this.weatherService.forecast();
+    // Weather warnings — append risks for today only (plus tier and above)
+    const forecast = this.tier.canSeeWeatherWarnings() ? this.weatherService.forecast() : null;
     if (forecast && forecast.length > 0) {
       const risks = analyzeForecast(forecast, {
         frost: this.userSettings.effectiveFrostThreshold(),
@@ -221,7 +223,7 @@ export class DigestComponent implements OnInit {
   });
 
   ngOnInit() {
-    if (!this.weatherService.forecast()) this.weatherService.fetchForecast();
+    if (this.tier.canSeeWeatherWarnings() && !this.weatherService.forecast()) this.weatherService.fetchForecast();
     this.sensorService.getHourlyData(24).subscribe(data => {
       const todayStr = new Date().toDateString();
       this.hourlyData.set(data.filter(d => new Date(d.hour).toDateString() === todayStr));

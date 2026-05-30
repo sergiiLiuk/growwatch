@@ -27,6 +27,22 @@ async function seedAndMigrate(): Promise<string> {
 
     const superuserId = superuser._id.toString();
 
+    // Keep the seeded superuser on pro tier so dev/testing always has full access
+    if (superuser.subscriptionTier !== 'pro') {
+        superuser.subscriptionTier = 'pro';
+        await superuser.save();
+        console.log('🌱 Superuser tier set to pro');
+    }
+
+    // Backfill pre-existing users (no subscriptionTier field) to free
+    const tierMigrated = await User.updateMany(
+        { subscriptionTier: { $exists: false } },
+        { $set: { subscriptionTier: 'free' } },
+    );
+    if (tierMigrated.modifiedCount > 0) {
+        console.log(`🔄 Backfilled ${tierMigrated.modifiedCount} users → free tier`);
+    }
+
     // Attribute legacy records that have no userId to the superuser
     const [hourlyMigrated, plantsMigrated] = await Promise.all([
         HourlySensorData.updateMany({ userId: { $exists: false } }, { $set: { userId: superuserId } }),

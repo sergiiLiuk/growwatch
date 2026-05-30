@@ -5,10 +5,13 @@ const PLANT_TYPE_VALUES = Object.keys(PLANT_LIGHT_RANGES) as PlantType[];
 
 // ── User ────────────────────────────────────────────────────────────────────
 
+export type SubscriptionTier = 'free' | 'plus' | 'pro';
+
 export interface IUser extends Document {
     email: string;
     passwordHash: string;
     role: 'superuser' | 'user';
+    subscriptionTier: SubscriptionTier;
 }
 
 const userSchema = new Schema<IUser>(
@@ -16,6 +19,7 @@ const userSchema = new Schema<IUser>(
         email: { type: String, required: true, unique: true },
         passwordHash: { type: String, required: true },
         role: { type: String, required: true, enum: ['superuser', 'user'], default: 'user' },
+        subscriptionTier: { type: String, required: true, enum: ['free', 'plus', 'pro'], default: 'free' },
     },
     { timestamps: true }
 );
@@ -201,6 +205,7 @@ export interface IUserSettings extends Document {
     eveningTipTime?: string;   // 'HH:MM'
     location?: { lat: number; lng: number; city?: string };
     lastSmartTipRun?: { morning?: Date; evening?: Date };
+    lastManualRefreshAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -231,11 +236,42 @@ const userSettingsSchema = new Schema<IUserSettings>(
             morning: { type: Date },
             evening: { type: Date },
         },
+        lastManualRefreshAt: { type: Date },
     },
     { timestamps: true }
 );
 
 export const UserSettings = mongoose.model<IUserSettings>('UserSettings', userSettingsSchema);
+
+// ── AiUsage ─────────────────────────────────────────────────────────────────
+// One row per Claude call so we can spot abuse and total spend without
+// logging into the Anthropic dashboard. Pruned/aggregated later if it grows.
+
+export interface IAiUsage extends Document {
+    userId: string;
+    cycle?: 'morning' | 'evening' | 'manual';
+    source: string;
+    plantCount: number;
+    success: boolean;
+    error?: string;
+    createdAt: Date;
+}
+
+const aiUsageSchema = new Schema<IAiUsage>(
+    {
+        userId: { type: String, required: true, index: true },
+        cycle: { type: String, enum: ['morning', 'evening', 'manual'] },
+        source: { type: String, required: true },
+        plantCount: { type: Number, required: true, default: 0 },
+        success: { type: Boolean, required: true, default: true },
+        error: { type: String },
+    },
+    { timestamps: true }
+);
+
+aiUsageSchema.index({ userId: 1, createdAt: -1 });
+
+export const AiUsage = mongoose.model<IAiUsage>('AiUsage', aiUsageSchema);
 
 // ── DailyBriefing ───────────────────────────────────────────────────────────
 

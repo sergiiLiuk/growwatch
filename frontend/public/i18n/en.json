@@ -24,6 +24,9 @@
     "alertsTriggerOutside": "Alerts trigger when temperature falls outside this range.",
     "humidityRange": "Humidity range",
     "humidityAlertsTriggerOutside": "Alerts trigger when humidity is outside this range.",
+    "subscription": "Subscription",
+    "currentPlan": "Current plan",
+    "viewPlans": "View plans",
     "smartTips": "Smart tips",
     "smartTipsEnabled": "Enable smart tips",
     "morningTipTime": "Morning tip",
@@ -146,6 +149,25 @@
     "hideArchived": "Hide archived",
     "archived": "Archived"
   },
+  "upgrade": {
+    "title": "Choose your plan",
+    "free": "Free",
+    "plus": "Plus",
+    "pro": "Pro",
+    "freePrice": "$0",
+    "plusPrice": "$3.99 / month",
+    "proPrice": "Coming with hardware",
+    "freeFeatures": "Plant log, action history, archive",
+    "plusFeatures": "Everything in Free + AI smart tips + 3-day weather warnings",
+    "proFeatures": "Everything in Plus + live ESP32 sensor data",
+    "current": "Current plan",
+    "joinWaitlist": "Join waitlist",
+    "upgrade": "Upgrade",
+    "comingSoon": "Payments coming soon — contact us to upgrade manually."
+  },
+  "admin": {
+    "tier": "Tier"
+  },
   "plantDetail": {
     "recommendations": "Recommendations",
     "logAction": "Log action",
@@ -230,6 +252,8 @@
     "loginFailed": "Login failed"
   },
   "home": {
+    "upgradeTitle": "Unlock smart tips and weather warnings",
+    "upgradeBody": "Plus subscribers get a Claude-powered briefing twice daily plus 3-day forecast alerts.",
     "todaysBrief": "Today's brief",
     "morningBrief": "Morning brief",
     "eveningBrief": "Evening brief",

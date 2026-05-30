@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { TierService } from '../../core/services/tier.service';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
@@ -8,7 +9,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 
 @Component({
   selector: 'app-settings',
-  imports: [FormsModule, IconComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, IconComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -77,7 +78,21 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
       </div>
 
+      <!-- Subscription -->
+      <div class="mb-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.subscription') }}</div>
+        <a routerLink="/upgrade"
+           class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gw-green-light transition-colors">
+          <div class="flex-1">
+            <div class="text-[13px] font-medium text-gray-800">{{ t('settings.currentPlan') }}: {{ t('upgrade.' + tier.current()) }}</div>
+            <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.viewPlans') }}</div>
+          </div>
+          <span class="text-gray-300">›</span>
+        </a>
+      </div>
+
       <!-- Temperature range -->
+      @if (tier.canSeeSensors()) {
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.temperatureRange') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
@@ -128,7 +143,10 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
       </div>
 
+      }
+
       <!-- Humidity range -->
+      @if (tier.canSeeSensors()) {
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.humidityRange') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
@@ -179,7 +197,10 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
       </div>
 
+      }
+
       <!-- Weather warnings -->
+      @if (tier.canSeeWeatherWarnings()) {
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.weatherWarnings') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex flex-col gap-3">
@@ -238,7 +259,10 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
       </div>
 
+      }
+
       <!-- Smart tips -->
+      @if (tier.canSeeAi()) {
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.smartTips') }}</div>
         <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
@@ -265,6 +289,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
         <p class="text-[11px] text-gray-400 leading-relaxed mt-2 px-1">{{ t('settings.smartTipsHint') }}</p>
       </div>
+      }
 
       <!-- About -->
       <div>
@@ -387,6 +412,7 @@ export class SettingsComponent implements OnInit {
   private router = inject(Router);
   private auth = inject(AuthService);
   settings = inject(UserSettingsService);
+  tier = inject(TierService);
   private readonly STORAGE_KEY = 'growwatch-settings';
 
   userEmail = () => this.auth.user()?.email ?? '';

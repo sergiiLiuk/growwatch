@@ -2,6 +2,7 @@ import { Component, inject, computed, signal, HostListener, OnInit } from '@angu
 import { ActivatedRoute, Router } from '@angular/router';
 import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
 import { PlantActionService, PlantAction, PlantActionType, SmartTip } from '../../core/services/plant-action.service';
+import { TierService } from '../../core/services/tier.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PlantNoteModalComponent } from './plant-note-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
@@ -104,7 +105,7 @@ import dayjs from 'dayjs';
         @if (!p.archived) {
 
           <!-- Smart tip -->
-          @if (smartTip() || smartTipLoading()) {
+          @if (tier.canSeeAi() && (smartTip() || smartTipLoading())) {
             <div class="mb-4">
               <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.recommendations') }}</div>
 
@@ -248,6 +249,7 @@ export class PlantDetailComponent implements OnInit {
   private actions = inject(PlantActionService);
   private transloco = inject(TranslocoService);
   plantService = inject(PlantService);
+  tier = inject(TierService);
 
   plant = computed(() => {
     const id = this.route.snapshot.paramMap.get('id');
@@ -431,6 +433,6 @@ export class PlantDetailComponent implements OnInit {
     if (!id) return;
 
     this.actions.list(id).subscribe(list => this.plantActions.set(list));
-    this.actions.getSmartTip(id).subscribe(tip => this.smartTip.set(tip));
+    if (this.tier.canSeeAi()) this.actions.getSmartTip(id).subscribe(tip => this.smartTip.set(tip));
   }
 }
