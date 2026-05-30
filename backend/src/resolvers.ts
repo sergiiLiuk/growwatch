@@ -4,7 +4,7 @@ import { SensorData } from './types';
 import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing } from './models';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
-import { signToken, verifyPassword, JwtPayload } from './auth';
+import { signToken, verifyPassword, hashPassword, JwtPayload } from './auth';
 import { pushReading, getAll as getAllReadings, getAllForUser as getReadingsForUser } from './sensorStore';
 
 let lastSavedHour: number = -1;
@@ -594,6 +594,90 @@ export const resolvers = {
                 deviceCount: 0,
                 plantCount: 0,
             };
+        },
+        adminCreateUser: async (_: any, { email, password, role, tier }: { email: string; password: string; role: string; tier: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
+            const trimmedEmail = email.trim().toLowerCase();
+            if (!trimmedEmail) throw new Error('Email required');
+            if (!password || password.length < 8) throw new Error('Password must be at least 8 characters');
+            if (!['user', 'superuser'].includes(role)) throw new Error('Invalid role');
+            if (!['free', 'plus', 'pro'].includes(tier)) throw new Error('Invalid tier');
+            const existing = await User.findOne({ email: trimmedEmail });
+            if (existing) throw new Error('A user with that email already exists');
+            const passwordHash = await hashPassword(password);
+            const doc: any = await User.create({
+                email: trimmedEmail,
+                passwordHash,
+                role: role as 'user' | 'superuser',
+                subscriptionTier: tier as 'free' | 'plus' | 'pro',
+            });
+            return {
+                id: doc._id.toString(),
+                email: doc.email,
+                role: doc.role,
+                subscriptionTier: doc.subscriptionTier ?? 'free',
+                createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : new Date().toISOString(),
+                deviceCount: 0,
+                plantCount: 0,
+            };
+        },
+        adminUpdateUser: async (_: any, { userId, email, role, tier }: { userId: string; email?: string; role?: string; tier?: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
+            const update: any = {};
+            if (email !== undefined) {
+                const e = email.trim().toLowerCase();
+                if (!e) throw new Error('Email required');
+                const dup = await User.findOne({ email: e, _id: { $ne: userId } });
+                if (dup) throw new Error('A user with that email already exists');
+                update.email = e;
+            }
+            if (role !== undefined) {
+                if (!['user', 'superuser'].includes(role)) throw new Error('Invalid role');
+                // Don't allow demoting yourself from superuser (lockout protection)
+                if (userId === ctx.user.userId && role !== 'superuser') {
+                    throw new Error('Cannot demote your own superuser account');
+                }
+                // Don't allow demoting the last superuser
+                if (role !== 'superuser') {
+                    const target = await User.findById(userId).lean();
+                    if (target?.role === 'superuser') {
+                        const superCount = await User.countDocuments({ role: 'superuser' });
+                        if (superCount <= 1) throw new Error('Cannot demote the last superuser');
+                    }
+                }
+                update.role = role;
+            }
+            if (tier !== undefined) {
+                if (!['free', 'plus', 'pro'].includes(tier)) throw new Error('Invalid tier');
+                update.subscriptionTier = tier;
+            }
+            const user = await User.findByIdAndUpdate(userId, update, { new: true }).lean();
+            if (!user) throw new Error('User not found');
+            const u: any = user;
+            return {
+                id: u._id.toString(),
+                email: u.email,
+                role: u.role,
+                subscriptionTier: u.subscriptionTier ?? 'free',
+                createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
+                deviceCount: 0,
+                plantCount: 0,
+            };
+        },
+        adminDeleteUser: async (_: any, { userId }: { userId: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
+            if (userId === ctx.user.userId) throw new Error('Cannot delete your own account');
+            const target = await User.findById(userId).lean();
+            if (!target) throw new Error('User not found');
+            if (target.role === 'superuser') {
+                const superCount = await User.countDocuments({ role: 'superuser' });
+                if (superCount <= 1) throw new Error('Cannot delete the last superuser');
+            }
+            await User.findByIdAndDelete(userId);
+            return true;
         },
         openDeviceClaim: (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');

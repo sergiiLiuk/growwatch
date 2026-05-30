@@ -196,6 +196,9 @@ export const typeDefs = gql`
     removePlantAction(id: String!): Boolean!
     regenerateBriefing: DailyBriefing
     setSubscriptionTier(userId: String!, tier: String!): User!
+    adminCreateUser(email: String!, password: String!, role: String!, tier: String!): User!
+    adminUpdateUser(userId: String!, email: String, role: String, tier: String): User!
+    adminDeleteUser(userId: String!): Boolean!
     openDeviceClaim: String!
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!

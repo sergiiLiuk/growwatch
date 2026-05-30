@@ -165,9 +165,6 @@
     "upgrade": "Opgradér",
     "comingSoon": "Betalinger kommer snart — kontakt os for at opgradere manuelt."
   },
-  "admin": {
-    "tier": "Abonnement"
-  },
   "plantDetail": {
     "recommendations": "Anbefalinger",
     "logAction": "Log handling",
@@ -357,8 +354,18 @@
     "devicesHeader": "Enheder",
     "plantsHeader": "Planter",
     "createdHeader": "Oprettet",
+    "actionsHeader": "Handlinger",
     "superBadge": "super",
-    "joined": "Tilmeldt"
+    "joined": "Tilmeldt",
+    "tier": "Abonnement",
+    "addUser": "Tilføj bruger",
+    "editUser": "Redigér bruger",
+    "edit": "Redigér",
+    "delete": "Slet",
+    "password": "Adgangskode",
+    "passwordHint": "Mindst 8 tegn",
+    "deleteConfirmTitle": "Slet {{ email }}?",
+    "deleteConfirmBody": "Dette fjerner brugerkontoen, men sletter ikke deres planter eller målinger."
   },
   "sensorSetup": {
     "title": "Sensoropsætning",

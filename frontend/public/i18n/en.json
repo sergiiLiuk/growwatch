@@ -165,9 +165,6 @@
     "upgrade": "Upgrade",
     "comingSoon": "Payments coming soon — contact us to upgrade manually."
   },
-  "admin": {
-    "tier": "Tier"
-  },
   "plantDetail": {
     "recommendations": "Recommendations",
     "logAction": "Log action",
@@ -357,8 +354,18 @@
     "devicesHeader": "Devices",
     "plantsHeader": "Plants",
     "createdHeader": "Created",
+    "actionsHeader": "Actions",
     "superBadge": "super",
-    "joined": "Joined"
+    "joined": "Joined",
+    "tier": "Tier",
+    "addUser": "Add user",
+    "editUser": "Edit user",
+    "edit": "Edit",
+    "delete": "Delete",
+    "password": "Password",
+    "passwordHint": "Minimum 8 characters",
+    "deleteConfirmTitle": "Delete {{ email }}?",
+    "deleteConfirmBody": "This removes the user account but does not delete their plants or readings."
   },
   "sensorSetup": {
     "title": "Sensor setup guide",
