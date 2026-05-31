@@ -365,7 +365,8 @@
     "password": "Password",
     "passwordHint": "Minimum 8 characters",
     "deleteConfirmTitle": "Delete {{ email }}?",
-    "deleteConfirmBody": "This removes the user account but does not delete their plants or readings."
+    "deleteConfirmBody": "This removes the user account but does not delete their plants or readings.",
+    "superuserAlwaysPro": "Superusers are always Pro"
   },
   "sensorSetup": {
     "title": "Sensor setup guide",

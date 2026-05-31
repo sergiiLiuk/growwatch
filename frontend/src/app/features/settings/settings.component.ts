@@ -325,23 +325,6 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </button>
       </div>
 
-      <!-- Admin (superuser only) -->
-      @if (isSuperuser()) {
-        <div class="mt-5">
-          <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.admin') }}</div>
-          <button (click)="openAdmin()"
-                  class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
-            <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-              <app-icon name="admin" class="w-4 h-4 text-gw-green-dark" />
-            </div>
-            <div class="flex-1 text-left">
-              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.adminAllUsers') }}</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.adminAllUsersDescription') }}</div>
-            </div>
-            <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
-          </button>
-        </div>
-      }
 
       <!-- Sensor setup + devices -->
       <div class="mt-5">
@@ -418,7 +401,6 @@ export class SettingsComponent implements OnInit {
   userEmail = () => this.auth.user()?.email ?? '';
   userId = () => this.auth.user()?.userId ?? '';
   userRole = () => this.auth.user()?.role ?? '';
-  isSuperuser = () => this.auth.user()?.role === 'superuser';
 
   // showDebug stays in localStorage — purely client-only UI state (per device/browser).
   private readonly DEBUG_KEY = 'growwatch-show-debug';
@@ -519,7 +501,6 @@ export class SettingsComponent implements OnInit {
 
   openSensorSetup() { this.router.navigate(['/settings/sensor-setup']); }
   openDevices() { this.router.navigate(['/settings/devices']); }
-  openAdmin() { this.router.navigate(['/admin']); }
   logout() { this.auth.logout(); }
 
 }

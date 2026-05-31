@@ -578,6 +578,11 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
             if (!['free', 'plus', 'pro'].includes(tier)) throw new Error('Invalid tier');
+            const target = await User.findById(userId).lean();
+            if (!target) throw new Error('User not found');
+            if (target.role === 'superuser' && tier !== 'pro') {
+                throw new Error('Superusers are always Pro');
+            }
             const user = await User.findByIdAndUpdate(
                 userId,
                 { subscriptionTier: tier },
@@ -606,11 +611,13 @@ export const resolvers = {
             const existing = await User.findOne({ email: trimmedEmail });
             if (existing) throw new Error('A user with that email already exists');
             const passwordHash = await hashPassword(password);
+            // Superusers are always pro regardless of submitted tier
+            const finalTier = role === 'superuser' ? 'pro' : tier;
             const doc: any = await User.create({
                 email: trimmedEmail,
                 passwordHash,
                 role: role as 'user' | 'superuser',
-                subscriptionTier: tier as 'free' | 'plus' | 'pro',
+                subscriptionTier: finalTier as 'free' | 'plus' | 'pro',
             });
             return {
                 id: doc._id.toString(),
@@ -652,6 +659,10 @@ export const resolvers = {
             if (tier !== undefined) {
                 if (!['free', 'plus', 'pro'].includes(tier)) throw new Error('Invalid tier');
                 update.subscriptionTier = tier;
+            }
+            // Whenever role becomes superuser, force tier to pro (overrides any tier in this update or in DB)
+            if (update.role === 'superuser') {
+                update.subscriptionTier = 'pro';
             }
             const user = await User.findByIdAndUpdate(userId, update, { new: true }).lean();
             if (!user) throw new Error('User not found');

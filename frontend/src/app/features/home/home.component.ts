@@ -64,7 +64,8 @@ interface ActivityEvent {
           </div>
         }
 
-        <!-- Phase / mood card -->
+        <!-- Phase / mood card — hidden for Free since it needs sensor data to mean anything -->
+        @if (!tier.isFree()) {
         <div class="rounded-2xl p-4 border border-transparent flex flex-col" [class]="moodBg()">
           <div class="flex items-start justify-between gap-2 mb-1">
             <span class="text-[10px] font-semibold tracking-widest uppercase opacity-50" [class]="moodIconColor()">{{ t('home.currentPhase') }}</span>
@@ -86,6 +87,7 @@ interface ActivityEvent {
           <!-- Subtle divider at bottom matching mockup -->
           <div class="mt-3 h-px opacity-20 rounded-full" [class]="moodIconColor() === 'text-gw-green-dark' ? 'bg-gw-green-dark' : 'bg-gw-amber-dark'"></div>
         </div>
+        }
 
       </div>
 

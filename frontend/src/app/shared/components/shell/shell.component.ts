@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { IconComponent } from '../atoms/icon.component';
@@ -70,7 +70,7 @@ import { IconComponent } from '../atoms/icon.component';
 
       <!-- Mobile bottom nav -->
       <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-gw-surface/95 backdrop-blur-sm border-t border-gw-border flex z-50">
-        @for (item of allNavItems; track item.path) {
+        @for (item of mobileNavItems(); track item.path) {
           <a [routerLink]="item.path"
              routerLinkActive="active-tab"
              [routerLinkActiveOptions]="{exact: item.path === '/'}"
@@ -103,6 +103,17 @@ export class ShellComponent {
     ...this.navItems,
     { path: '/settings', label: 'Settings', icon: 'settings' as const },
   ];
+
+  // Mobile bottom nav: insert Admin between Alerts and Settings for superusers
+  mobileNavItems = computed(() => {
+    const isSuper = this.auth.user()?.role === 'superuser';
+    if (!isSuper) return this.allNavItems;
+    return [
+      ...this.navItems,
+      { path: '/admin',    label: 'Admin',    icon: 'admin' as const    },
+      { path: '/settings', label: 'Settings', icon: 'settings' as const },
+    ];
+  });
 
   isSuperuser = () => this.auth.user()?.role === 'superuser';
 

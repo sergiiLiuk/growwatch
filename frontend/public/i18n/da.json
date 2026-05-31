@@ -365,7 +365,8 @@
     "password": "Adgangskode",
     "passwordHint": "Mindst 8 tegn",
     "deleteConfirmTitle": "Slet {{ email }}?",
-    "deleteConfirmBody": "Dette fjerner brugerkontoen, men sletter ikke deres planter eller målinger."
+    "deleteConfirmBody": "Dette fjerner brugerkontoen, men sletter ikke deres planter eller målinger.",
+    "superuserAlwaysPro": "Superbrugere er altid Pro"
   },
   "sensorSetup": {
     "title": "Sensoropsætning",

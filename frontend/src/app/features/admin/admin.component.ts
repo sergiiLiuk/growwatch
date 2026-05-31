@@ -75,13 +75,19 @@ interface UserFormState {
               <div class="text-[12px] text-gray-500 sm:block hidden">{{ u.role }}</div>
               <div>
                 <span class="sm:hidden text-[11px] text-gray-400">{{ t('admin.tier') }}: </span>
-                <select [ngModel]="u.subscriptionTier"
-                        (ngModelChange)="onTierChange(u.id, $event)"
-                        class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors">
-                  <option value="free">{{ t('upgrade.free') }}</option>
-                  <option value="plus">{{ t('upgrade.plus') }}</option>
-                  <option value="pro">{{ t('upgrade.pro') }}</option>
-                </select>
+                @if (u.role === 'superuser') {
+                  <span class="text-[12px] text-gray-500 px-2 py-1 inline-block" [title]="t('admin.superuserAlwaysPro')">
+                    {{ t('upgrade.pro') }}
+                  </span>
+                } @else {
+                  <select [ngModel]="u.subscriptionTier"
+                          (ngModelChange)="onTierChange(u.id, $event)"
+                          class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors">
+                    <option value="free">{{ t('upgrade.free') }}</option>
+                    <option value="plus">{{ t('upgrade.plus') }}</option>
+                    <option value="pro">{{ t('upgrade.pro') }}</option>
+                  </select>
+                }
               </div>
               <div class="text-[12px] text-gray-700 sm:text-right">
                 <span class="sm:hidden text-gray-400">{{ t('admin.devicesHeader') }}: </span>{{ u.deviceCount }}
@@ -115,8 +121,8 @@ interface UserFormState {
 
     <!-- Add / Edit modal -->
     @if (formOpen()) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30" (click)="closeForm()">
-        <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 pb-8 max-h-[85vh] overflow-y-auto"
+      <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30" (click)="closeForm()">
+        <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 pb-24 sm:pb-5 max-h-[85vh] overflow-y-auto"
              (click)="$event.stopPropagation()" *transloco="let t">
           <h2 class="text-[16px] font-medium text-gray-800 mb-4">
             {{ form().id ? t('admin.editUser') : t('admin.addUser') }}
@@ -141,7 +147,7 @@ interface UserFormState {
 
             <label class="block">
               <span class="text-[11px] text-gray-400">{{ t('admin.roleHeader') }}</span>
-              <select [ngModel]="form().role" (ngModelChange)="updateForm({ role: $event })"
+              <select [ngModel]="form().role" (ngModelChange)="onRoleChange($event)"
                       class="w-full mt-1 text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors">
                 <option value="user">user</option>
                 <option value="superuser">superuser</option>
@@ -151,11 +157,15 @@ interface UserFormState {
             <label class="block">
               <span class="text-[11px] text-gray-400">{{ t('admin.tier') }}</span>
               <select [ngModel]="form().tier" (ngModelChange)="updateForm({ tier: $event })"
-                      class="w-full mt-1 text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors">
+                      [disabled]="form().role === 'superuser'"
+                      class="w-full mt-1 text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                 <option value="free">{{ t('upgrade.free') }}</option>
                 <option value="plus">{{ t('upgrade.plus') }}</option>
                 <option value="pro">{{ t('upgrade.pro') }}</option>
               </select>
+              @if (form().role === 'superuser') {
+                <span class="text-[10px] text-gray-400 mt-0.5 block">{{ t('admin.superuserAlwaysPro') }}</span>
+              }
             </label>
           </div>
 
@@ -181,8 +191,8 @@ interface UserFormState {
 
     <!-- Delete confirmation -->
     @if (deletingUser(); as d) {
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30" (click)="cancelDelete()">
-        <div class="bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-5"
+      <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30" (click)="cancelDelete()">
+        <div class="bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-5 pb-24 sm:pb-5"
              (click)="$event.stopPropagation()" *transloco="let t">
           <h2 class="text-[15px] font-medium text-gray-800 mb-2">{{ t('admin.deleteConfirmTitle', { email: d.email }) }}</h2>
           <p class="text-[12px] text-gray-500 leading-relaxed mb-4">{{ t('admin.deleteConfirmBody') }}</p>
@@ -262,6 +272,11 @@ export class AdminComponent implements OnInit {
 
   updateForm(patch: Partial<UserFormState>) {
     this.form.update(s => ({ ...s, ...patch }));
+  }
+
+  onRoleChange(role: 'user' | 'superuser') {
+    // Superusers are always pro — auto-snap the tier dropdown when role flips.
+    this.form.update(s => ({ ...s, role, tier: role === 'superuser' ? 'pro' : s.tier }));
   }
 
   closeForm() {
