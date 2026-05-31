@@ -19,7 +19,7 @@ export class TierService {
 
   // Demo accounts behave like Free for feature gating, but their UI hides
   // any upgrade/subscription CTAs so the app stays a pure walkthrough.
-  isDemo = computed(() => this.auth.user()?.isDemo === true);
+  isDemo = computed(() => this.auth.user()?.role === 'demo');
   canSeeSubscription = computed(() => !this.isDemo());
 
   canSeeAi = computed(() => this.isPlus());

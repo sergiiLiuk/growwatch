@@ -4,16 +4,16 @@ import { environment } from '../../../environments/environment';
 
 const TOKEN_KEY = 'growwatch-token';
 const TIER_KEY = 'growwatch-tier';
-const DEMO_KEY = 'growwatch-demo';
+const ROLE_KEY = 'growwatch-role';
 
 export type SubscriptionTier = 'free' | 'plus' | 'pro';
+export type UserRole = 'user' | 'superuser' | 'demo';
 
 export interface User {
   email: string;
   userId: string;
-  role: 'user' | 'superuser';
+  role: UserRole;
   subscriptionTier: SubscriptionTier;
-  isDemo: boolean;
 }
 
 interface TokenPayload {
@@ -38,25 +38,26 @@ export class AuthService {
         const payload = this.decodeToken(token);
         if (payload.exp * 1000 > Date.now()) {
           const tier = (localStorage.getItem(TIER_KEY) as SubscriptionTier | null) ?? 'free';
-          const isDemo = localStorage.getItem(DEMO_KEY) === '1';
+          // JWT role doesn't include 'demo' yet (legacy tokens), so trust ROLE_KEY when present.
+          const storedRole = (localStorage.getItem(ROLE_KEY) as UserRole | null);
+          const role: UserRole = storedRole ?? (payload.role as UserRole);
           this._user.set({
             email: payload.email,
-            role: payload.role as 'user' | 'superuser',
+            role,
             userId: payload.userId,
             subscriptionTier: tier,
-            isDemo,
           });
-          // Refresh from server so tier changes from another session apply
+          // Refresh from server so role/tier changes from another session apply
           this.refreshMe().catch(() => {/* non-fatal */});
         } else {
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem(TIER_KEY);
-          localStorage.removeItem(DEMO_KEY);
+          localStorage.removeItem(ROLE_KEY);
         }
       } catch {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(TIER_KEY);
-        localStorage.removeItem(DEMO_KEY);
+        localStorage.removeItem(ROLE_KEY);
       }
     }
   }
@@ -67,7 +68,7 @@ export class AuthService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query: `mutation Login($email: String!, $password: String!) {
-          login(email: $email, password: $password) { token email role userId subscriptionTier isDemo }
+          login(email: $email, password: $password) { token email role userId subscriptionTier }
         }`,
         variables: { email, password },
       }),
@@ -76,13 +77,13 @@ export class AuthService {
     const json = await res.json();
     if (json.errors?.length) throw new Error(json.errors[0].message);
 
-    const { token, email: userEmail, role, userId, subscriptionTier, isDemo } = json.data.login;
+    const { token, email: userEmail, role, userId, subscriptionTier } = json.data.login;
     const tier: SubscriptionTier = subscriptionTier ?? 'free';
-    const demo = !!isDemo;
+    const userRole: UserRole = (role as UserRole) ?? 'user';
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(TIER_KEY, tier);
-    localStorage.setItem(DEMO_KEY, demo ? '1' : '0');
-    this._user.set({ email: userEmail, role, userId, subscriptionTier: tier, isDemo: demo });
+    localStorage.setItem(ROLE_KEY, userRole);
+    this._user.set({ email: userEmail, role: userRole, userId, subscriptionTier: tier });
   }
 
   async refreshMe(): Promise<void> {
@@ -93,17 +94,17 @@ export class AuthService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          query: `query Me { me { email role userId subscriptionTier isDemo } }`,
+          query: `query Me { me { email role userId subscriptionTier } }`,
         }),
       });
       const json = await res.json();
       const m = json.data?.me;
       if (!m) return;
       const tier: SubscriptionTier = m.subscriptionTier ?? 'free';
-      const demo = !!m.isDemo;
+      const userRole: UserRole = (m.role as UserRole) ?? 'user';
       localStorage.setItem(TIER_KEY, tier);
-      localStorage.setItem(DEMO_KEY, demo ? '1' : '0');
-      this._user.set({ email: m.email, role: m.role, userId: m.userId, subscriptionTier: tier, isDemo: demo });
+      localStorage.setItem(ROLE_KEY, userRole);
+      this._user.set({ email: m.email, role: userRole, userId: m.userId, subscriptionTier: tier });
     } catch {
       // non-fatal
     }
@@ -112,7 +113,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(TIER_KEY);
-    localStorage.removeItem(DEMO_KEY);
+    localStorage.removeItem(ROLE_KEY);
     this._user.set(null);
     this.router.navigate(['/login']);
   }

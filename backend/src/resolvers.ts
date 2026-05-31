@@ -463,7 +463,6 @@ export const resolvers = {
                 email: u.email,
                 role: u.role,
                 subscriptionTier: u.subscriptionTier ?? 'free',
-                isDemo: u.isDemo ?? false,
                 createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
                 deviceCount: devicesByUser.get(u._id.toString()) ?? 0,
                 plantCount: plantsByUser.get(u._id.toString()) ?? 0,
@@ -479,7 +478,6 @@ export const resolvers = {
                 role: user.role,
                 userId: ctx.user.userId,
                 subscriptionTier: user.subscriptionTier ?? 'free',
-                isDemo: user.isDemo ?? false,
             };
         },
     },
@@ -492,7 +490,7 @@ export const resolvers = {
             }
             const userId = user._id.toString();
             const token = signToken({ userId, email: user.email, role: user.role });
-            return { token, email: user.email, role: user.role, userId, subscriptionTier: user.subscriptionTier ?? 'free', isDemo: user.isDemo ?? false };
+            return { token, email: user.email, role: user.role, userId, subscriptionTier: user.subscriptionTier ?? 'free' };
         },
         addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -585,7 +583,7 @@ export const resolvers = {
             if (target.role === 'superuser' && tier !== 'pro') {
                 throw new Error('Superusers are always Pro');
             }
-            if (target.isDemo && tier !== 'free') {
+            if (target.role === 'demo' && tier !== 'free') {
                 throw new Error('Demo accounts are always on Free tier');
             }
             const user = await User.findByIdAndUpdate(
@@ -600,46 +598,41 @@ export const resolvers = {
                 email: u.email,
                 role: u.role,
                 subscriptionTier: u.subscriptionTier ?? 'free',
-                isDemo: u.isDemo ?? false,
                 createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
                 deviceCount: 0,
                 plantCount: 0,
             };
         },
-        adminCreateUser: async (_: any, { email, password, role, tier, isDemo }: { email: string; password: string; role: string; tier: string; isDemo?: boolean }, ctx: Ctx) => {
+        adminCreateUser: async (_: any, { email, password, role, tier }: { email: string; password: string; role: string; tier: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
             const trimmedEmail = email.trim().toLowerCase();
             if (!trimmedEmail) throw new Error('Email required');
             if (!password || password.length < 8) throw new Error('Password must be at least 8 characters');
-            if (!['user', 'superuser'].includes(role)) throw new Error('Invalid role');
+            if (!['user', 'superuser', 'demo'].includes(role)) throw new Error('Invalid role');
             if (!['free', 'plus', 'pro'].includes(tier)) throw new Error('Invalid tier');
             const existing = await User.findOne({ email: trimmedEmail });
             if (existing) throw new Error('A user with that email already exists');
+            // Role overrides tier: superuser is always pro, demo is always free.
+            const finalTier = role === 'superuser' ? 'pro' : role === 'demo' ? 'free' : tier;
             const passwordHash = await hashPassword(password);
-            // Superusers are always pro regardless of submitted tier
-            const finalTier = role === 'superuser' ? 'pro' : tier;
-            // Demo flag is a non-paying tier; force it to free
-            const demoFlag = isDemo === true && role !== 'superuser';
             const doc: any = await User.create({
                 email: trimmedEmail,
                 passwordHash,
-                role: role as 'user' | 'superuser',
-                subscriptionTier: (demoFlag ? 'free' : finalTier) as 'free' | 'plus' | 'pro',
-                isDemo: demoFlag,
+                role: role as 'user' | 'superuser' | 'demo',
+                subscriptionTier: finalTier as 'free' | 'plus' | 'pro',
             });
             return {
                 id: doc._id.toString(),
                 email: doc.email,
                 role: doc.role,
                 subscriptionTier: doc.subscriptionTier ?? 'free',
-                isDemo: doc.isDemo ?? false,
                 createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : new Date().toISOString(),
                 deviceCount: 0,
                 plantCount: 0,
             };
         },
-        adminUpdateUser: async (_: any, { userId, email, role, tier, isDemo }: { userId: string; email?: string; role?: string; tier?: string; isDemo?: boolean }, ctx: Ctx) => {
+        adminUpdateUser: async (_: any, { userId, email, role, tier }: { userId: string; email?: string; role?: string; tier?: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
             const update: any = {};
@@ -651,7 +644,7 @@ export const resolvers = {
                 update.email = e;
             }
             if (role !== undefined) {
-                if (!['user', 'superuser'].includes(role)) throw new Error('Invalid role');
+                if (!['user', 'superuser', 'demo'].includes(role)) throw new Error('Invalid role');
                 // Don't allow demoting yourself from superuser (lockout protection)
                 if (userId === ctx.user.userId && role !== 'superuser') {
                     throw new Error('Cannot demote your own superuser account');
@@ -670,15 +663,9 @@ export const resolvers = {
                 if (!['free', 'plus', 'pro'].includes(tier)) throw new Error('Invalid tier');
                 update.subscriptionTier = tier;
             }
-            // Whenever role becomes superuser, force tier to pro (overrides any tier in this update or in DB)
-            if (update.role === 'superuser') {
-                update.subscriptionTier = 'pro';
-                update.isDemo = false;
-            }
-            if (isDemo !== undefined) {
-                update.isDemo = isDemo && update.role !== 'superuser';
-                if (update.isDemo) update.subscriptionTier = 'free';
-            }
+            // Role overrides tier: superuser → pro, demo → free.
+            if (update.role === 'superuser') update.subscriptionTier = 'pro';
+            else if (update.role === 'demo') update.subscriptionTier = 'free';
             const user = await User.findByIdAndUpdate(userId, update, { new: true }).lean();
             if (!user) throw new Error('User not found');
             const u: any = user;
@@ -687,7 +674,6 @@ export const resolvers = {
                 email: u.email,
                 role: u.role,
                 subscriptionTier: u.subscriptionTier ?? 'free',
-                isDemo: u.isDemo ?? false,
                 createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
                 deviceCount: 0,
                 plantCount: 0,

@@ -43,6 +43,23 @@ async function seedAndMigrate(): Promise<string> {
         console.log(`🔄 Backfilled ${tierMigrated.modifiedCount} users → free tier`);
     }
 
+    // Migration: isDemo:true rows become role:'demo' and the field is dropped.
+    const demoMigrated = await User.collection.updateMany(
+        { isDemo: true },
+        { $set: { role: 'demo', subscriptionTier: 'free' }, $unset: { isDemo: '' } },
+    );
+    if (demoMigrated.modifiedCount > 0) {
+        console.log(`🔄 Migrated ${demoMigrated.modifiedCount} isDemo users → role:'demo'`);
+    }
+    // Drop the field entirely from any remaining rows so the schema stays clean.
+    const demoFieldStripped = await User.collection.updateMany(
+        { isDemo: { $exists: true } },
+        { $unset: { isDemo: '' } },
+    );
+    if (demoFieldStripped.modifiedCount > 0) {
+        console.log(`🧹 Cleared isDemo field from ${demoFieldStripped.modifiedCount} users`);
+    }
+
     // Attribute legacy records that have no userId to the superuser
     const [hourlyMigrated, plantsMigrated] = await Promise.all([
         HourlySensorData.updateMany({ userId: { $exists: false } }, { $set: { userId: superuserId } }),

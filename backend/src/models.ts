@@ -7,21 +7,21 @@ const PLANT_TYPE_VALUES = Object.keys(PLANT_LIGHT_RANGES) as PlantType[];
 
 export type SubscriptionTier = 'free' | 'plus' | 'pro';
 
+export type UserRole = 'superuser' | 'user' | 'demo';
+
 export interface IUser extends Document {
     email: string;
     passwordHash: string;
-    role: 'superuser' | 'user';
+    role: UserRole;
     subscriptionTier: SubscriptionTier;
-    isDemo: boolean;
 }
 
 const userSchema = new Schema<IUser>(
     {
         email: { type: String, required: true, unique: true },
         passwordHash: { type: String, required: true },
-        role: { type: String, required: true, enum: ['superuser', 'user'], default: 'user' },
+        role: { type: String, required: true, enum: ['superuser', 'user', 'demo'], default: 'user' },
         subscriptionTier: { type: String, required: true, enum: ['free', 'plus', 'pro'], default: 'free' },
-        isDemo: { type: Boolean, required: true, default: false },
     },
     { timestamps: true }
 );
