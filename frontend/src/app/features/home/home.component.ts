@@ -135,8 +135,8 @@ interface ActivityEvent {
         </div>
       }
 
-      <!-- Free-tier CTA -->
-      @if (tier.isFree()) {
+      <!-- Free-tier CTA (hidden for demo accounts) -->
+      @if (tier.isFree() && tier.canSeeSubscription()) {
         <a routerLink="/upgrade"
            class="block mb-5 rounded-2xl border border-dashed border-gw-green/40 bg-gw-green-light/30 p-4 hover:border-gw-green transition-colors">
           <p class="text-[13px] font-medium text-gw-green-dark">{{ t('home.upgradeTitle') }}</p>

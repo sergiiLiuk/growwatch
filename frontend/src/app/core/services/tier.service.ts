@@ -17,6 +17,11 @@ export class TierService {
   isPlus = computed(() => this.isAtLeast('plus'));
   isPro = computed(() => this.isAtLeast('pro'));
 
+  // Demo accounts behave like Free for feature gating, but their UI hides
+  // any upgrade/subscription CTAs so the app stays a pure walkthrough.
+  isDemo = computed(() => this.auth.user()?.isDemo === true);
+  canSeeSubscription = computed(() => !this.isDemo());
+
   canSeeAi = computed(() => this.isPlus());
   canSeeWeatherWarnings = computed(() => this.isPlus());
   canSeeSensors = computed(() => this.isPro());

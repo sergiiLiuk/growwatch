@@ -157,6 +157,7 @@ export const typeDefs = gql`
     email: String!
     role: String!
     subscriptionTier: String!
+    isDemo: Boolean!
     createdAt: String!
     deviceCount: Int!
     plantCount: Int!
@@ -183,6 +184,7 @@ export const typeDefs = gql`
     role: String!
     userId: String!
     subscriptionTier: String!
+    isDemo: Boolean!
   }
 
   type Mutation {
@@ -196,8 +198,8 @@ export const typeDefs = gql`
     removePlantAction(id: String!): Boolean!
     regenerateBriefing: DailyBriefing
     setSubscriptionTier(userId: String!, tier: String!): User!
-    adminCreateUser(email: String!, password: String!, role: String!, tier: String!): User!
-    adminUpdateUser(userId: String!, email: String, role: String, tier: String): User!
+    adminCreateUser(email: String!, password: String!, role: String!, tier: String!, isDemo: Boolean): User!
+    adminUpdateUser(userId: String!, email: String, role: String, tier: String, isDemo: Boolean): User!
     adminDeleteUser(userId: String!): Boolean!
     openDeviceClaim: String!
     cancelDeviceClaim: Boolean!

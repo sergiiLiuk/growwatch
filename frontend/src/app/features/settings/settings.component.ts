@@ -78,18 +78,20 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
         </div>
       </div>
 
-      <!-- Subscription -->
-      <div class="mb-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.subscription') }}</div>
-        <a routerLink="/upgrade"
-           class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gw-green-light transition-colors">
-          <div class="flex-1">
-            <div class="text-[13px] font-medium text-gray-800">{{ t('settings.currentPlan') }}: {{ t('upgrade.' + tier.current()) }}</div>
-            <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.viewPlans') }}</div>
-          </div>
-          <span class="text-gray-300">›</span>
-        </a>
-      </div>
+      <!-- Subscription — hidden for demo accounts -->
+      @if (tier.canSeeSubscription()) {
+        <div class="mb-5">
+          <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.subscription') }}</div>
+          <a routerLink="/upgrade"
+             class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gw-green-light transition-colors">
+            <div class="flex-1">
+              <div class="text-[13px] font-medium text-gray-800">{{ t('settings.currentPlan') }}: {{ t('upgrade.' + tier.current()) }}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.viewPlans') }}</div>
+            </div>
+            <span class="text-gray-300">›</span>
+          </a>
+        </div>
+      }
 
       <!-- Temperature range -->
       @if (tier.canSeeSensors()) {
@@ -326,34 +328,36 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
       </div>
 
 
-      <!-- Sensor setup + devices -->
-      <div class="mt-5">
-        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.setup') }}</div>
-        <div class="space-y-2">
-          <button (click)="openDevices()"
-                  class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
-            <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-              <app-icon name="device" class="w-4 h-4 text-gw-green-dark" />
-            </div>
-            <div class="flex-1 text-left">
-              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.myDevices') }}</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.myDevicesDescription') }}</div>
-            </div>
-            <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
-          </button>
-          <button (click)="openSensorSetup()"
-                  class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
-            <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-              <app-icon name="wifi" class="w-4 h-4 text-gw-green-dark" />
-            </div>
-            <div class="flex-1 text-left">
-              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.sensorSetupGuide') }}</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.sensorSetupGuideDescription') }}</div>
-            </div>
-            <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
-          </button>
+      <!-- Sensor setup + devices — Pro only (sensors are a Pro-tier feature) -->
+      @if (tier.canSeeSensors()) {
+        <div class="mt-5">
+          <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.setup') }}</div>
+          <div class="space-y-2">
+            <button (click)="openDevices()"
+                    class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+              <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+                <app-icon name="device" class="w-4 h-4 text-gw-green-dark" />
+              </div>
+              <div class="flex-1 text-left">
+                <div class="text-[14px] font-medium text-gray-800">{{ t('settings.myDevices') }}</div>
+                <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.myDevicesDescription') }}</div>
+              </div>
+              <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
+            </button>
+            <button (click)="openSensorSetup()"
+                    class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+              <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+                <app-icon name="wifi" class="w-4 h-4 text-gw-green-dark" />
+              </div>
+              <div class="flex-1 text-left">
+                <div class="text-[14px] font-medium text-gray-800">{{ t('settings.sensorSetupGuide') }}</div>
+                <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.sensorSetupGuideDescription') }}</div>
+              </div>
+              <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
+            </button>
+          </div>
         </div>
-      </div>
+      }
 
       <!-- Debug info (temporary) -->
       <div class="mt-5">

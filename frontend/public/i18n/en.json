@@ -366,7 +366,11 @@
     "passwordHint": "Minimum 8 characters",
     "deleteConfirmTitle": "Delete {{ email }}?",
     "deleteConfirmBody": "This removes the user account but does not delete their plants or readings.",
-    "superuserAlwaysPro": "Superusers are always Pro"
+    "superuserAlwaysPro": "Superusers are always Pro",
+    "demoAccount": "Demo account",
+    "demoAccountHint": "Behaves like Free, but the Subscription and upgrade prompts are hidden — ideal for showcasing the app.",
+    "demoAlwaysFree": "Demo accounts are always on Free tier",
+    "demoBadge": "demo"
   },
   "sensorSetup": {
     "title": "Sensor setup guide",

@@ -9,6 +9,7 @@ export interface AdminUser {
   email: string;
   role: string;
   subscriptionTier: SubscriptionTier;
+  isDemo: boolean;
   createdAt: string;
   deviceCount: number;
   plantCount: number;
@@ -27,7 +28,7 @@ export class AdminService {
       this.apolloClient.query<{ allUsers: AdminUser[] }>({
         query: gql`
           query AllUsers {
-            allUsers { id email role subscriptionTier createdAt deviceCount plantCount }
+            allUsers { id email role subscriptionTier isDemo createdAt deviceCount plantCount }
           }
         `,
         fetchPolicy: 'network-only',
@@ -46,7 +47,7 @@ export class AdminService {
         mutation: gql`
           mutation SetSubscriptionTier($userId: String!, $tier: String!) {
             setSubscriptionTier(userId: $userId, tier: $tier) {
-              id email role subscriptionTier createdAt deviceCount plantCount
+              id email role subscriptionTier isDemo createdAt deviceCount plantCount
             }
           }
         `,
@@ -60,34 +61,40 @@ export class AdminService {
     });
   }
 
-  createUser(email: string, password: string, role: 'user' | 'superuser', tier: SubscriptionTier): Observable<AdminUser> {
+  createUser(email: string, password: string, role: 'user' | 'superuser', tier: SubscriptionTier, isDemo: boolean): Observable<AdminUser> {
     return new Observable(observer => {
       this.apolloClient.mutate<{ adminCreateUser: AdminUser }>({
         mutation: gql`
-          mutation AdminCreateUser($email: String!, $password: String!, $role: String!, $tier: String!) {
-            adminCreateUser(email: $email, password: $password, role: $role, tier: $tier) {
-              id email role subscriptionTier createdAt deviceCount plantCount
+          mutation AdminCreateUser($email: String!, $password: String!, $role: String!, $tier: String!, $isDemo: Boolean) {
+            adminCreateUser(email: $email, password: $password, role: $role, tier: $tier, isDemo: $isDemo) {
+              id email role subscriptionTier isDemo createdAt deviceCount plantCount
             }
           }
         `,
-        variables: { email, password, role, tier },
+        variables: { email, password, role, tier, isDemo },
       })
         .then(result => { observer.next(result.data!.adminCreateUser); observer.complete(); })
         .catch(err => observer.error(err));
     });
   }
 
-  updateUser(userId: string, patch: { email?: string; role?: 'user' | 'superuser'; tier?: SubscriptionTier }): Observable<AdminUser> {
+  updateUser(userId: string, patch: { email?: string; role?: 'user' | 'superuser'; tier?: SubscriptionTier; isDemo?: boolean }): Observable<AdminUser> {
     return new Observable(observer => {
       this.apolloClient.mutate<{ adminUpdateUser: AdminUser }>({
         mutation: gql`
-          mutation AdminUpdateUser($userId: String!, $email: String, $role: String, $tier: String) {
-            adminUpdateUser(userId: $userId, email: $email, role: $role, tier: $tier) {
-              id email role subscriptionTier createdAt deviceCount plantCount
+          mutation AdminUpdateUser($userId: String!, $email: String, $role: String, $tier: String, $isDemo: Boolean) {
+            adminUpdateUser(userId: $userId, email: $email, role: $role, tier: $tier, isDemo: $isDemo) {
+              id email role subscriptionTier isDemo createdAt deviceCount plantCount
             }
           }
         `,
-        variables: { userId, email: patch.email ?? null, role: patch.role ?? null, tier: patch.tier ?? null },
+        variables: {
+          userId,
+          email: patch.email ?? null,
+          role: patch.role ?? null,
+          tier: patch.tier ?? null,
+          isDemo: patch.isDemo ?? null,
+        },
       })
         .then(result => { observer.next(result.data!.adminUpdateUser); observer.complete(); })
         .catch(err => observer.error(err));

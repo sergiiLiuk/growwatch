@@ -64,10 +64,12 @@ export const routes: Routes = [
       },
       {
         path: 'settings/sensor-setup',
+        canActivate: [tierGuard('pro')],
         loadComponent: () => import('./features/settings/sensor-setup.component').then(m => m.SensorSetupComponent),
       },
       {
         path: 'settings/devices',
+        canActivate: [tierGuard('pro')],
         loadComponent: () => import('./features/settings/devices.component').then(m => m.DevicesComponent),
       },
       {

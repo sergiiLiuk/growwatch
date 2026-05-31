@@ -366,7 +366,11 @@
     "passwordHint": "Mindst 8 tegn",
     "deleteConfirmTitle": "Slet {{ email }}?",
     "deleteConfirmBody": "Dette fjerner brugerkontoen, men sletter ikke deres planter eller målinger.",
-    "superuserAlwaysPro": "Superbrugere er altid Pro"
+    "superuserAlwaysPro": "Superbrugere er altid Pro",
+    "demoAccount": "Demokonto",
+    "demoAccountHint": "Opfører sig som Gratis, men abonnements- og opgraderingssektioner er skjult — ideel til at vise appen frem.",
+    "demoAlwaysFree": "Demokonti er altid på Gratis-niveau",
+    "demoBadge": "demo"
   },
   "sensorSetup": {
     "title": "Sensoropsætning",

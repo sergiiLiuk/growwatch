@@ -12,6 +12,7 @@ export interface IUser extends Document {
     passwordHash: string;
     role: 'superuser' | 'user';
     subscriptionTier: SubscriptionTier;
+    isDemo: boolean;
 }
 
 const userSchema = new Schema<IUser>(
@@ -20,6 +21,7 @@ const userSchema = new Schema<IUser>(
         passwordHash: { type: String, required: true },
         role: { type: String, required: true, enum: ['superuser', 'user'], default: 'user' },
         subscriptionTier: { type: String, required: true, enum: ['free', 'plus', 'pro'], default: 'free' },
+        isDemo: { type: Boolean, required: true, default: false },
     },
     { timestamps: true }
 );

@@ -13,6 +13,7 @@ interface UserFormState {
   password: string;
   role: 'user' | 'superuser';
   tier: SubscriptionTier;
+  isDemo: boolean;
 }
 
 @Component({
@@ -71,6 +72,9 @@ interface UserFormState {
                 @if (u.role === 'superuser') {
                   <span class="text-[10px] font-medium bg-gw-green-light text-gw-green-dark px-2 py-0.5 rounded-full">{{ t('admin.superBadge') }}</span>
                 }
+                @if (u.isDemo) {
+                  <span class="text-[10px] font-medium bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{{ t('admin.demoBadge') }}</span>
+                }
               </div>
               <div class="text-[12px] text-gray-500 sm:block hidden">{{ u.role }}</div>
               <div>
@@ -78,6 +82,10 @@ interface UserFormState {
                 @if (u.role === 'superuser') {
                   <span class="text-[12px] text-gray-500 px-2 py-1 inline-block" [title]="t('admin.superuserAlwaysPro')">
                     {{ t('upgrade.pro') }}
+                  </span>
+                } @else if (u.isDemo) {
+                  <span class="text-[12px] text-gray-500 px-2 py-1 inline-block" [title]="t('admin.demoAlwaysFree')">
+                    {{ t('upgrade.free') }}
                   </span>
                 } @else {
                   <select [ngModel]="u.subscriptionTier"
@@ -157,7 +165,7 @@ interface UserFormState {
             <label class="block">
               <span class="text-[11px] text-gray-400">{{ t('admin.tier') }}</span>
               <select [ngModel]="form().tier" (ngModelChange)="updateForm({ tier: $event })"
-                      [disabled]="form().role === 'superuser'"
+                      [disabled]="form().role === 'superuser' || form().isDemo"
                       class="w-full mt-1 text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                 <option value="free">{{ t('upgrade.free') }}</option>
                 <option value="plus">{{ t('upgrade.plus') }}</option>
@@ -165,8 +173,20 @@ interface UserFormState {
               </select>
               @if (form().role === 'superuser') {
                 <span class="text-[10px] text-gray-400 mt-0.5 block">{{ t('admin.superuserAlwaysPro') }}</span>
+              } @else if (form().isDemo) {
+                <span class="text-[10px] text-gray-400 mt-0.5 block">{{ t('admin.demoAlwaysFree') }}</span>
               }
             </label>
+
+            @if (form().role !== 'superuser') {
+              <label class="flex items-center gap-2 mt-1 cursor-pointer">
+                <input type="checkbox" [checked]="form().isDemo"
+                       (change)="onDemoChange(!form().isDemo)"
+                       class="w-4 h-4 accent-gw-green" />
+                <span class="text-[13px] text-gray-700">{{ t('admin.demoAccount') }}</span>
+              </label>
+              <span class="text-[10px] text-gray-400 -mt-1 block">{{ t('admin.demoAccountHint') }}</span>
+            }
           </div>
 
           @if (formError()) {
@@ -228,7 +248,7 @@ export class AdminComponent implements OnInit {
   errorMessage = signal<string | null>(null);
 
   formOpen = signal(false);
-  form = signal<UserFormState>({ email: '', password: '', role: 'user', tier: 'free' });
+  form = signal<UserFormState>({ email: '', password: '', role: 'user', tier: 'free', isDemo: false });
   formError = signal<string | null>(null);
   saving = signal(false);
 
@@ -259,13 +279,13 @@ export class AdminComponent implements OnInit {
   // ── Add / Edit ─────────────────────────────────────────────────────────────
 
   openAddModal() {
-    this.form.set({ email: '', password: '', role: 'user', tier: 'free' });
+    this.form.set({ email: '', password: '', role: 'user', tier: 'free', isDemo: false });
     this.formError.set(null);
     this.formOpen.set(true);
   }
 
   openEditModal(u: AdminUser) {
-    this.form.set({ id: u.id, email: u.email, password: '', role: u.role as 'user' | 'superuser', tier: u.subscriptionTier });
+    this.form.set({ id: u.id, email: u.email, password: '', role: u.role as 'user' | 'superuser', tier: u.subscriptionTier, isDemo: u.isDemo });
     this.formError.set(null);
     this.formOpen.set(true);
   }
@@ -275,8 +295,18 @@ export class AdminComponent implements OnInit {
   }
 
   onRoleChange(role: 'user' | 'superuser') {
-    // Superusers are always pro — auto-snap the tier dropdown when role flips.
-    this.form.update(s => ({ ...s, role, tier: role === 'superuser' ? 'pro' : s.tier }));
+    // Superusers are always pro and never demo — auto-snap the related fields.
+    this.form.update(s => ({
+      ...s,
+      role,
+      tier: role === 'superuser' ? 'pro' : s.tier,
+      isDemo: role === 'superuser' ? false : s.isDemo,
+    }));
+  }
+
+  onDemoChange(value: boolean) {
+    // Demo users behave like Free — keep the tier in sync so the dropdown doesn't lie.
+    this.form.update(s => ({ ...s, isDemo: value, tier: value ? 'free' : s.tier }));
   }
 
   closeForm() {
@@ -294,8 +324,8 @@ export class AdminComponent implements OnInit {
     this.formError.set(null);
 
     const obs = f.id
-      ? this.adminService.updateUser(f.id, { email: f.email.trim(), role: f.role, tier: f.tier })
-      : this.adminService.createUser(f.email.trim(), f.password, f.role, f.tier);
+      ? this.adminService.updateUser(f.id, { email: f.email.trim(), role: f.role, tier: f.tier, isDemo: f.isDemo })
+      : this.adminService.createUser(f.email.trim(), f.password, f.role, f.tier, f.isDemo);
 
     obs.subscribe({
       next: saved => {
