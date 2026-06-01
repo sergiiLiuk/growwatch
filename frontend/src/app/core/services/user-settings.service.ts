@@ -29,7 +29,7 @@ export class UserSettingsService {
   readonly DEFAULT_HUMIDITY_MAX = 80;
   readonly DEFAULT_FROST_THRESHOLD = 2;
   readonly DEFAULT_HEAT_THRESHOLD = 32;
-  readonly DEFAULT_WIND_THRESHOLD = 50;
+  readonly DEFAULT_WIND_THRESHOLD = 14;  // m/s — roughly former 50 km/h
   readonly DEFAULT_DIGEST_TIME = '20:00';
   readonly DEFAULT_MORNING_TIP_TIME = '07:00';
   readonly DEFAULT_EVENING_TIP_TIME = '20:00';

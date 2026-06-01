@@ -530,7 +530,7 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "lowHigh": "Low {{ low }}° · High {{ high }}°",
-    "windTo": "Wind to {{ wind }} km/h",
+    "windTo": "Wind to {{ wind }} m/s",
     "noRisks": "✓ No risks expected",
     "loading": "Loading forecast…",
     "noData": "Forecast unavailable. Check your connection.",
@@ -539,8 +539,8 @@
       "frostSevere": "Forecast min {{ min }}°C — direct damage risk for warm-season crops.",
       "heatWarn": "Highs of {{ max }}°C will stress most crops, especially in a closed greenhouse.",
       "heatSevere": "Severe heat forecast at {{ max }}°C — plants may wilt or scorch without immediate action.",
-      "windWarn": "Gusts up to {{ wind }} km/h may damage greenhouse cover or knock over plants.",
-      "windSevere": "Severe wind forecast at {{ wind }} km/h — high risk of structural damage."
+      "windWarn": "Gusts up to {{ wind }} m/s may damage greenhouse cover or knock over plants.",
+      "windSevere": "Severe wind forecast at {{ wind }} m/s — high risk of structural damage."
     },
     "action": {
       "frost": "→ Close vents tonight and protect cold-sensitive plants (tomatoes, peppers, basil).",
@@ -558,7 +558,7 @@
       "windLabel": "Strong wind expected",
       "frostDetail": "forecast min {{ min }}°C",
       "heatDetail": "forecast max {{ max }}°C",
-      "windDetail": "gusts to {{ wind }} km/h"
+      "windDetail": "gusts to {{ wind }} m/s"
     },
     "badge": {
       "frost": "Frost",

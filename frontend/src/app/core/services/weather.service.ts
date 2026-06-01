@@ -105,7 +105,7 @@ export class WeatherService {
       const res = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
         `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,cloud_cover,surface_pressure` +
-        `&daily=sunrise,sunset&timezone=auto`
+        `&daily=sunrise,sunset&wind_speed_unit=ms&timezone=auto`
       );
       const data = await res.json();
       const c = data.current;
@@ -138,7 +138,7 @@ export class WeatherService {
       const res = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
         `&daily=temperature_2m_min,temperature_2m_max,wind_speed_10m_max,weather_code` +
-        `&forecast_days=3&timezone=auto`
+        `&wind_speed_unit=ms&forecast_days=3&timezone=auto`
       );
       const data = await res.json();
       const days: DailyForecast[] = (data.daily?.time ?? []).map((date: string, i: number) => {

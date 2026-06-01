@@ -28,7 +28,7 @@ export async function fetchWeatherContext(
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${ln}` +
             `&current=temperature_2m,relative_humidity_2m,weather_code` +
             `&daily=temperature_2m_min,temperature_2m_max,wind_speed_10m_max,weather_code` +
-            `&forecast_days=3&timezone=auto`;
+            `&wind_speed_unit=ms&forecast_days=3&timezone=auto`;
         const res = await fetch(url);
         const data: any = await res.json();
         const c = data.current;

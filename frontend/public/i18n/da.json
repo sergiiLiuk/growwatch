@@ -530,7 +530,7 @@
     "today": "I dag",
     "tomorrow": "I morgen",
     "lowHigh": "Lav {{ low }}° · Høj {{ high }}°",
-    "windTo": "Vind op til {{ wind }} km/t",
+    "windTo": "Vind op til {{ wind }} m/s",
     "noRisks": "✓ Ingen risici forventet",
     "loading": "Henter vejrudsigt…",
     "noData": "Vejrudsigt ikke tilgængelig. Tjek din forbindelse.",
@@ -539,8 +539,8 @@
       "frostSevere": "Forventet minimum {{ min }}°C — direkte risiko for skade på varmekrævende afgrøder.",
       "heatWarn": "Højpunkter på {{ max }}°C vil stresse de fleste afgrøder, især i et lukket drivhus.",
       "heatSevere": "Alvorlig varme på {{ max }}°C — planter kan visne eller blive svedet uden hurtig handling.",
-      "windWarn": "Vindstød op til {{ wind }} km/t kan beskadige drivhusdække eller vælte planter.",
-      "windSevere": "Alvorlig vind forventet på {{ wind }} km/t — høj risiko for skader."
+      "windWarn": "Vindstød op til {{ wind }} m/s kan beskadige drivhusdække eller vælte planter.",
+      "windSevere": "Alvorlig vind forventet på {{ wind }} m/s — høj risiko for skader."
     },
     "action": {
       "frost": "→ Luk ventilation i nat og beskyt kuldefølsomme planter (tomater, peberfrugt, basilikum).",
@@ -558,7 +558,7 @@
       "windLabel": "Stærk vind forventet",
       "frostDetail": "forventet minimum {{ min }}°C",
       "heatDetail": "forventet maksimum {{ max }}°C",
-      "windDetail": "vindstød op til {{ wind }} km/t"
+      "windDetail": "vindstød op til {{ wind }} m/s"
     },
     "badge": {
       "frost": "Frost",

@@ -13,7 +13,7 @@ import { configurePush } from './services/pushSender';
 import { startReminderScheduler } from './services/reminderScheduler';
 import { ESP32Message } from './types';
 import { connectDB } from './db';
-import { User, Plant, HourlySensorData } from './models';
+import { User, Plant, HourlySensorData, UserSettings } from './models';
 import { hashPassword, verifyToken } from './auth';
 
 const PORT = Number(process.env.PORT) || 4000;
@@ -43,6 +43,18 @@ async function seedAndMigrate(): Promise<string> {
     );
     if (tierMigrated.modifiedCount > 0) {
         console.log(`🔄 Backfilled ${tierMigrated.modifiedCount} users → free tier`);
+    }
+
+    // One-shot migration: windThreshold switched from km/h to m/s. Any saved value
+    // >= 25 was almost certainly a km/h number (no one sets 25 m/s threshold).
+    // Convert by dividing by 3.6 and rounding.
+    const windyUsers = await UserSettings.find({ windThreshold: { $gte: 25 } }).lean();
+    if (windyUsers.length > 0) {
+        for (const u of windyUsers) {
+            const ms = Math.round((u.windThreshold ?? 50) / 3.6);
+            await UserSettings.updateOne({ _id: u._id }, { $set: { windThreshold: ms } });
+        }
+        console.log(`💨 Converted ${windyUsers.length} windThreshold values from km/h to m/s`);
     }
 
     // Backfill plant codes for rows created before the code field existed.

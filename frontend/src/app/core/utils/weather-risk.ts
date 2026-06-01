@@ -37,7 +37,7 @@ export interface Thresholds {
 
 export const SEVERE_FROST_CEILING = 0;
 export const SEVERE_HEAT_FLOOR = 35;
-export const SEVERE_WIND_FLOOR = 70;
+export const SEVERE_WIND_FLOOR = 19;  // m/s — roughly former 70 km/h
 
 const RISK_ICON: Record<RiskType, string> = {
   frost: '🥶',

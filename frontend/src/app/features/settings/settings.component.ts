@@ -261,7 +261,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
               <select [ngModel]="settings.effectiveWindThreshold()" (ngModelChange)="onWindChange($event)"
                       class="appearance-none w-24 text-center text-[14px] font-medium text-gw-green-dark bg-white border-[0.5px] border-gw-green-light rounded-lg pl-2 pr-6 py-1.5 outline-none focus:border-gw-green transition-colors cursor-pointer">
                 @for (w of windOptions; track w) {
-                  <option [ngValue]="w">{{ w }} km/h</option>
+                  <option [ngValue]="w">{{ w }} m/s</option>
                 }
               </select>
               <app-icon name="chevron-down" strokeWidth="2"
@@ -453,7 +453,7 @@ export class SettingsComponent implements OnInit {
   readonly humidityOptions = Array.from({ length: 21 }, (_, i) => i * 5); // 0,5,...,100
   readonly frostOptions = Array.from({ length: 11 }, (_, i) => i - 5); // -5..5
   readonly heatOptions = Array.from({ length: 11 }, (_, i) => 28 + i); // 28..38
-  readonly windOptions = Array.from({ length: 9 }, (_, i) => 30 + i * 10); // 30..110
+  readonly windOptions = [5, 8, 10, 12, 14, 17, 20, 25, 30]; // m/s — light breeze through severe gale
 
   readonly localeOptions = [
     { code: 'en', label: 'English',  flag: '🇬🇧' },
