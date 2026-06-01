@@ -2,7 +2,9 @@ import { Component, inject, computed, signal, HostListener, OnInit } from '@angu
 import { ActivatedRoute, Router } from '@angular/router';
 import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
 import { PlantActionService, PlantAction, PlantActionType, SmartTip } from '../../core/services/plant-action.service';
+import { ReminderService, PlantReminder, ReminderActionType } from '../../core/services/reminder.service';
 import { TierService } from '../../core/services/tier.service';
+import { FormsModule } from '@angular/forms';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PlantNoteModalComponent } from './plant-note-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
@@ -13,7 +15,7 @@ import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plant-detail',
-  imports: [PlantEditModalComponent, PlantNoteModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
+  imports: [FormsModule, PlantEditModalComponent, PlantNoteModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -146,6 +148,58 @@ import dayjs from 'dayjs';
             </div>
           }
 
+          <!-- Reminders -->
+          <div class="mb-4">
+            <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('reminders.title') }}</div>
+            <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
+
+              @for (row of reminderRows(); track row.type) {
+                <div class="p-3 flex flex-col gap-2"
+                     [class.bg-gw-amber-light]="isReminderDue(row.reminder)">
+                  <div class="flex items-center gap-3">
+                    <span class="text-lg leading-none">{{ row.emoji }}</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-[13px] font-medium text-gray-800">{{ t(row.labelKey) }}</div>
+                      <div class="text-[11px]"
+                           [class.text-gw-red]="isReminderDue(row.reminder)"
+                           [class.text-gray-400]="!isReminderDue(row.reminder)">
+                        {{ reminderDueLabel(row.reminder) }}
+                      </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" class="sr-only peer"
+                             [checked]="row.reminder?.enabled ?? false"
+                             (change)="toggleReminder(row.type)" />
+                      <div class="w-9 h-5 bg-gray-200 peer-checked:bg-gw-green rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-transform peer-checked:after:translate-x-4"></div>
+                    </label>
+                  </div>
+                  @if (row.reminder?.enabled) {
+                    <div class="flex items-center gap-2 pl-8">
+                      <span class="text-[11px] text-gray-400">{{ t('reminders.every') }}</span>
+                      <select [ngModel]="row.reminder!.intervalDays"
+                              (ngModelChange)="changeReminderInterval(row.type, $event)"
+                              class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors">
+                        @for (d of intervalOptions; track d) {
+                          <option [ngValue]="d">{{ t('reminders.dayCount', { n: d }) }}</option>
+                        }
+                      </select>
+                      @if (isReminderDue(row.reminder)) {
+                        <button (click)="onActionClick(row.type)"
+                                class="ml-auto text-[11px] font-medium bg-gw-green text-white px-3 py-1 rounded-md hover:bg-gw-green-dark transition-colors">
+                          {{ t('reminders.markDone') }}
+                        </button>
+                        <button (click)="snoozeReminder(row.reminder!.id)"
+                                class="text-[11px] font-medium text-gray-600 border-[0.5px] border-gray-200 px-3 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                          {{ t('reminders.snooze') }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
           <!-- Log action -->
           <div class="mb-4">
             <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.logAction') }}</div>
@@ -247,9 +301,21 @@ export class PlantDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private actions = inject(PlantActionService);
+  private reminderService = inject(ReminderService);
   private transloco = inject(TranslocoService);
   plantService = inject(PlantService);
   tier = inject(TierService);
+
+  reminders = signal<PlantReminder[]>([]);
+  readonly intervalOptions = [1, 2, 3, 5, 7, 10, 14, 21, 30];
+
+  waterReminder = computed(() => this.reminders().find(r => r.actionType === 'water') ?? null);
+  fertilizeReminder = computed(() => this.reminders().find(r => r.actionType === 'fertilize') ?? null);
+
+  reminderRows = computed(() => [
+    { type: 'water'     as ReminderActionType, emoji: '💧', labelKey: 'plantDetail.action.water',     reminder: this.waterReminder() },
+    { type: 'fertilize' as ReminderActionType, emoji: '🌱', labelKey: 'plantDetail.action.fertilize', reminder: this.fertilizeReminder() },
+  ]);
 
   plant = computed(() => {
     const id = this.route.snapshot.paramMap.get('id');
@@ -355,12 +421,70 @@ export class PlantDetailComponent implements OnInit {
     if (!p) return;
     this.actions.log(p.id, type, note).subscribe(a => {
       this.plantActions.update(list => [a, ...list]);
+      // The backend resets matching reminders on log; pull the fresh copy.
+      if (type === 'water' || type === 'fertilize') {
+        this.reminderService.list(p.id).subscribe(list => this.reminders.set(list));
+      }
     });
   }
 
   removeAction(id: string) {
     this.actions.remove(id).subscribe(() => {
       this.plantActions.update(list => list.filter(a => a.id !== id));
+    });
+  }
+
+  // ── Smart tip ──────────────────────────────────────────────────────────────
+
+  // ── Reminders ──────────────────────────────────────────────────────────────
+
+  isReminderDue(r: PlantReminder | null): boolean {
+    return r ? ReminderService.isDue(r) : false;
+  }
+
+  reminderDueLabel(r: PlantReminder | null): string {
+    if (!r || !r.enabled) return this.transloco.translate('reminders.off');
+    const now = Date.now();
+    if (r.snoozedUntil && r.snoozedUntil.getTime() > now) {
+      const hrs = Math.max(1, Math.ceil((r.snoozedUntil.getTime() - now) / (60 * 60 * 1000)));
+      return this.transloco.translate('reminders.snoozedFor', { hours: hrs });
+    }
+    const diffMs = r.nextDueAt.getTime() - now;
+    const days = Math.round(diffMs / (24 * 60 * 60 * 1000));
+    if (diffMs <= 0) return this.transloco.translate('reminders.dueNow');
+    if (days === 0) return this.transloco.translate('reminders.dueToday');
+    if (days === 1) return this.transloco.translate('reminders.dueTomorrow');
+    return this.transloco.translate('reminders.dueInDays', { n: days });
+  }
+
+  toggleReminder(type: ReminderActionType) {
+    const p = this.plant();
+    if (!p) return;
+    const existing = this.reminders().find(r => r.actionType === type);
+    const interval = existing?.intervalDays ?? (type === 'water' ? 3 : 14);
+    const enabled = !(existing?.enabled ?? false);
+    this.reminderService.set(p.id, type, interval, enabled).subscribe(updated => {
+      this.reminders.update(list => {
+        const without = list.filter(r => r.actionType !== type);
+        return [...without, updated];
+      });
+    });
+  }
+
+  changeReminderInterval(type: ReminderActionType, days: number) {
+    const p = this.plant();
+    if (!p) return;
+    this.reminderService.set(p.id, type, days, true).subscribe(updated => {
+      this.reminders.update(list => {
+        const without = list.filter(r => r.actionType !== type);
+        return [...without, updated];
+      });
+    });
+  }
+
+  snoozeReminder(id: string) {
+    this.reminderService.snooze(id, 24).subscribe(updated => {
+      this.reminders.update(list => list.map(r => r.id === id ? updated : r));
     });
   }
 
@@ -434,5 +558,6 @@ export class PlantDetailComponent implements OnInit {
 
     this.actions.list(id).subscribe(list => this.plantActions.set(list));
     if (this.tier.canSeeAi()) this.actions.getSmartTip(id).subscribe(tip => this.smartTip.set(tip));
+    this.reminderService.list(id).subscribe(list => this.reminders.set(list));
   }
 }

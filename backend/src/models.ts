@@ -275,6 +275,71 @@ aiUsageSchema.index({ userId: 1, createdAt: -1 });
 
 export const AiUsage = mongoose.model<IAiUsage>('AiUsage', aiUsageSchema);
 
+// ── PlantReminder ───────────────────────────────────────────────────────────
+// One row per plant per actionType. Storing intervalDays + nextDueAt rather
+// than a cron expression keeps the model simple and makes "logging the
+// action resets the timer" trivial — bump nextDueAt by intervalDays.
+
+export type ReminderActionType = 'water' | 'fertilize';
+
+export interface IPlantReminder extends Document {
+    plantId: string;
+    userId: string;
+    actionType: ReminderActionType;
+    intervalDays: number;
+    nextDueAt: Date;
+    snoozedUntil?: Date;
+    lastNotifiedAt?: Date;
+    enabled: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const plantReminderSchema = new Schema<IPlantReminder>(
+    {
+        plantId: { type: String, required: true, index: true },
+        userId: { type: String, required: true, index: true },
+        actionType: { type: String, required: true, enum: ['water', 'fertilize'] },
+        intervalDays: { type: Number, required: true, min: 1, max: 365 },
+        nextDueAt: { type: Date, required: true },
+        snoozedUntil: { type: Date },
+        lastNotifiedAt: { type: Date },
+        enabled: { type: Boolean, required: true, default: true },
+    },
+    { timestamps: true }
+);
+
+// One reminder per (user, plant, actionType) — toggling enabled keeps the row.
+plantReminderSchema.index({ userId: 1, plantId: 1, actionType: 1 }, { unique: true });
+
+export const PlantReminder = mongoose.model<IPlantReminder>('PlantReminder', plantReminderSchema);
+
+// ── PushSubscription ────────────────────────────────────────────────────────
+// One row per browser/device that's opted in. The endpoint is unique within
+// the push service, so we use it as the natural dedupe key per user.
+
+export interface IPushSubscription extends Document {
+    userId: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    createdAt: Date;
+}
+
+const pushSubscriptionSchema = new Schema<IPushSubscription>(
+    {
+        userId: { type: String, required: true, index: true },
+        endpoint: { type: String, required: true },
+        p256dh: { type: String, required: true },
+        auth: { type: String, required: true },
+    },
+    { timestamps: true }
+);
+
+pushSubscriptionSchema.index({ userId: 1, endpoint: 1 }, { unique: true });
+
+export const PushSubscription = mongoose.model<IPushSubscription>('PushSubscription', pushSubscriptionSchema);
+
 // ── DailyBriefing ───────────────────────────────────────────────────────────
 
 export type BriefingCycle = 'morning' | 'evening';

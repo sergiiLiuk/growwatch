@@ -27,6 +27,9 @@
     "subscription": "Subscription",
     "currentPlan": "Current plan",
     "viewPlans": "View plans",
+    "pushNotifications": "Push notifications",
+    "pushNotificationsDescription": "Receive reminders even when the app is closed",
+    "pushNotSupported": "Your browser doesn't support push notifications",
     "smartTips": "Smart tips",
     "smartTipsEnabled": "Enable smart tips",
     "morningTipTime": "Morning tip",
@@ -164,6 +167,23 @@
     "joinWaitlist": "Join waitlist",
     "upgrade": "Upgrade",
     "comingSoon": "Payments coming soon — contact us to upgrade manually."
+  },
+  "reminders": {
+    "title": "Reminders",
+    "off": "Off",
+    "every": "Every",
+    "dayCount": "{{ n }} days",
+    "dueNow": "Due now",
+    "dueToday": "Due today",
+    "dueTomorrow": "Due tomorrow",
+    "dueInDays": "Due in {{ n }} days",
+    "snoozedFor": "Snoozed for {{ hours }}h",
+    "markDone": "Mark done",
+    "snooze": "Snooze 1d",
+    "alertWaterTitle": "💧 Water {{ name }}",
+    "alertWaterBody": "{{ name }} is due for watering.",
+    "alertFertilizeTitle": "🌱 Fertilize {{ name }}",
+    "alertFertilizeBody": "{{ name }} is due for fertilizing."
   },
   "plantDetail": {
     "recommendations": "Recommendations",

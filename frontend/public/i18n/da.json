@@ -27,6 +27,9 @@
     "subscription": "Abonnement",
     "currentPlan": "Nuværende abonnement",
     "viewPlans": "Se abonnementer",
+    "pushNotifications": "Push-notifikationer",
+    "pushNotificationsDescription": "Modtag påmindelser, selv når appen er lukket",
+    "pushNotSupported": "Din browser understøtter ikke push-notifikationer",
     "smartTips": "Smarte tips",
     "smartTipsEnabled": "Aktivér smarte tips",
     "morningTipTime": "Morgentip",
@@ -164,6 +167,23 @@
     "joinWaitlist": "Tilmeld venteliste",
     "upgrade": "Opgradér",
     "comingSoon": "Betalinger kommer snart — kontakt os for at opgradere manuelt."
+  },
+  "reminders": {
+    "title": "Påmindelser",
+    "off": "Slået fra",
+    "every": "Hver",
+    "dayCount": "{{ n }} dage",
+    "dueNow": "Skal gøres nu",
+    "dueToday": "Skal gøres i dag",
+    "dueTomorrow": "Skal gøres i morgen",
+    "dueInDays": "Om {{ n }} dage",
+    "snoozedFor": "Udsat i {{ hours }}t",
+    "markDone": "Markér færdig",
+    "snooze": "Udsæt 1d",
+    "alertWaterTitle": "💧 Vand {{ name }}",
+    "alertWaterBody": "{{ name }} skal vandes.",
+    "alertFertilizeTitle": "🌱 Gød {{ name }}",
+    "alertFertilizeBody": "{{ name }} skal gødes."
   },
   "plantDetail": {
     "recommendations": "Anbefalinger",

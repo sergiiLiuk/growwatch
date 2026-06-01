@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing } from './models';
+import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType } from './models';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
 import { signToken, verifyPassword, hashPassword, JwtPayload } from './auth';
@@ -320,6 +320,18 @@ function mapBriefing(doc: any) {
     };
 }
 
+function mapReminder(doc: any) {
+    return {
+        id: doc._id.toString(),
+        plantId: doc.plantId,
+        actionType: doc.actionType,
+        intervalDays: doc.intervalDays,
+        nextDueAt: doc.nextDueAt instanceof Date ? doc.nextDueAt.toISOString() : String(doc.nextDueAt),
+        snoozedUntil: doc.snoozedUntil instanceof Date ? doc.snoozedUntil.toISOString() : (doc.snoozedUntil ?? null),
+        enabled: doc.enabled,
+    };
+}
+
 function currentCycle(settings: any): 'morning' | 'evening' {
     // Pick whichever configured time is closer to "now" and not in the future.
     const morning = settings?.morningTipTime ?? '07:00';
@@ -417,6 +429,14 @@ export const resolvers = {
             const doc = await DailyBriefing.findOne({ userId: ctx.user.userId }).lean();
             return doc ? mapBriefing(doc) : null;
         },
+        plantReminders: async (_: any, { plantId }: { plantId?: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const query: any = { userId: ctx.user.userId };
+            if (plantId) query.plantId = plantId;
+            const docs = await PlantReminder.find(query).sort({ nextDueAt: 1 }).lean();
+            return docs.map(mapReminder);
+        },
+        vapidPublicKey: () => process.env.VAPID_PUBLIC_KEY ?? null,
         myDevices: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) return [];
             const docs = await Device.find({ userId: ctx.user.userId }).sort({ createdAt: 1 }).lean();
@@ -544,6 +564,20 @@ export const resolvers = {
             const plant = await Plant.findOne({ _id: plantId, userId: ctx.user.userId });
             if (!plant) throw new Error('Plant not found');
             const doc = await PlantAction.create({ plantId, userId: ctx.user.userId, type, note: note ?? undefined });
+
+            // If this action matches a reminder, reset its timer. "Mark done."
+            if (type === 'water' || type === 'fertilize') {
+                const reminder = await PlantReminder.findOne({
+                    plantId, userId: ctx.user.userId, actionType: type, enabled: true,
+                });
+                if (reminder) {
+                    const next = new Date(Date.now() + reminder.intervalDays * 24 * 60 * 60 * 1000);
+                    reminder.nextDueAt = next;
+                    reminder.snoozedUntil = undefined;
+                    reminder.lastNotifiedAt = undefined;
+                    await reminder.save();
+                }
+            }
             return mapPlantAction(doc);
         },
         removePlantAction: async (_: any, { id }: { id: string }, ctx: Ctx) => {
@@ -678,6 +712,65 @@ export const resolvers = {
                 deviceCount: 0,
                 plantCount: 0,
             };
+        },
+        setPlantReminder: async (_: any, { plantId, actionType, intervalDays, enabled }: { plantId: string; actionType: ReminderActionType; intervalDays: number; enabled: boolean }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const plant = await Plant.findOne({ _id: plantId, userId: ctx.user.userId });
+            if (!plant) throw new Error('Plant not found');
+            if (intervalDays < 1 || intervalDays > 365) throw new Error('Interval must be between 1 and 365 days');
+
+            const existing = await PlantReminder.findOne({ plantId, userId: ctx.user.userId, actionType });
+            const now = Date.now();
+            // When enabling a reminder for the first time (or after disable), seed nextDueAt
+            // relative to the most recent matching action so we don't immediately flag it overdue.
+            let nextDueAt: Date;
+            if (existing) {
+                // Preserve the existing due date if interval didn't change; otherwise re-seed
+                const intervalChanged = existing.intervalDays !== intervalDays;
+                nextDueAt = intervalChanged ? new Date(now + intervalDays * 24 * 60 * 60 * 1000) : existing.nextDueAt;
+            } else {
+                const lastAction = await PlantAction.findOne({ plantId, userId: ctx.user.userId, type: actionType })
+                    .sort({ createdAt: -1 }).lean();
+                const baseTime = lastAction ? new Date(lastAction.createdAt).getTime() : now;
+                nextDueAt = new Date(baseTime + intervalDays * 24 * 60 * 60 * 1000);
+            }
+
+            const doc = await PlantReminder.findOneAndUpdate(
+                { plantId, userId: ctx.user.userId, actionType },
+                { $set: { intervalDays, enabled, nextDueAt }, $setOnInsert: { plantId, userId: ctx.user.userId, actionType } },
+                { upsert: true, new: true },
+            ).lean();
+            return mapReminder(doc);
+        },
+        removePlantReminder: async (_: any, { id }: { id: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const result = await PlantReminder.findOneAndDelete({ _id: id, userId: ctx.user.userId });
+            return result !== null;
+        },
+        snoozeReminder: async (_: any, { id, hours }: { id: string; hours?: number }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const h = hours && hours > 0 ? Math.min(hours, 168) : 24;
+            const doc = await PlantReminder.findOneAndUpdate(
+                { _id: id, userId: ctx.user.userId },
+                { $set: { snoozedUntil: new Date(Date.now() + h * 60 * 60 * 1000), lastNotifiedAt: null } },
+                { new: true },
+            ).lean();
+            if (!doc) throw new Error('Reminder not found');
+            return mapReminder(doc);
+        },
+        subscribeToPush: async (_: any, { subscription }: { subscription: { endpoint: string; p256dh: string; auth: string } }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            await PushSubscription.findOneAndUpdate(
+                { userId: ctx.user.userId, endpoint: subscription.endpoint },
+                { $set: { p256dh: subscription.p256dh, auth: subscription.auth }, $setOnInsert: { userId: ctx.user.userId, endpoint: subscription.endpoint } },
+                { upsert: true },
+            );
+            return true;
+        },
+        unsubscribeFromPush: async (_: any, { endpoint }: { endpoint: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            await PushSubscription.deleteOne({ userId: ctx.user.userId, endpoint });
+            return true;
         },
         adminDeleteUser: async (_: any, { userId }: { userId: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');

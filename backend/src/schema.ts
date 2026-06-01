@@ -152,6 +152,27 @@ export const typeDefs = gql`
     generatedAt: String!
   }
 
+  enum ReminderActionType {
+    water
+    fertilize
+  }
+
+  type PlantReminder {
+    id: String!
+    plantId: String!
+    actionType: ReminderActionType!
+    intervalDays: Int!
+    nextDueAt: String!
+    snoozedUntil: String
+    enabled: Boolean!
+  }
+
+  input PushSubscriptionInput {
+    endpoint: String!
+    p256dh: String!
+    auth: String!
+  }
+
   type User {
     id: String!
     email: String!
@@ -171,6 +192,8 @@ export const typeDefs = gql`
     plantActions(plantId: String!, limit: Int): [PlantAction!]!
     smartTip(plantId: String!): SmartTip
     dailyBriefing: DailyBriefing
+    plantReminders(plantId: String): [PlantReminder!]!
+    vapidPublicKey: String
     myDevices: [Device!]!
     myUserSettings: UserSettings!
     allUsers: [User!]!
@@ -199,6 +222,11 @@ export const typeDefs = gql`
     adminCreateUser(email: String!, password: String!, role: String!, tier: String!): User!
     adminUpdateUser(userId: String!, email: String, role: String, tier: String): User!
     adminDeleteUser(userId: String!): Boolean!
+    setPlantReminder(plantId: String!, actionType: ReminderActionType!, intervalDays: Int!, enabled: Boolean!): PlantReminder!
+    removePlantReminder(id: String!): Boolean!
+    snoozeReminder(id: String!, hours: Int): PlantReminder!
+    subscribeToPush(subscription: PushSubscriptionInput!): Boolean!
+    unsubscribeFromPush(endpoint: String!): Boolean!
     openDeviceClaim: String!
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!

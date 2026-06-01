@@ -7,6 +7,7 @@ import { UserSettingsService } from '../../core/services/user-settings.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { analyzeForecast } from '../../core/utils/weather-risk';
 import { TierService } from '../../core/services/tier.service';
+import { ReminderService, PlantReminder } from '../../core/services/reminder.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -86,7 +87,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
   private userSettings = inject(UserSettingsService);
   private weatherService = inject(WeatherService);
   private tier = inject(TierService);
+  private reminderService = inject(ReminderService);
   private transloco = inject(TranslocoService);
+  private dueReminders = signal<PlantReminder[]>([]);
   private sub?: Subscription;
   private lastData: SensorData | null = null;
   private readonly STORAGE_KEY = 'growwatch-alerts';
@@ -118,7 +121,29 @@ export class AlertsComponent implements OnInit, OnDestroy {
     }));
   });
 
-  allAlerts = computed<Alert[]>(() => [...this.weatherAlerts(), ...this.alerts()]);
+  reminderAlerts = computed<Alert[]>(() => {
+    this.localeKey();
+    const plants = this.plants();
+    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
+    const now = new Date();
+    return this.dueReminders()
+      .filter(r => ReminderService.isDue(r, now))
+      .map(r => {
+        const plant = plants.find(p => p.id === r.plantId);
+        const name = plant?.name ?? '—';
+        const titleKey = r.actionType === 'water' ? 'reminders.alertWaterTitle' : 'reminders.alertFertilizeTitle';
+        const bodyKey = r.actionType === 'water' ? 'reminders.alertWaterBody' : 'reminders.alertFertilizeBody';
+        return {
+          id: `reminder-${r.id}`,
+          type: 'warn' as Alert['type'],
+          title: t(titleKey, { name }),
+          message: t(bodyKey, { name }),
+          timestamp: r.nextDueAt,
+        };
+      });
+  });
+
+  allAlerts = computed<Alert[]>(() => [...this.reminderAlerts(), ...this.weatherAlerts(), ...this.alerts()]);
 
   todayAlerts = computed(() => {
     const today = new Date().toDateString();
@@ -204,6 +229,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.transloco.langChanges$.subscribe(l => this.localeKey.set(l));
     if (this.tier.canSeeWeatherWarnings() && !this.weatherService.forecast()) this.weatherService.fetchForecast();
+    this.reminderService.list().subscribe(list => this.dueReminders.set(list));
     this.sub = this.sensorService.subscribeToSensorData().subscribe(data => {
       if (!data) return;
       if (!this.userSettings.effectiveAlertsEnabled()) return;

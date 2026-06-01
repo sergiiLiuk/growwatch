@@ -1,6 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, OnInit, computed, inject } from '@angular/core';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { PushService } from '../../../core/services/push.service';
 import { IconComponent } from '../atoms/icon.component';
 
 @Component({
@@ -89,8 +90,20 @@ import { IconComponent } from '../atoms/icon.component';
     </div>
   `,
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit {
   private auth = inject(AuthService);
+  private push = inject(PushService);
+  private router = inject(Router);
+
+  ngOnInit() {
+    // Route push notification clicks to the plant page that triggered them.
+    this.push.onClicks(({ notification }) => {
+      const data = (notification as any)?.data;
+      if (data?.url) {
+        this.router.navigateByUrl(data.url);
+      }
+    });
+  }
 
   navItems = [
     { path: '/',       label: 'Home',     icon: 'home' as const    },

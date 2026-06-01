@@ -9,6 +9,8 @@ import { resolvers, handleSensorData, startHourlyAggregation, saveHourlyData, in
 import { StubLlmProvider } from './services/smartTip';
 import { ClaudeLlmProvider } from './services/claudeLlmProvider';
 import { startSmartTipScheduler } from './services/smartTipScheduler';
+import { configurePush } from './services/pushSender';
+import { startReminderScheduler } from './services/reminderScheduler';
 import { ESP32Message } from './types';
 import { connectDB } from './db';
 import { User, Plant, HourlySensorData } from './models';
@@ -106,6 +108,12 @@ async function startServer() {
         console.log('✨ Smart tips using stub provider (set ANTHROPIC_API_KEY for Claude)');
     }
     startSmartTipScheduler();
+
+    // ─── Reminders: push sender + hourly scheduler ─────────────────────────
+    if (configurePush()) {
+        console.log('🔔 Web Push configured');
+    }
+    startReminderScheduler();
 
     const app: Express = express();
     const httpServer = createServer(app);

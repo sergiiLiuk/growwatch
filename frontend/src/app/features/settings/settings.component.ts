@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TierService } from '../../core/services/tier.service';
+import { PushService } from '../../core/services/push.service';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
@@ -53,7 +54,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
                    [class]="settings.effectiveDigestEnabled() ? 'left-5' : 'left-1'"></div>
             </button>
           </div>
-          <div class="flex items-center gap-3 p-4">
+          <div class="flex items-center gap-3 p-4 border-b border-gray-100">
             <div class="flex-1">
               <div class="text-[14px] font-medium text-gray-800">{{ t('settings.smartAlerts') }}</div>
               <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.smartAlertsDescription') }}</div>
@@ -63,6 +64,25 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
                     [class]="settings.effectiveAlertsEnabled() ? 'bg-gw-green' : 'bg-gray-200'">
               <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
                    [class]="settings.effectiveAlertsEnabled() ? 'left-5' : 'left-1'"></div>
+            </button>
+          </div>
+          <div class="flex items-center gap-3 p-4">
+            <div class="flex-1">
+              <div class="text-[14px] font-medium text-gray-800">{{ t('settings.pushNotifications') }}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">
+                @if (push.isSupported()) {
+                  {{ t('settings.pushNotificationsDescription') }}
+                } @else {
+                  {{ t('settings.pushNotSupported') }}
+                }
+              </div>
+            </div>
+            <button (click)="togglePush()"
+                    [disabled]="!push.isSupported()"
+                    class="w-10 h-6 rounded-full transition-colors relative shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                    [class]="push.enabled() ? 'bg-gw-green' : 'bg-gray-200'">
+              <div class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
+                   [class]="push.enabled() ? 'left-5' : 'left-1'"></div>
             </button>
           </div>
         </div>
@@ -400,6 +420,15 @@ export class SettingsComponent implements OnInit {
   private auth = inject(AuthService);
   settings = inject(UserSettingsService);
   tier = inject(TierService);
+  push = inject(PushService);
+
+  async togglePush() {
+    if (this.push.enabled()) {
+      await this.push.unsubscribe();
+    } else {
+      await this.push.subscribe();
+    }
+  }
   private readonly STORAGE_KEY = 'growwatch-settings';
 
   userEmail = () => this.auth.user()?.email ?? '';
