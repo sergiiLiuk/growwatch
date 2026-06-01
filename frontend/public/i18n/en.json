@@ -148,6 +148,7 @@
     "saveChanges": "Save changes",
     "saving": "Saving…",
     "plantNotFound": "Plant not found.",
+    "copyCode": "Tap to copy the plant code — use this to label the physical plant",
     "showArchived": "Show archived ({{ n }})",
     "hideArchived": "Hide archived",
     "archived": "Archived"

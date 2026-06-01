@@ -277,7 +277,27 @@ function mapPlant(doc: any) {
         monitored: doc.monitored ?? true,
         archived: doc.archived ?? false,
         dailyLightHours: doc.dailyLightHours ?? 12,
+        code: doc.code ?? null,
     };
+}
+
+/**
+ * Builds a human-friendly identifier for a new plant, scoped per user per type.
+ * Format: <3-letter type prefix>-<zero-padded sequence>, e.g. TOM-01.
+ * Sequence never reuses — if TOM-01/02/03 exist and 02 is deleted, the next
+ * tomato is still TOM-04.
+ */
+async function generatePlantCode(userId: string, type: PlantType): Promise<string> {
+    const prefix = type.slice(0, 3).toUpperCase();
+    const existing = await Plant.find({ userId, type, code: { $regex: `^${prefix}-` } })
+        .select('code').lean();
+    let maxSeq = 0;
+    for (const p of existing) {
+        const match = /^[A-Z]{3}-(\d+)$/.exec((p as any).code ?? '');
+        if (match) maxSeq = Math.max(maxSeq, parseInt(match[1], 10));
+    }
+    const next = maxSeq + 1;
+    return `${prefix}-${String(next).padStart(2, '0')}`;
 }
 
 function mapPlantAction(doc: any) {
@@ -514,7 +534,8 @@ export const resolvers = {
         },
         addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
-            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours, userId: ctx.user.userId });
+            const code = await generatePlantCode(ctx.user.userId, type);
+            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours, code, userId: ctx.user.userId });
             await refreshPrimaryPlant();
             return mapPlant(doc);
         },

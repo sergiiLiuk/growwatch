@@ -148,6 +148,7 @@
     "saveChanges": "Gem ændringer",
     "saving": "Gemmer…",
     "plantNotFound": "Plante ikke fundet.",
+    "copyCode": "Tryk for at kopiere plantens kode — brug den til at markere den fysiske plante",
     "showArchived": "Vis arkiverede ({{ n }})",
     "hideArchived": "Skjul arkiverede",
     "archived": "Arkiveret"

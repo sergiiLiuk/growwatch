@@ -38,6 +38,7 @@ export interface IPlant extends Document {
     monitored: boolean;
     archived: boolean;
     dailyLightHours: number;
+    code?: string;
     userId?: string;
 }
 
@@ -50,10 +51,13 @@ const plantSchema = new Schema<IPlant>(
         monitored: { type: Boolean, required: true, default: true },
         archived: { type: Boolean, required: true, default: false },
         dailyLightHours: { type: Number, required: true, default: 12 },
+        code: { type: String, index: true },
         userId: { type: String, index: true },
     },
     { timestamps: true }
 );
+
+plantSchema.index({ userId: 1, code: 1 });
 
 export const Plant = mongoose.model<IPlant>('Plant', plantSchema);
 

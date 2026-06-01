@@ -45,6 +45,23 @@ async function seedAndMigrate(): Promise<string> {
         console.log(`🔄 Backfilled ${tierMigrated.modifiedCount} users → free tier`);
     }
 
+    // Backfill plant codes for rows created before the code field existed.
+    // Numbering is per-(user, type), incrementing oldest-first by createdAt.
+    const codelessPlants = await Plant.find({ $or: [{ code: { $exists: false } }, { code: null }] })
+        .sort({ createdAt: 1 }).lean();
+    if (codelessPlants.length > 0) {
+        const seqByKey = new Map<string, number>();
+        for (const p of codelessPlants) {
+            const key = `${p.userId}|${p.type}`;
+            const prefix = p.type.slice(0, 3).toUpperCase();
+            const seq = (seqByKey.get(key) ?? 0) + 1;
+            seqByKey.set(key, seq);
+            const code = `${prefix}-${String(seq).padStart(2, '0')}`;
+            await Plant.updateOne({ _id: p._id }, { $set: { code } });
+        }
+        console.log(`🔢 Backfilled codes for ${codelessPlants.length} plants`);
+    }
+
     // Migration: isDemo:true rows become role:'demo' and the field is dropped.
     const demoMigrated = await User.collection.updateMany(
         { isDemo: true },

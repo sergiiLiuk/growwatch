@@ -80,6 +80,7 @@ export const typeDefs = gql`
     monitored: Boolean!
     archived: Boolean!
     dailyLightHours: Int!
+    code: String
   }
 
   enum PlantActionType {

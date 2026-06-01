@@ -52,12 +52,13 @@ export interface Plant {
   monitored: boolean;
   archived: boolean;
   dailyLightHours: number;
+  code: string | null;
 }
 
 const SET_MONITORED = gql`
   mutation SetPlantMonitored($id: String!, $monitored: Boolean!) {
     setPlantMonitored(id: $id, monitored: $monitored) {
-      id name type plantedDate count monitored archived dailyLightHours
+      id name type plantedDate count monitored archived dailyLightHours code
     }
   }
 `;
@@ -65,21 +66,21 @@ const SET_MONITORED = gql`
 const SET_ARCHIVED = gql`
   mutation SetPlantArchived($id: String!, $archived: Boolean!) {
     setPlantArchived(id: $id, archived: $archived) {
-      id name type plantedDate count monitored archived dailyLightHours
+      id name type plantedDate count monitored archived dailyLightHours code
     }
   }
 `;
 
 const PLANTS_QUERY_ALL = gql`
   query GetAllPlants {
-    plants(includeArchived: true) { id name type plantedDate count monitored archived dailyLightHours }
+    plants(includeArchived: true) { id name type plantedDate count monitored archived dailyLightHours code }
   }
 `;
 
 const ADD_PLANT = gql`
   mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
     addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) {
-      id name type plantedDate count monitored archived dailyLightHours
+      id name type plantedDate count monitored archived dailyLightHours code
     }
   }
 `;
@@ -87,7 +88,7 @@ const ADD_PLANT = gql`
 const UPDATE_PLANT = gql`
   mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
     updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) {
-      id name type plantedDate count monitored archived dailyLightHours
+      id name type plantedDate count monitored archived dailyLightHours code
     }
   }
 `;
@@ -98,7 +99,7 @@ const REMOVE_PLANT = gql`
   }
 `;
 
-interface RawPlant { id: string; name: string; type: string; plantedDate: string; count: number; monitored: boolean; archived: boolean; dailyLightHours: number; }
+interface RawPlant { id: string; name: string; type: string; plantedDate: string; count: number; monitored: boolean; archived: boolean; dailyLightHours: number; code: string | null; }
 
 @Injectable({ providedIn: 'root' })
 export class PlantService {
@@ -140,6 +141,7 @@ export class PlantService {
         monitored: p.monitored ?? true,
         archived: p.archived ?? false,
         dailyLightHours: p.dailyLightHours ?? 12,
+        code: p.code ?? null,
       };
     });
   }

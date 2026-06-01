@@ -68,6 +68,13 @@ import dayjs from 'dayjs';
                     [class.text-gray-700]="!p.monitored">
                   {{ p.name }}
                 </h1>
+                @if (p.code) {
+                  <button (click)="copyCode(p.code)"
+                          [title]="t('plants.copyCode')"
+                          class="text-[11px] font-mono font-medium tracking-wider bg-white border-[0.5px] border-gw-green-light text-gw-green-dark px-2 py-0.5 rounded-md hover:bg-gw-green-light/40 transition-colors cursor-pointer">
+                    {{ p.code }}
+                  </button>
+                }
                 @if (!p.monitored) {
                   <app-status-badge [label]="t('plants.paused')" variant="gray" />
                 }
@@ -379,6 +386,11 @@ export class PlantDetailComponent implements OnInit {
 
   getPlantedLabel(plant: Plant): string {
     return dayjs(plant.plantedDate).format('D MMM');
+  }
+
+  copyCode(code: string) {
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(code).catch(() => {/* non-fatal */});
   }
 
   toggleMonitored(e: Event) {
