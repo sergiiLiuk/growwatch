@@ -207,13 +207,17 @@
       "water": "Vand",
       "fertilize": "Gødning",
       "prune": "Beskær",
+      "harvest": "Høst",
+      "bloom": "Blomst",
       "note": "Note",
       "add": "Tilføj"
     },
     "history": {
       "watered": "Vandet",
-      "fertilized": "Gødet med gødning",
+      "fertilized": "Gødet",
       "pruned": "Beskåret",
+      "harvested": "Høstet",
+      "bloomed": "Blomstrede",
       "note": "Note"
     },
     "smartTip": {

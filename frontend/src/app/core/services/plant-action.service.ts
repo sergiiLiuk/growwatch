@@ -3,7 +3,7 @@ import { ApolloClient, gql } from '@apollo/client/core';
 import { Observable } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 
-export type PlantActionType = 'water' | 'fertilize' | 'prune' | 'note';
+export type PlantActionType = 'water' | 'fertilize' | 'prune' | 'harvest' | 'bloom' | 'note';
 
 export interface PlantAction {
   id: string;

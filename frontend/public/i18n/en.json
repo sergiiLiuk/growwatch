@@ -207,13 +207,17 @@
       "water": "Water",
       "fertilize": "Fertilize",
       "prune": "Prune",
+      "harvest": "Harvest",
+      "bloom": "Bloom",
       "note": "Note",
       "add": "Add"
     },
     "history": {
       "watered": "Watered",
-      "fertilized": "Fertilized with fertilizer",
+      "fertilized": "Fertilized",
       "pruned": "Pruned",
+      "harvested": "Harvested",
+      "bloomed": "Bloomed",
       "note": "Note"
     },
     "smartTip": {

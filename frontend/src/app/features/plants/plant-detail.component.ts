@@ -211,7 +211,7 @@ import dayjs from 'dayjs';
           <div class="mb-4">
             <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.logAction') }}</div>
             <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-3">
-              <div class="grid grid-cols-4 gap-2">
+              <div class="grid grid-cols-3 gap-2">
                 @for (a of actionButtons(); track a.type) {
                   <button (click)="onActionClick(a.type)"
                           class="rounded-lg border-[0.5px] py-3 flex flex-col items-center gap-1 transition-colors"
@@ -358,6 +358,8 @@ export class PlantDetailComponent implements OnInit {
       { type: 'water'     as PlantActionType, emoji: '💧', labelKey: 'plantDetail.action.water',     activeClass: 'border-red-200 bg-red-50/60' },
       { type: 'fertilize' as PlantActionType, emoji: '🌱', labelKey: 'plantDetail.action.fertilize', activeClass: 'border-gw-green-light bg-gw-green-light/30' },
       { type: 'prune'     as PlantActionType, emoji: '✂️', labelKey: 'plantDetail.action.prune',     activeClass: 'border-pink-200 bg-pink-50/60' },
+      { type: 'harvest'   as PlantActionType, emoji: '🍅', labelKey: 'plantDetail.action.harvest',   activeClass: 'border-orange-200 bg-orange-50/60' },
+      { type: 'bloom'     as PlantActionType, emoji: '🌸', labelKey: 'plantDetail.action.bloom',     activeClass: 'border-rose-200 bg-rose-50/60' },
       { type: 'note'      as PlantActionType, emoji: '📝', labelKey: 'plantDetail.action.note',      activeClass: 'border-amber-200 bg-amber-50/60' },
     ]).map(b => ({
       ...b,
@@ -535,7 +537,7 @@ export class PlantDetailComponent implements OnInit {
   // ── History rendering helpers ─────────────────────────────────────────────
 
   historyIconEmoji(type: PlantActionType): string {
-    return ({ water: '💧', fertilize: '🌱', prune: '✂️', note: '📝' } as const)[type];
+    return ({ water: '💧', fertilize: '🌱', prune: '✂️', harvest: '🍅', bloom: '🌸', note: '📝' } as const)[type];
   }
 
   historyIconBg(type: PlantActionType): string {
@@ -543,13 +545,23 @@ export class PlantDetailComponent implements OnInit {
       water: 'bg-red-50',
       fertilize: 'bg-gw-green-light',
       prune: 'bg-pink-50',
+      harvest: 'bg-orange-50',
+      bloom: 'bg-rose-50',
       note: 'bg-amber-50',
     } as const)[type];
   }
 
   historyLabel(a: PlantAction): string {
     if (a.type === 'note') return a.note?.split('\n')[0] ?? this.transloco.translate('plantDetail.history.note');
-    return this.transloco.translate(`plantDetail.history.${a.type === 'water' ? 'watered' : a.type === 'fertilize' ? 'fertilized' : 'pruned'}`);
+    const labelKey = ({
+      water: 'watered',
+      fertilize: 'fertilized',
+      prune: 'pruned',
+      harvest: 'harvested',
+      bloom: 'bloomed',
+    } as const)[a.type];
+    const base = this.transloco.translate(`plantDetail.history.${labelKey}`);
+    return a.note ? `${base} — ${a.note.split('\n')[0]}` : base;
   }
 
   historyDateLabel(d: Date): string {

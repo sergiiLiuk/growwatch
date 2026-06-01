@@ -87,6 +87,8 @@ export const typeDefs = gql`
     water
     fertilize
     prune
+    harvest
+    bloom
     note
   }
 

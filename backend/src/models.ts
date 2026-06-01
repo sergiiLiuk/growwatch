@@ -63,7 +63,7 @@ export const Plant = mongoose.model<IPlant>('Plant', plantSchema);
 
 // ── PlantAction ─────────────────────────────────────────────────────────────
 
-export type PlantActionType = 'water' | 'fertilize' | 'prune' | 'note';
+export type PlantActionType = 'water' | 'fertilize' | 'prune' | 'harvest' | 'bloom' | 'note';
 
 export interface IPlantAction extends Document {
     plantId: string;
@@ -78,7 +78,7 @@ const plantActionSchema = new Schema<IPlantAction>(
     {
         plantId: { type: String, required: true, index: true },
         userId: { type: String, required: true, index: true },
-        type: { type: String, required: true, enum: ['water', 'fertilize', 'prune', 'note'] },
+        type: { type: String, required: true, enum: ['water', 'fertilize', 'prune', 'harvest', 'bloom', 'note'] },
         note: { type: String },
     },
     { timestamps: true }
