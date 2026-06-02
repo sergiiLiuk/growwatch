@@ -7,6 +7,7 @@ interface PlanRow {
   tier: SubscriptionTier;
   nameKey: string;
   priceKey: string;
+  annualPriceKey?: string;
   featuresKey: string;
 }
 
@@ -24,7 +25,12 @@ interface PlanRow {
                [class.border-gray-200]="tier.current() !== p.tier">
             <div class="flex items-baseline justify-between mb-1">
               <h2 class="text-[15px] font-medium text-gray-800">{{ t(p.nameKey) }}</h2>
-              <span class="text-[13px] text-gray-500">{{ t(p.priceKey) }}</span>
+              <div class="text-right">
+                <span class="text-[13px] text-gray-500">{{ t(p.priceKey) }}</span>
+                @if (p.annualPriceKey) {
+                  <div class="text-[11px] text-gray-400">{{ t(p.annualPriceKey) }}</div>
+                }
+              </div>
             </div>
             <p class="text-[12px] text-gray-500 leading-relaxed mb-3">{{ t(p.featuresKey) }}</p>
             @if (tier.current() === p.tier) {
@@ -50,7 +56,7 @@ export class UpgradeComponent {
   tier = inject(TierService);
   plans: PlanRow[] = [
     { tier: 'free', nameKey: 'upgrade.free', priceKey: 'upgrade.freePrice', featuresKey: 'upgrade.freeFeatures' },
-    { tier: 'plus', nameKey: 'upgrade.plus', priceKey: 'upgrade.plusPrice', featuresKey: 'upgrade.plusFeatures' },
+    { tier: 'plus', nameKey: 'upgrade.plus', priceKey: 'upgrade.plusPrice', annualPriceKey: 'upgrade.plusPriceAnnual', featuresKey: 'upgrade.plusFeatures' },
     { tier: 'pro',  nameKey: 'upgrade.pro',  priceKey: 'upgrade.proPrice',  featuresKey: 'upgrade.proFeatures' },
   ];
 }
