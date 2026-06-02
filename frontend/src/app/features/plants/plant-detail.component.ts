@@ -12,6 +12,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import dayjs from 'dayjs';
+import { daysAgo } from '../../core/utils/time';
 
 @Component({
   selector: 'app-plant-detail',
@@ -566,7 +567,7 @@ export class PlantDetailComponent implements OnInit {
 
   historyDateLabel(d: Date): string {
     const day = dayjs(d);
-    const days = Math.max(0, dayjs().diff(day, 'day'));
+    const days = daysAgo(d);
     const dateStr = day.format('D MMM');
     if (days === 0) return this.transloco.translate('plantDetail.today') + ' · ' + dateStr;
     return dateStr + ' · ' + this.transloco.translate('home.daysAgo', { n: days });

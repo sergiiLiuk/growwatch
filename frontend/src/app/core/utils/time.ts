@@ -1,3 +1,10 @@
+import dayjs from 'dayjs';
+
+/** Whole days elapsed since `date`, floored at 0. */
+export function daysAgo(date: Date | string): number {
+  return Math.max(0, dayjs().diff(date, 'day'));
+}
+
 const DAWN_BEFORE_MIN = 45;
 const DAWN_AFTER_MIN  = 60;
 const DUSK_BEFORE_MIN = 60;

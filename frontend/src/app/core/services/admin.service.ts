@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 import { SubscriptionTier } from './auth.service';
 
@@ -14,6 +14,8 @@ export interface AdminUser {
   plantCount: number;
 }
 
+const USER_FIELDS = `id email role subscriptionTier createdAt deviceCount plantCount`;
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private apolloClient: ApolloClient;
@@ -23,68 +25,46 @@ export class AdminService {
   }
 
   allUsers(): Observable<AdminUser[]> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.query<{ allUsers: AdminUser[] }>({
-        query: gql`
-          query AllUsers {
-            allUsers { id email role subscriptionTier createdAt deviceCount plantCount }
-          }
-        `,
+        query: gql`query AllUsers { allUsers { ${USER_FIELDS} } }`,
         fetchPolicy: 'network-only',
-      })
-        .then(result => {
-          observer.next(result.data?.allUsers ?? []);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data?.allUsers ?? [])
+    );
   }
 
   setSubscriptionTier(userId: string, tier: SubscriptionTier): Observable<AdminUser> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.mutate<{ setSubscriptionTier: AdminUser }>({
         mutation: gql`
           mutation SetSubscriptionTier($userId: String!, $tier: String!) {
-            setSubscriptionTier(userId: $userId, tier: $tier) {
-              id email role subscriptionTier createdAt deviceCount plantCount
-            }
+            setSubscriptionTier(userId: $userId, tier: $tier) { ${USER_FIELDS} }
           }
         `,
         variables: { userId, tier },
-      })
-        .then(result => {
-          observer.next(result.data!.setSubscriptionTier);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data!.setSubscriptionTier)
+    );
   }
 
   createUser(email: string, password: string, role: 'user' | 'superuser' | 'demo', tier: SubscriptionTier): Observable<AdminUser> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.mutate<{ adminCreateUser: AdminUser }>({
         mutation: gql`
           mutation AdminCreateUser($email: String!, $password: String!, $role: String!, $tier: String!) {
-            adminCreateUser(email: $email, password: $password, role: $role, tier: $tier) {
-              id email role subscriptionTier createdAt deviceCount plantCount
-            }
+            adminCreateUser(email: $email, password: $password, role: $role, tier: $tier) { ${USER_FIELDS} }
           }
         `,
         variables: { email, password, role, tier },
-      })
-        .then(result => { observer.next(result.data!.adminCreateUser); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data!.adminCreateUser)
+    );
   }
 
   updateUser(userId: string, patch: { email?: string; role?: 'user' | 'superuser' | 'demo'; tier?: SubscriptionTier }): Observable<AdminUser> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.mutate<{ adminUpdateUser: AdminUser }>({
         mutation: gql`
           mutation AdminUpdateUser($userId: String!, $email: String, $role: String, $tier: String) {
-            adminUpdateUser(userId: $userId, email: $email, role: $role, tier: $tier) {
-              id email role subscriptionTier createdAt deviceCount plantCount
-            }
+            adminUpdateUser(userId: $userId, email: $email, role: $role, tier: $tier) { ${USER_FIELDS} }
           }
         `,
         variables: {
@@ -93,14 +73,12 @@ export class AdminService {
           role: patch.role ?? null,
           tier: patch.tier ?? null,
         },
-      })
-        .then(result => { observer.next(result.data!.adminUpdateUser); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data!.adminUpdateUser)
+    );
   }
 
   deleteUser(userId: string): Observable<boolean> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.mutate<{ adminDeleteUser: boolean }>({
         mutation: gql`
           mutation AdminDeleteUser($userId: String!) {
@@ -108,9 +86,7 @@ export class AdminService {
           }
         `,
         variables: { userId },
-      })
-        .then(result => { observer.next(result.data!.adminDeleteUser); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data!.adminDeleteUser)
+    );
   }
 }

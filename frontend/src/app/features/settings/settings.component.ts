@@ -7,6 +7,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { STORAGE_KEYS } from '../../core/constants/storage-keys';
 
 @Component({
   selector: 'app-settings',
@@ -429,14 +430,14 @@ export class SettingsComponent implements OnInit {
       await this.push.subscribe();
     }
   }
-  private readonly STORAGE_KEY = 'growwatch-settings';
+  private readonly STORAGE_KEY = STORAGE_KEYS.SETTINGS;
 
   userEmail = () => this.auth.user()?.email ?? '';
   userId = () => this.auth.user()?.userId ?? '';
   userRole = () => this.auth.user()?.role ?? '';
 
   // showDebug stays in localStorage — purely client-only UI state (per device/browser).
-  private readonly DEBUG_KEY = 'growwatch-show-debug';
+  private readonly DEBUG_KEY = STORAGE_KEYS.DEBUG;
   showDebug = localStorage.getItem(this.DEBUG_KEY) === '1';
 
   toggleDebug() {

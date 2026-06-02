@@ -1,9 +1,10 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
 import { TranslocoService } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 import { GraphQLClientService } from './graphql-client.service';
+import { daysAgo } from '../utils/time';
 
 export type PlantType =
   | 'TOMATO' | 'PEPPER' | 'CUCUMBER' | 'ZUCCHINI' | 'EGGPLANT'
@@ -55,41 +56,35 @@ export interface Plant {
   code: string | null;
 }
 
+const PLANT_FIELDS = `id name type plantedDate count monitored archived dailyLightHours code`;
+
 const SET_MONITORED = gql`
   mutation SetPlantMonitored($id: String!, $monitored: Boolean!) {
-    setPlantMonitored(id: $id, monitored: $monitored) {
-      id name type plantedDate count monitored archived dailyLightHours code
-    }
+    setPlantMonitored(id: $id, monitored: $monitored) { ${PLANT_FIELDS} }
   }
 `;
 
 const SET_ARCHIVED = gql`
   mutation SetPlantArchived($id: String!, $archived: Boolean!) {
-    setPlantArchived(id: $id, archived: $archived) {
-      id name type plantedDate count monitored archived dailyLightHours code
-    }
+    setPlantArchived(id: $id, archived: $archived) { ${PLANT_FIELDS} }
   }
 `;
 
 const PLANTS_QUERY_ALL = gql`
   query GetAllPlants {
-    plants(includeArchived: true) { id name type plantedDate count monitored archived dailyLightHours code }
+    plants(includeArchived: true) { ${PLANT_FIELDS} }
   }
 `;
 
 const ADD_PLANT = gql`
   mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
-    addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) {
-      id name type plantedDate count monitored archived dailyLightHours code
-    }
+    addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) { ${PLANT_FIELDS} }
   }
 `;
 
 const UPDATE_PLANT = gql`
   mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
-    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) {
-      id name type plantedDate count monitored archived dailyLightHours code
-    }
+    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) { ${PLANT_FIELDS} }
   }
 `;
 
@@ -147,91 +142,71 @@ export class PlantService {
   }
 
   add(name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12): Observable<Plant> {
-    return new Observable(observer => {
-      this.client
-        .mutate<{ addPlant: RawPlant }>({
-          mutation: ADD_PLANT,
-          variables: { name: name.trim(), type: type.trim(), plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours },
-        })
-        .then(result => {
-          const mapped = this.mapPlants([result.data!.addPlant])[0];
-          this.allPlants.update(ps => [...ps, mapped]);
-          observer.next(mapped);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.mutate<{ addPlant: RawPlant }>({
+        mutation: ADD_PLANT,
+        variables: { name: name.trim(), type: type.trim(), plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours },
+      }).then(result => {
+        const mapped = this.mapPlants([result.data!.addPlant])[0];
+        this.allPlants.update(ps => [...ps, mapped]);
+        return mapped;
+      })
+    );
   }
 
   update(id: string, name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12): Observable<Plant> {
-    return new Observable(observer => {
-      this.client
-        .mutate<{ updatePlant: RawPlant }>({
-          mutation: UPDATE_PLANT,
-          variables: { id, name: name.trim(), type, plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours },
-        })
-        .then(result => {
-          const mapped = this.mapPlants([result.data!.updatePlant])[0];
-          this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
-          observer.next(mapped);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.mutate<{ updatePlant: RawPlant }>({
+        mutation: UPDATE_PLANT,
+        variables: { id, name: name.trim(), type, plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours },
+      }).then(result => {
+        const mapped = this.mapPlants([result.data!.updatePlant])[0];
+        this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
+        return mapped;
+      })
+    );
   }
 
   remove(id: string): Observable<boolean> {
-    return new Observable(observer => {
-      this.client
-        .mutate<{ removePlant: boolean }>({
-          mutation: REMOVE_PLANT,
-          variables: { id },
-        })
-        .then(() => {
-          this.allPlants.update(ps => ps.filter(p => p.id !== id));
-          observer.next(true);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.mutate<{ removePlant: boolean }>({
+        mutation: REMOVE_PLANT,
+        variables: { id },
+      }).then(() => {
+        this.allPlants.update(ps => ps.filter(p => p.id !== id));
+        return true;
+      })
+    );
   }
 
   setMonitored(id: string, monitored: boolean): Observable<Plant> {
-    return new Observable(observer => {
-      this.client
-        .mutate<{ setPlantMonitored: RawPlant }>({
-          mutation: SET_MONITORED,
-          variables: { id, monitored },
-        })
-        .then(result => {
-          const mapped = this.mapPlants([result.data!.setPlantMonitored])[0];
-          this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
-          observer.next(mapped);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.mutate<{ setPlantMonitored: RawPlant }>({
+        mutation: SET_MONITORED,
+        variables: { id, monitored },
+      }).then(result => {
+        const mapped = this.mapPlants([result.data!.setPlantMonitored])[0];
+        this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
+        return mapped;
+      })
+    );
   }
 
   setArchived(id: string, archived: boolean): Observable<Plant> {
-    return new Observable(observer => {
-      this.client
-        .mutate<{ setPlantArchived: RawPlant }>({
-          mutation: SET_ARCHIVED,
-          variables: { id, archived },
-        })
-        .then(result => {
-          const mapped = this.mapPlants([result.data!.setPlantArchived])[0];
-          this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
-          observer.next(mapped);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.mutate<{ setPlantArchived: RawPlant }>({
+        mutation: SET_ARCHIVED,
+        variables: { id, archived },
+      }).then(result => {
+        const mapped = this.mapPlants([result.data!.setPlantArchived])[0];
+        this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
+        return mapped;
+      })
+    );
   }
 
   getAgeLabel(plant: Plant): string {
-    const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
+    const days = daysAgo(plant.plantedDate);
     if (days < 7) return days === 1 ? this.transloco.translate('age.dayOneOld') : this.transloco.translate('age.daysOld', { n: days });
     const weeks = Math.floor(days / 7);
     if (weeks < 8) return weeks === 1 ? this.transloco.translate('age.weekOneOld') : this.transloco.translate('age.weeksOld', { n: weeks });
@@ -240,7 +215,7 @@ export class PlantService {
   }
 
   getAgeShort(plant: Plant): string {
-    const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
+    const days = daysAgo(plant.plantedDate);
     if (days < 7) return days === 1 ? this.transloco.translate('age.dayOne') : this.transloco.translate('age.days', { n: days });
     const weeks = Math.floor(days / 7);
     if (weeks < 8) return weeks === 1 ? this.transloco.translate('age.weekOne') : this.transloco.translate('age.weeks', { n: weeks });

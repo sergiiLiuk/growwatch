@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 
 export type PlantActionType = 'water' | 'fertilize' | 'prune' | 'harvest' | 'bloom' | 'note';
@@ -88,90 +88,57 @@ export class PlantActionService {
   }
 
   list(plantId: string, limit = 100): Observable<PlantAction[]> {
-    return new Observable(observer => {
-      this.client
-        .query<{ plantActions: RawAction[] }>({
-          query: ACTIONS_QUERY,
-          variables: { plantId, limit },
-          fetchPolicy: 'network-only',
-        })
-        .then(r => {
-          observer.next((r.data?.plantActions ?? []).map(mapAction));
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.query<{ plantActions: RawAction[] }>({
+        query: ACTIONS_QUERY,
+        variables: { plantId, limit },
+        fetchPolicy: 'network-only',
+      }).then(r => (r.data?.plantActions ?? []).map(mapAction))
+    );
   }
 
   log(plantId: string, type: PlantActionType, note?: string): Observable<PlantAction> {
-    return new Observable(observer => {
-      this.client
-        .mutate<{ logPlantAction: RawAction }>({
-          mutation: LOG_ACTION,
-          variables: { plantId, type, note: note ?? null },
-        })
-        .then(r => {
-          observer.next(mapAction(r.data!.logPlantAction));
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.mutate<{ logPlantAction: RawAction }>({
+        mutation: LOG_ACTION,
+        variables: { plantId, type, note: note ?? null },
+      }).then(r => mapAction(r.data!.logPlantAction))
+    );
   }
 
   remove(id: string): Observable<boolean> {
-    return new Observable(observer => {
-      this.client
-        .mutate<{ removePlantAction: boolean }>({
-          mutation: REMOVE_ACTION,
-          variables: { id },
-        })
-        .then(() => { observer.next(true); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.mutate<{ removePlantAction: boolean }>({
+        mutation: REMOVE_ACTION,
+        variables: { id },
+      }).then(() => true)
+    );
   }
 
   getSmartTip(plantId: string): Observable<SmartTip | null> {
-    return new Observable(observer => {
-      this.client
-        .query<{ smartTip: RawTip | null }>({
-          query: SMART_TIP_QUERY,
-          variables: { plantId },
-          fetchPolicy: 'network-only',
-        })
-        .then(r => {
-          observer.next(r.data?.smartTip ? mapTip(r.data.smartTip) : null);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.query<{ smartTip: RawTip | null }>({
+        query: SMART_TIP_QUERY,
+        variables: { plantId },
+        fetchPolicy: 'network-only',
+      }).then(r => r.data?.smartTip ? mapTip(r.data.smartTip) : null)
+    );
   }
 
   getDailyBriefing(): Observable<DailyBriefing | null> {
-    return new Observable(observer => {
-      this.client
-        .query<{ dailyBriefing: RawBriefing | null }>({
-          query: DAILY_BRIEFING_QUERY,
-          fetchPolicy: 'network-only',
-        })
-        .then(r => {
-          observer.next(r.data?.dailyBriefing ? mapBriefing(r.data.dailyBriefing) : null);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.query<{ dailyBriefing: RawBriefing | null }>({
+        query: DAILY_BRIEFING_QUERY,
+        fetchPolicy: 'network-only',
+      }).then(r => r.data?.dailyBriefing ? mapBriefing(r.data.dailyBriefing) : null)
+    );
   }
 
   regenerateBriefing(): Observable<DailyBriefing | null> {
-    return new Observable(observer => {
-      this.client
-        .mutate<{ regenerateBriefing: RawBriefing | null }>({
-          mutation: REGENERATE_BRIEFING,
-        })
-        .then(r => {
-          observer.next(r.data?.regenerateBriefing ? mapBriefing(r.data.regenerateBriefing) : null);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+    return defer(() =>
+      this.client.mutate<{ regenerateBriefing: RawBriefing | null }>({
+        mutation: REGENERATE_BRIEFING,
+      }).then(r => r.data?.regenerateBriefing ? mapBriefing(r.data.regenerateBriefing) : null)
+    );
   }
 }

@@ -9,6 +9,7 @@ import { analyzeForecast } from '../../core/utils/weather-risk';
 import { TierService } from '../../core/services/tier.service';
 import { ReminderService, PlantReminder } from '../../core/services/reminder.service';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
+import { STORAGE_KEYS } from '../../core/constants/storage-keys';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 export interface Alert {
@@ -92,7 +93,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
   private dueReminders = signal<PlantReminder[]>([]);
   private sub?: Subscription;
   private lastData: SensorData | null = null;
-  private readonly STORAGE_KEY = 'growwatch-alerts';
+  private readonly STORAGE_KEY = STORAGE_KEYS.ALERTS;
   private localeKey = signal(this.transloco.getActiveLang());
 
   alerts = signal<Alert[]>(this.loadAlerts());

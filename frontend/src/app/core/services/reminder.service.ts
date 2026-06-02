@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 
 export type ReminderActionType = 'water' | 'fertilize';
@@ -65,51 +65,40 @@ export class ReminderService {
   constructor(gql: GraphQLClientService) { this.client = gql.client; }
 
   list(plantId?: string): Observable<PlantReminder[]> {
-    return new Observable(observer => {
+    return defer(() =>
       this.client.query<{ plantReminders: RawReminder[] }>({
         query: REMINDERS_QUERY,
         variables: { plantId: plantId ?? null },
         fetchPolicy: 'network-only',
-      })
-        .then(r => {
-          observer.next((r.data?.plantReminders ?? []).map(mapReminder));
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+      }).then(r => (r.data?.plantReminders ?? []).map(mapReminder))
+    );
   }
 
   set(plantId: string, actionType: ReminderActionType, intervalDays: number, enabled: boolean): Observable<PlantReminder> {
-    return new Observable(observer => {
+    return defer(() =>
       this.client.mutate<{ setPlantReminder: RawReminder }>({
         mutation: SET_REMINDER,
         variables: { plantId, actionType, intervalDays, enabled },
-      })
-        .then(r => { observer.next(mapReminder(r.data!.setPlantReminder)); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+      }).then(r => mapReminder(r.data!.setPlantReminder))
+    );
   }
 
   remove(id: string): Observable<boolean> {
-    return new Observable(observer => {
+    return defer(() =>
       this.client.mutate<{ removePlantReminder: boolean }>({
         mutation: REMOVE_REMINDER,
         variables: { id },
-      })
-        .then(() => { observer.next(true); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+      }).then(() => true)
+    );
   }
 
   snooze(id: string, hours = 24): Observable<PlantReminder> {
-    return new Observable(observer => {
+    return defer(() =>
       this.client.mutate<{ snoozeReminder: RawReminder }>({
         mutation: SNOOZE_REMINDER,
         variables: { id, hours },
-      })
-        .then(r => { observer.next(mapReminder(r.data!.snoozeReminder)); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+      }).then(r => mapReminder(r.data!.snoozeReminder))
+    );
   }
 
   /** A reminder is "due" if nextDueAt is in the past and not currently snoozed. */

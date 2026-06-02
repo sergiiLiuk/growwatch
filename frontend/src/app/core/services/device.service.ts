@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 
 export interface Device {
@@ -20,7 +20,7 @@ export class DeviceService {
   }
 
   myDevices(): Observable<Device[]> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.query<{ myDevices: Device[] }>({
         query: gql`
           query MyDevices {
@@ -28,43 +28,28 @@ export class DeviceService {
           }
         `,
         fetchPolicy: 'network-only',
-      })
-        .then(result => {
-          observer.next(result.data?.myDevices ?? []);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data?.myDevices ?? [])
+    );
   }
 
   openClaim(): Observable<string> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.mutate<{ openDeviceClaim: string }>({
         mutation: gql`mutation OpenDeviceClaim { openDeviceClaim }`,
-      })
-        .then(result => {
-          observer.next(result.data?.openDeviceClaim ?? '');
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data?.openDeviceClaim ?? '')
+    );
   }
 
   cancelClaim(): Observable<boolean> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.mutate<{ cancelDeviceClaim: boolean }>({
         mutation: gql`mutation CancelDeviceClaim { cancelDeviceClaim }`,
-      })
-        .then(result => {
-          observer.next(result.data?.cancelDeviceClaim ?? false);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data?.cancelDeviceClaim ?? false)
+    );
   }
 
   renameDevice(id: string, name: string): Observable<Device> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.mutate<{ renameDevice: Device }>({
         mutation: gql`
           mutation RenameDevice($id: String!, $name: String!) {
@@ -72,29 +57,19 @@ export class DeviceService {
           }
         `,
         variables: { id, name },
-      })
-        .then(result => {
-          if (result.data) observer.next(result.data.renameDevice);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data!.renameDevice)
+    );
   }
 
   removeDevice(id: string): Observable<boolean> {
-    return new Observable(observer => {
+    return defer(() =>
       this.apolloClient.mutate<{ removeDevice: boolean }>({
         mutation: gql`
           mutation RemoveDevice($id: String!) { removeDevice(id: $id) }
         `,
         variables: { id },
-      })
-        .then(result => {
-          observer.next(result.data?.removeDevice ?? false);
-          observer.complete();
-        })
-        .catch(err => observer.error(err));
-    });
+      }).then(result => result.data?.removeDevice ?? false)
+    );
   }
 
   subscribeDeviceClaimed(userId: string): Observable<Device> {

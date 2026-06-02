@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DailyForecast } from '../utils/weather-risk';
 import { UserSettingsService } from './user-settings.service';
+import { STORAGE_KEYS } from '../constants/storage-keys';
 
 export interface WeatherData {
   temperature: number;
@@ -36,7 +37,7 @@ function weatherInfo(code: number): { label: string; icon: string } {
   return { label: 'Thunderstorm', icon: '⛈️' };
 }
 
-const LOCATION_KEY = 'growwatch-location';
+const LOCATION_KEY = STORAGE_KEYS.LOCATION;
 
 @Injectable({ providedIn: 'root' })
 export class WeatherService {

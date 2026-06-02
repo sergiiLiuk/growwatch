@@ -9,10 +9,9 @@ import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PlantActionService, DailyBriefing } from '../../core/services/plant-action.service';
 import { TierService } from '../../core/services/tier.service';
-import { isNight, isDawnOrDusk } from '../../core/utils/time';
+import { isNight, isDawnOrDusk, daysAgo } from '../../core/utils/time';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import dayjs from 'dayjs';
 
 const PLANT_EMOJI: Record<string, string> = {
   TOMATO: '🍅', PEPPER: '🌶️', CUCUMBER: '🥒', ZUCCHINI: '🥒', EGGPLANT: '🍆',
@@ -528,7 +527,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       if (m === 'stressed') return this.transloco.translate('mood.stressed');
       if (m === 'critical') return this.transloco.translate('mood.critical');
     }
-    const days = Math.max(0, dayjs().diff(plant.plantedDate, 'day'));
+    const days = daysAgo(plant.plantedDate);
     return this.transloco.translate('home.dayCounter', { n: days });
   }
 

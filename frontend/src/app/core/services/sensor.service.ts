@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ApolloClient, gql } from '@apollo/client/core';
-import { Observable, retry, timer } from 'rxjs';
+import { Observable, defer, retry, timer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 import { UserSettingsService } from './user-settings.service';
 import { TranslocoService } from '@jsverse/transloco';
@@ -90,46 +90,34 @@ export class SensorService {
   }
 
   getSensorData(): Observable<SensorData[]> {
-    return new Observable(observer => {
-      this.apolloClient
-        .query<{ sensorData: SensorData[] }>({
-          query: gql`
-            query GetSensorData {
-              sensorData {
-                id lightLevel timestamp temperature humidity pressure co2
-                lightStatus { status message icon percentageOfOptimal }
-              }
+    return defer(() =>
+      this.apolloClient.query<{ sensorData: SensorData[] }>({
+        query: gql`
+          query GetSensorData {
+            sensorData {
+              id lightLevel timestamp temperature humidity pressure co2
+              lightStatus { status message icon percentageOfOptimal }
             }
-          `,
-        })
-        .then((result: { data?: { sensorData: SensorData[] } }) => {
-          observer.next(result.data?.sensorData || []);
-          observer.complete();
-        })
-        .catch((err: any) => observer.error(err));
-    });
+          }
+        `,
+      }).then(result => result.data?.sensorData || [])
+    );
   }
 
   getLatestSensorData(): Observable<SensorData | null> {
-    return new Observable(observer => {
-      this.apolloClient
-        .query<{ latestSensorData: SensorData | null }>({
-          query: gql`
-            query GetLatestSensorData {
-              latestSensorData {
-                id lightLevel timestamp temperature humidity pressure co2
-                lightStatus { status message icon percentageOfOptimal }
-              }
+    return defer(() =>
+      this.apolloClient.query<{ latestSensorData: SensorData | null }>({
+        query: gql`
+          query GetLatestSensorData {
+            latestSensorData {
+              id lightLevel timestamp temperature humidity pressure co2
+              lightStatus { status message icon percentageOfOptimal }
             }
-          `,
-          fetchPolicy: 'network-only',
-        })
-        .then((result: { data?: { latestSensorData: SensorData | null } }) => {
-          observer.next(result.data?.latestSensorData || null);
-          observer.complete();
-        })
-        .catch((err: any) => observer.error(err));
-    });
+          }
+        `,
+        fetchPolicy: 'network-only',
+      }).then(result => result.data?.latestSensorData || null)
+    );
   }
 
   subscribeToSensorData(): Observable<SensorData> {
@@ -156,55 +144,43 @@ export class SensorService {
   }
 
   getHourlyData(limit = 168): Observable<HourlySensorData[]> {
-    return new Observable(observer => {
-      this.apolloClient
-        .query<{ hourlyData: HourlySensorData[] }>({
-          query: gql`
-            query GetHourlyData($limit: Int) {
-              hourlyData(limit: $limit) {
-                id hour lightLevel minLight maxLight avgLight readingCount
-                avgTemperature minTemperature maxTemperature
-                avgHumidity minHumidity maxHumidity
-                avgPressure avgCo2
-                lightStatus { status message icon percentageOfOptimal }
-              }
+    return defer(() =>
+      this.apolloClient.query<{ hourlyData: HourlySensorData[] }>({
+        query: gql`
+          query GetHourlyData($limit: Int) {
+            hourlyData(limit: $limit) {
+              id hour lightLevel minLight maxLight avgLight readingCount
+              avgTemperature minTemperature maxTemperature
+              avgHumidity minHumidity maxHumidity
+              avgPressure avgCo2
+              lightStatus { status message icon percentageOfOptimal }
             }
-          `,
-          variables: { limit },
-          fetchPolicy: 'network-only',
-        })
-        .then((result: { data?: { hourlyData: HourlySensorData[] } }) => {
-          observer.next(result.data?.hourlyData || []);
-          observer.complete();
-        })
-        .catch((err: any) => observer.error(err));
-    });
+          }
+        `,
+        variables: { limit },
+        fetchPolicy: 'network-only',
+      }).then(result => result.data?.hourlyData || [])
+    );
   }
 
   getHourlyDataRange(from: Date, to: Date): Observable<HourlySensorData[]> {
-    return new Observable(observer => {
-      this.apolloClient
-        .query<{ hourlyDataRange: HourlySensorData[] }>({
-          query: gql`
-            query GetHourlyDataRange($from: String!, $to: String!) {
-              hourlyDataRange(from: $from, to: $to) {
-                id hour lightLevel minLight maxLight avgLight readingCount
-                avgTemperature minTemperature maxTemperature
-                avgHumidity minHumidity maxHumidity
-                avgPressure avgCo2
-                lightStatus { status message icon percentageOfOptimal }
-              }
+    return defer(() =>
+      this.apolloClient.query<{ hourlyDataRange: HourlySensorData[] }>({
+        query: gql`
+          query GetHourlyDataRange($from: String!, $to: String!) {
+            hourlyDataRange(from: $from, to: $to) {
+              id hour lightLevel minLight maxLight avgLight readingCount
+              avgTemperature minTemperature maxTemperature
+              avgHumidity minHumidity maxHumidity
+              avgPressure avgCo2
+              lightStatus { status message icon percentageOfOptimal }
             }
-          `,
-          variables: { from: from.toISOString(), to: to.toISOString() },
-          fetchPolicy: 'network-only',
-        })
-        .then((result: { data?: { hourlyDataRange: HourlySensorData[] } }) => {
-          observer.next(result.data?.hourlyDataRange || []);
-          observer.complete();
-        })
-        .catch((err: any) => observer.error(err));
-    });
+          }
+        `,
+        variables: { from: from.toISOString(), to: to.toISOString() },
+        fetchPolicy: 'network-only',
+      }).then(result => result.data?.hourlyDataRange || [])
+    );
   }
 
   getMood(data: SensorData | null): MoodInfo {

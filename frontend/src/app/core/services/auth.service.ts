@@ -1,10 +1,11 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { STORAGE_KEYS } from '../constants/storage-keys';
 
-const TOKEN_KEY = 'growwatch-token';
-const TIER_KEY = 'growwatch-tier';
-const ROLE_KEY = 'growwatch-role';
+const TOKEN_KEY = STORAGE_KEYS.TOKEN;
+const TIER_KEY = STORAGE_KEYS.TIER;
+const ROLE_KEY = STORAGE_KEYS.ROLE;
 
 export type SubscriptionTier = 'free' | 'plus' | 'pro';
 export type UserRole = 'user' | 'superuser' | 'demo';
