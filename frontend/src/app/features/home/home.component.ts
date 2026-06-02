@@ -134,12 +134,23 @@ interface ActivityEvent {
         </div>
       }
 
-      <!-- Free-tier CTA (hidden for demo accounts) -->
-      @if (tier.isFree() && tier.canSeeSubscription()) {
+      <!-- Seasonal tip — static daily content for free users. Plus/Pro users
+           see the AI briefing instead. Demo also gets the seasonal tip. -->
+      @if (!tier.canSeeAi()) {
+        <div class="mb-5 bg-white border-[0.5px] border-gray-200 rounded-2xl p-4">
+          <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">{{ t('home.seasonalTipTitle') }}</div>
+          <p class="text-[13px] text-gray-700 leading-relaxed">{{ seasonalTip() }}</p>
+        </div>
+      }
+
+      <!-- Free-tier nudge — only when the user has plants and so could
+           actually benefit from smart tips. Hidden for empty accounts (focus
+           on the "Add your first plant" CTA) and for demo. -->
+      @if (tier.isFree() && tier.canSeeSubscription() && plants().length > 0) {
         <a routerLink="/upgrade"
-           class="block mb-5 rounded-2xl border border-dashed border-gw-green/40 bg-gw-green-light/30 p-4 hover:border-gw-green transition-colors">
-          <p class="text-[13px] font-medium text-gw-green-dark">{{ t('home.upgradeTitle') }}</p>
-          <p class="text-[11px] text-gw-green-dark/70 mt-0.5">{{ t('home.upgradeBody') }}</p>
+           class="flex items-center gap-2 mb-5 rounded-xl bg-gw-green-light/30 px-3 py-2 hover:bg-gw-green-light/50 transition-colors">
+          <span class="text-[12px] text-gw-green-dark/80 flex-1">{{ t('home.upgradeBody') }}</span>
+          <span class="text-[11px] font-medium text-gw-green-dark">{{ t('home.upgradeCta') }}</span>
         </a>
       }
 
@@ -255,6 +266,14 @@ export class HomeComponent implements OnInit, OnDestroy {
   plantsLoading = this.plantService.plantsLoading;
   monitoredPlants = computed(() => this.plants().filter(p => p.monitored));
   weather = this.weatherService.weather;
+
+  // Seasonal tip — static, locale-reactive, no backend cost. Shown to free users
+  // in place of the AI briefing they don't have access to.
+  seasonalTip = computed(() => {
+    this.localeKey();
+    const month = new Date().getMonth();
+    return this.transloco.translate(`home.seasonalTips.${month}`);
+  });
 
   // ── Phase countdown ──────────────────────────────────────────────────────────
 

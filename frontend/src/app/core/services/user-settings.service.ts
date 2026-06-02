@@ -70,8 +70,8 @@ export class UserSettingsService {
   effectiveLocale = computed(() => {
     const stored = this.locale();
     if (stored && (this.SUPPORTED_LOCALES as readonly string[]).includes(stored)) return stored;
-    const browser = (navigator.language ?? 'en').slice(0, 2).toLowerCase();
-    return (this.SUPPORTED_LOCALES as readonly string[]).includes(browser) ? browser : 'en';
+    const browser = (navigator.language ?? '').slice(0, 2).toLowerCase();
+    return (this.SUPPORTED_LOCALES as readonly string[]).includes(browser) ? browser : 'da';
   });
 
   constructor(gqlClient: GraphQLClientService) {

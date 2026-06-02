@@ -1,5 +1,5 @@
 import { Component, inject, computed, signal, HostListener, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
 import { PlantActionService, PlantAction, PlantActionType, SmartTip } from '../../core/services/plant-action.service';
 import { ReminderService, PlantReminder, ReminderActionType } from '../../core/services/reminder.service';
@@ -16,7 +16,7 @@ import { daysAgo } from '../../core/utils/time';
 
 @Component({
   selector: 'app-plant-detail',
-  imports: [FormsModule, PlantEditModalComponent, PlantNoteModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, PlantEditModalComponent, PlantNoteModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -113,6 +113,24 @@ import { daysAgo } from '../../core/utils/time';
 
         <!-- Active sections are hidden for archived plants -->
         @if (!p.archived) {
+
+          <!-- Locked smart-tip teaser: shown to free users (real subscribers only,
+               i.e. not demo) so they see where Plus value would appear. -->
+          @if (!tier.canSeeAi() && tier.canSeeSubscription()) {
+            <div class="mb-4">
+              <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.recommendations') }}</div>
+              <a routerLink="/upgrade"
+                 class="block bg-white border-[0.5px] border-dashed border-gray-300 rounded-xl p-3 hover:border-gw-green/60 hover:bg-gw-green-light/10 transition-colors">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-2 text-gray-500">
+                    <span class="opacity-50">✨</span>
+                    <span class="text-[12px] leading-relaxed">{{ t('home.smartTipLocked') }}</span>
+                  </div>
+                  <span class="text-[11px] font-medium text-gw-green-dark shrink-0">{{ t('home.smartTipLockedCta') }}</span>
+                </div>
+              </a>
+            </div>
+          }
 
           <!-- Smart tip -->
           @if (tier.canSeeAi() && (smartTip() || smartTipLoading())) {

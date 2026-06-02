@@ -15,8 +15,8 @@ export const SUPPORTED_LOCALES = ['en', 'da'] as const;
 export type Locale = typeof SUPPORTED_LOCALES[number];
 
 function detectInitialLocale(): Locale {
-  const browser = (navigator.language ?? 'en').slice(0, 2).toLowerCase();
-  return (SUPPORTED_LOCALES as readonly string[]).includes(browser) ? (browser as Locale) : 'en';
+  const browser = (navigator.language ?? '').slice(0, 2).toLowerCase();
+  return (SUPPORTED_LOCALES as readonly string[]).includes(browser) ? (browser as Locale) : 'da';
 }
 
 export const appConfig: ApplicationConfig = {
