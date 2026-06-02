@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
@@ -6,27 +6,24 @@ import { AuthService } from '../../core/services/auth.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-register',
   imports: [FormsModule, RouterLink, IconComponent, TranslocoDirective],
   template: `
-    <div class="min-h-screen bg-gw-parchment flex flex-col items-center justify-center px-6" *transloco="let t">
+    <div class="min-h-screen bg-gw-parchment flex flex-col items-center justify-center px-6 py-10" *transloco="let t">
 
-      <!-- Logo + branding -->
-      <div class="flex flex-col items-center mb-10">
+      <div class="flex flex-col items-center mb-8">
         <div class="w-20 h-20 rounded-full bg-gw-green flex items-center justify-center mb-5 shadow-sm text-white">
           <app-icon name="leaf" class="w-9 h-9" strokeWidth="1.8" />
         </div>
         <h1 class="text-[1.75rem] tracking-tight">
           <span class="font-bold text-gw-green-dark">Grow</span><span class="font-normal text-gray-500">Watch</span>
         </h1>
-        <p class="text-gray-400 text-sm mt-1">{{ t('auth.tagline') }}</p>
+        <p class="text-gray-400 text-sm mt-1">{{ t('auth.registerTagline') }}</p>
       </div>
 
-      <!-- Form card -->
-      <form (ngSubmit)="signIn()"
+      <form (ngSubmit)="submit()" autocomplete="on"
             class="w-full max-w-sm bg-gw-surface rounded-2xl p-8 shadow-sm border border-gw-border/50">
 
-        <!-- Email -->
         <div class="mb-5">
           <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('auth.email') }}</label>
           <input
@@ -40,13 +37,12 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
           />
         </div>
 
-        <!-- Password -->
-        <div class="mb-7">
+        <div class="mb-5">
           <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('auth.password') }}</label>
           <div class="relative">
             <input
               [type]="showPassword() ? 'text' : 'password'"
-              autocomplete="current-password"
+              autocomplete="new-password"
               [(ngModel)]="password"
               name="password"
               [placeholder]="t('auth.passwordPlaceholder')"
@@ -57,51 +53,74 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
               <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" class="w-[18px] h-[18px]" strokeWidth="1.8" />
             </button>
           </div>
+          <p class="text-[11px] text-gray-400 mt-1.5">{{ t('auth.passwordHint') }}</p>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('auth.confirmPassword') }}</label>
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="new-password"
+            [(ngModel)]="confirm"
+            name="confirm"
+            [placeholder]="t('auth.confirmPlaceholder')"
+            class="w-full px-4 py-3 rounded-xl border border-gw-border bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gw-green/30 focus:border-gw-green transition-colors"
+          />
         </div>
 
         @if (error()) {
           <p class="text-sm text-red-500 mb-4 text-center">{{ error() }}</p>
         }
 
-        <div class="text-right -mt-4 mb-5">
-          <a routerLink="/forgot-password" class="text-[12px] text-gw-green-dark hover:underline">{{ t('auth.forgotPassword') }}</a>
-        </div>
-
-        <!-- Sign in button -->
         <button
           type="submit"
-          [disabled]="loading()"
+          [disabled]="loading() || !canSubmit()"
           class="w-full py-3.5 rounded-xl bg-gw-green text-white font-semibold text-base hover:bg-gw-green-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-          {{ loading() ? t('auth.signingIn') : t('auth.signIn') }}
+          {{ loading() ? t('auth.creating') : t('auth.createAccount') }}
         </button>
 
         <p class="text-[12px] text-gray-500 text-center mt-5">
-          {{ t('auth.noAccount') }}
-          <a routerLink="/register" class="text-gw-green-dark font-medium hover:underline">{{ t('auth.createAccount') }}</a>
+          {{ t('auth.haveAccount') }}
+          <a routerLink="/login" class="text-gw-green-dark font-medium hover:underline">{{ t('auth.signIn') }}</a>
         </p>
       </form>
     </div>
   `,
 })
-export class LoginComponent {
+export class RegisterComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
 
   email = '';
   password = '';
+  confirm = '';
   showPassword = signal(false);
   error = signal('');
   loading = signal(false);
 
-  async signIn() {
-    if (!this.email || !this.password) return;
+  canSubmit = computed(() => true);
+
+  async submit() {
+    const email = this.email.trim();
+    if (!email || !this.password || !this.confirm) {
+      this.error.set('Please fill in all fields');
+      return;
+    }
+    if (this.password.length < 8) {
+      this.error.set('Password must be at least 8 characters');
+      return;
+    }
+    if (this.password !== this.confirm) {
+      this.error.set('Passwords do not match');
+      return;
+    }
     this.error.set('');
     this.loading.set(true);
     try {
-      await this.auth.login(this.email, this.password);
+      await this.auth.register(email, this.password);
       this.router.navigate(['/']);
     } catch (err: any) {
-      this.error.set(err.message || 'Login failed');
+      this.error.set(err.message || 'Registration failed');
     } finally {
       this.loading.set(false);
     }

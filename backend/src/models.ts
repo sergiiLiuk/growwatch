@@ -28,6 +28,27 @@ const userSchema = new Schema<IUser>(
 
 export const User = mongoose.model<IUser>('User', userSchema);
 
+// ── PasswordResetToken ──────────────────────────────────────────────────────
+
+export interface IPasswordResetToken extends Document {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+    usedAt?: Date | null;
+}
+
+const passwordResetTokenSchema = new Schema<IPasswordResetToken>(
+    {
+        userId: { type: String, required: true, index: true },
+        tokenHash: { type: String, required: true, unique: true },
+        expiresAt: { type: Date, required: true },
+        usedAt: { type: Date, default: null },
+    },
+    { timestamps: true }
+);
+
+export const PasswordResetToken = mongoose.model<IPasswordResetToken>('PasswordResetToken', passwordResetTokenSchema);
+
 // ── Plant ───────────────────────────────────────────────────────────────────
 
 export interface IPlant extends Document {

@@ -213,6 +213,9 @@ export const typeDefs = gql`
 
   type Mutation {
     login(email: String!, password: String!): AuthPayload!
+    register(email: String!, password: String!): AuthPayload!
+    requestPasswordReset(email: String!): Boolean!
+    resetPassword(token: String!, newPassword: String!): Boolean!
     addPlant(name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!
     updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!
     removePlant(id: String!): Boolean!

@@ -1,11 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
+import * as crypto from 'crypto';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType } from './models';
+import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken } from './models';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
 import { signToken, verifyPassword, hashPassword, JwtPayload } from './auth';
 import { pushReading, getAll as getAllReadings, getAllForUser as getReadingsForUser } from './sensorStore';
+import { sendPasswordResetEmail } from './services/emailSender';
 
 let lastSavedHour: number = -1;
 
@@ -531,6 +533,67 @@ export const resolvers = {
             const userId = user._id.toString();
             const token = signToken({ userId, email: user.email, role: user.role });
             return { token, email: user.email, role: user.role, userId, subscriptionTier: user.subscriptionTier ?? 'free' };
+        },
+        requestPasswordReset: async (_: any, { email }: { email: string }) => {
+            const trimmedEmail = email.trim().toLowerCase();
+            const user = await User.findOne({ email: trimmedEmail });
+            // Always return true — never leak whether the account exists.
+            if (!user) return true;
+            const userId = user._id.toString();
+            // Invalidate any prior unused tokens for this user.
+            await PasswordResetToken.updateMany(
+                { userId, usedAt: null },
+                { $set: { usedAt: new Date() } }
+            );
+            const rawToken = crypto.randomBytes(32).toString('hex');
+            const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+            const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+            await PasswordResetToken.create({ userId, tokenHash, expiresAt });
+            const baseUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+            const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
+            await sendPasswordResetEmail(trimmedEmail, resetUrl);
+            return true;
+        },
+        resetPassword: async (_: any, { token, newPassword }: { token: string; newPassword: string }) => {
+            if (!token) throw new Error('Reset token is required');
+            if (!newPassword || newPassword.length < 8) {
+                throw new Error('Password must be at least 8 characters');
+            }
+            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+            const record = await PasswordResetToken.findOne({ tokenHash });
+            if (!record) throw new Error('Invalid or expired reset link');
+            if (record.usedAt) throw new Error('This reset link has already been used');
+            if (record.expiresAt.getTime() < Date.now()) {
+                throw new Error('This reset link has expired');
+            }
+            const user = await User.findById(record.userId);
+            if (!user) throw new Error('Account not found');
+            user.passwordHash = await hashPassword(newPassword);
+            await user.save();
+            record.usedAt = new Date();
+            await record.save();
+            return true;
+        },
+        register: async (_: any, { email, password }: { email: string; password: string }) => {
+            const trimmedEmail = email.trim().toLowerCase();
+            if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+                throw new Error('Please enter a valid email address');
+            }
+            if (!password || password.length < 8) {
+                throw new Error('Password must be at least 8 characters');
+            }
+            const existing = await User.findOne({ email: trimmedEmail });
+            if (existing) throw new Error('An account with that email already exists');
+            const passwordHash = await hashPassword(password);
+            const doc: any = await User.create({
+                email: trimmedEmail,
+                passwordHash,
+                role: 'user',
+                subscriptionTier: 'free',
+            });
+            const userId = doc._id.toString();
+            const token = signToken({ userId, email: doc.email, role: doc.role });
+            return { token, email: doc.email, role: doc.role, userId, subscriptionTier: doc.subscriptionTier ?? 'free' };
         },
         addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');

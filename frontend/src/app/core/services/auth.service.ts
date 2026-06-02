@@ -64,21 +64,61 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<void> {
+    await this.authMutation(
+      `mutation Login($email: String!, $password: String!) {
+        login(email: $email, password: $password) { token email role userId subscriptionTier }
+      }`,
+      { email, password },
+      'login',
+    );
+  }
+
+  async register(email: string, password: string): Promise<void> {
+    await this.authMutation(
+      `mutation Register($email: String!, $password: String!) {
+        register(email: $email, password: $password) { token email role userId subscriptionTier }
+      }`,
+      { email, password },
+      'register',
+    );
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    await this.plainMutation(
+      `mutation RequestPasswordReset($email: String!) { requestPasswordReset(email: $email) }`,
+      { email },
+    );
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await this.plainMutation(
+      `mutation ResetPassword($token: String!, $newPassword: String!) {
+        resetPassword(token: $token, newPassword: $newPassword)
+      }`,
+      { token, newPassword },
+    );
+  }
+
+  private async plainMutation(query: string, variables: Record<string, unknown>): Promise<void> {
     const res = await fetch(environment.backendHttpUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `mutation Login($email: String!, $password: String!) {
-          login(email: $email, password: $password) { token email role userId subscriptionTier }
-        }`,
-        variables: { email, password },
-      }),
+      body: JSON.stringify({ query, variables }),
     });
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+  }
 
+  private async authMutation(query: string, variables: Record<string, unknown>, field: 'login' | 'register'): Promise<void> {
+    const res = await fetch(environment.backendHttpUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
     const json = await res.json();
     if (json.errors?.length) throw new Error(json.errors[0].message);
 
-    const { token, email: userEmail, role, userId, subscriptionTier } = json.data.login;
+    const { token, email: userEmail, role, userId, subscriptionTier } = json.data[field];
     const tier: SubscriptionTier = subscriptionTier ?? 'free';
     const userRole: UserRole = (role as UserRole) ?? 'user';
     localStorage.setItem(TOKEN_KEY, token);
