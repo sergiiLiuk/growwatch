@@ -514,30 +514,38 @@ export class PlantDetailComponent implements OnInit {
     return this.transloco.translate('reminders.dueInDays', { n: days });
   }
 
+  private mergeReminder(type: ReminderActionType, updated: PlantReminder) {
+    this.reminders.update(list => {
+      const without = list.filter(r => r.actionType !== type);
+      return [...without, updated];
+    });
+  }
+
+  private persistReminder(p: { id: string }, type: ReminderActionType, days: number, enabled: boolean, notifyTime: string | null) {
+    this.reminderService.set(p.id, type, days, enabled, notifyTime).subscribe({
+      next: updated => this.mergeReminder(type, updated),
+      error: err => {
+        console.error('reminder save failed:', err);
+        // Pull fresh state so the UI doesn't keep showing an unsaved value.
+        this.reminderService.list(p.id).subscribe(list => this.reminders.set(list));
+      },
+    });
+  }
+
   toggleReminder(type: ReminderActionType) {
     const p = this.plant();
     if (!p) return;
     const existing = this.reminders().find(r => r.actionType === type);
     const interval = existing?.intervalDays ?? (type === 'water' ? 3 : 14);
     const enabled = !(existing?.enabled ?? false);
-    this.reminderService.set(p.id, type, interval, enabled, existing?.notifyTime ?? null).subscribe(updated => {
-      this.reminders.update(list => {
-        const without = list.filter(r => r.actionType !== type);
-        return [...without, updated];
-      });
-    });
+    this.persistReminder(p, type, interval, enabled, existing?.notifyTime ?? null);
   }
 
   changeReminderInterval(type: ReminderActionType, days: number) {
     const p = this.plant();
     if (!p) return;
     const existing = this.reminders().find(r => r.actionType === type);
-    this.reminderService.set(p.id, type, days, true, existing?.notifyTime ?? null).subscribe(updated => {
-      this.reminders.update(list => {
-        const without = list.filter(r => r.actionType !== type);
-        return [...without, updated];
-      });
-    });
+    this.persistReminder(p, type, days, true, existing?.notifyTime ?? null);
   }
 
   changeReminderTime(type: ReminderActionType, time: string) {
@@ -546,12 +554,7 @@ export class PlantDetailComponent implements OnInit {
     const existing = this.reminders().find(r => r.actionType === type);
     if (!existing) return;
     const notifyTime = time && /^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? time : null;
-    this.reminderService.set(p.id, type, existing.intervalDays, true, notifyTime).subscribe(updated => {
-      this.reminders.update(list => {
-        const without = list.filter(r => r.actionType !== type);
-        return [...without, updated];
-      });
-    });
+    this.persistReminder(p, type, existing.intervalDays, true, notifyTime);
   }
 
   snoozeReminder(id: string) {
