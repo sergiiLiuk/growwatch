@@ -312,6 +312,8 @@ export interface IPlantReminder extends Document {
     userId: string;
     actionType: ReminderActionType;
     intervalDays: number;
+    /** HH:mm in server local timezone. When unset, nextDueAt is "now + intervalDays" with no time anchoring. */
+    notifyTime?: string;
     nextDueAt: Date;
     snoozedUntil?: Date;
     lastNotifiedAt?: Date;
@@ -326,6 +328,7 @@ const plantReminderSchema = new Schema<IPlantReminder>(
         userId: { type: String, required: true, index: true },
         actionType: { type: String, required: true, enum: ['water', 'fertilize'] },
         intervalDays: { type: Number, required: true, min: 1, max: 365 },
+        notifyTime: { type: String, match: /^([01]\d|2[0-3]):[0-5]\d$/ },
         nextDueAt: { type: Date, required: true },
         snoozedUntil: { type: Date },
         lastNotifiedAt: { type: Date },

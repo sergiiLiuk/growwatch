@@ -10,6 +10,7 @@ export interface PlantReminder {
   plantId: string;
   actionType: ReminderActionType;
   intervalDays: number;
+  notifyTime: string | null;
   nextDueAt: Date;
   snoozedUntil: Date | null;
   enabled: boolean;
@@ -20,6 +21,7 @@ interface RawReminder {
   plantId: string;
   actionType: ReminderActionType;
   intervalDays: number;
+  notifyTime: string | null;
   nextDueAt: string;
   snoozedUntil: string | null;
   enabled: boolean;
@@ -33,19 +35,17 @@ function mapReminder(r: RawReminder): PlantReminder {
   };
 }
 
+const REMINDER_FIELDS = `id plantId actionType intervalDays notifyTime nextDueAt snoozedUntil enabled`;
+
 const REMINDERS_QUERY = gql`
   query PlantReminders($plantId: String) {
-    plantReminders(plantId: $plantId) {
-      id plantId actionType intervalDays nextDueAt snoozedUntil enabled
-    }
+    plantReminders(plantId: $plantId) { ${REMINDER_FIELDS} }
   }
 `;
 
 const SET_REMINDER = gql`
-  mutation SetPlantReminder($plantId: String!, $actionType: ReminderActionType!, $intervalDays: Int!, $enabled: Boolean!) {
-    setPlantReminder(plantId: $plantId, actionType: $actionType, intervalDays: $intervalDays, enabled: $enabled) {
-      id plantId actionType intervalDays nextDueAt snoozedUntil enabled
-    }
+  mutation SetPlantReminder($plantId: String!, $actionType: ReminderActionType!, $intervalDays: Int!, $enabled: Boolean!, $notifyTime: String) {
+    setPlantReminder(plantId: $plantId, actionType: $actionType, intervalDays: $intervalDays, enabled: $enabled, notifyTime: $notifyTime) { ${REMINDER_FIELDS} }
   }
 `;
 
@@ -53,9 +53,7 @@ const REMOVE_REMINDER = gql`mutation RemovePlantReminder($id: String!) { removeP
 
 const SNOOZE_REMINDER = gql`
   mutation SnoozeReminder($id: String!, $hours: Int) {
-    snoozeReminder(id: $id, hours: $hours) {
-      id plantId actionType intervalDays nextDueAt snoozedUntil enabled
-    }
+    snoozeReminder(id: $id, hours: $hours) { ${REMINDER_FIELDS} }
   }
 `;
 
@@ -74,11 +72,11 @@ export class ReminderService {
     );
   }
 
-  set(plantId: string, actionType: ReminderActionType, intervalDays: number, enabled: boolean): Observable<PlantReminder> {
+  set(plantId: string, actionType: ReminderActionType, intervalDays: number, enabled: boolean, notifyTime?: string | null): Observable<PlantReminder> {
     return defer(() =>
       this.client.mutate<{ setPlantReminder: RawReminder }>({
         mutation: SET_REMINDER,
-        variables: { plantId, actionType, intervalDays, enabled },
+        variables: { plantId, actionType, intervalDays, enabled, notifyTime: notifyTime ?? null },
       }).then(r => mapReminder(r.data!.setPlantReminder))
     );
   }

@@ -348,10 +348,39 @@ function mapReminder(doc: any) {
         plantId: doc.plantId,
         actionType: doc.actionType,
         intervalDays: doc.intervalDays,
+        notifyTime: doc.notifyTime ?? null,
         nextDueAt: doc.nextDueAt instanceof Date ? doc.nextDueAt.toISOString() : String(doc.nextDueAt),
         snoozedUntil: doc.snoozedUntil instanceof Date ? doc.snoozedUntil.toISOString() : (doc.snoozedUntil ?? null),
         enabled: doc.enabled,
     };
+}
+
+/**
+ * Compute the next due timestamp. If notifyTime (HH:mm) is provided, the
+ * result lands on the next day-of-interval AT that wall-clock time in the
+ * server's local timezone. Without notifyTime we just add the interval to
+ * `from` and keep the time-of-day unchanged.
+ */
+function computeNextDueAt(intervalDays: number, from: Date, notifyTime?: string | null): Date {
+    if (!notifyTime || !/^([01]\d|2[0-3]):[0-5]\d$/.test(notifyTime)) {
+        return new Date(from.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+    }
+    const [hh, mm] = notifyTime.split(':').map(Number);
+    if (intervalDays === 1) {
+        // Daily: next occurrence of HH:mm from `from`. If it hasn't happened
+        // today yet, fire today; otherwise tomorrow.
+        const target = new Date(from);
+        target.setHours(hh, mm, 0, 0);
+        if (target.getTime() <= from.getTime()) {
+            target.setDate(target.getDate() + 1);
+        }
+        return target;
+    }
+    // Multi-day: anchor to (from + intervalDays) at HH:mm.
+    const target = new Date(from);
+    target.setDate(target.getDate() + intervalDays);
+    target.setHours(hh, mm, 0, 0);
+    return target;
 }
 
 function currentCycle(settings: any): 'morning' | 'evening' {
@@ -655,8 +684,7 @@ export const resolvers = {
                     plantId, userId: ctx.user.userId, actionType: type, enabled: true,
                 });
                 if (reminder) {
-                    const next = new Date(Date.now() + reminder.intervalDays * 24 * 60 * 60 * 1000);
-                    reminder.nextDueAt = next;
+                    reminder.nextDueAt = computeNextDueAt(reminder.intervalDays, new Date(), reminder.notifyTime);
                     reminder.snoozedUntil = undefined;
                     reminder.lastNotifiedAt = undefined;
                     await reminder.save();
@@ -797,31 +825,39 @@ export const resolvers = {
                 plantCount: 0,
             };
         },
-        setPlantReminder: async (_: any, { plantId, actionType, intervalDays, enabled }: { plantId: string; actionType: ReminderActionType; intervalDays: number; enabled: boolean }, ctx: Ctx) => {
+        setPlantReminder: async (_: any, { plantId, actionType, intervalDays, enabled, notifyTime }: { plantId: string; actionType: ReminderActionType; intervalDays: number; enabled: boolean; notifyTime?: string | null }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             const plant = await Plant.findOne({ _id: plantId, userId: ctx.user.userId });
             if (!plant) throw new Error('Plant not found');
             if (intervalDays < 1 || intervalDays > 365) throw new Error('Interval must be between 1 and 365 days');
+            if (notifyTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(notifyTime)) {
+                throw new Error('notifyTime must be in HH:mm 24-hour format');
+            }
 
             const existing = await PlantReminder.findOne({ plantId, userId: ctx.user.userId, actionType });
-            const now = Date.now();
-            // When enabling a reminder for the first time (or after disable), seed nextDueAt
-            // relative to the most recent matching action so we don't immediately flag it overdue.
+            const now = new Date();
+            // Re-seed nextDueAt when the interval or notify time changes, or when seeding fresh.
             let nextDueAt: Date;
-            if (existing) {
-                // Preserve the existing due date if interval didn't change; otherwise re-seed
-                const intervalChanged = existing.intervalDays !== intervalDays;
-                nextDueAt = intervalChanged ? new Date(now + intervalDays * 24 * 60 * 60 * 1000) : existing.nextDueAt;
+            const settingsChanged = !existing
+                || existing.intervalDays !== intervalDays
+                || (existing.notifyTime ?? null) !== (notifyTime ?? null);
+            if (existing && !settingsChanged) {
+                nextDueAt = existing.nextDueAt;
+            } else if (existing) {
+                nextDueAt = computeNextDueAt(intervalDays, now, notifyTime);
             } else {
                 const lastAction = await PlantAction.findOne({ plantId, userId: ctx.user.userId, type: actionType })
                     .sort({ createdAt: -1 }).lean();
-                const baseTime = lastAction ? new Date(lastAction.createdAt).getTime() : now;
-                nextDueAt = new Date(baseTime + intervalDays * 24 * 60 * 60 * 1000);
+                const baseTime = lastAction ? new Date(lastAction.createdAt) : now;
+                nextDueAt = computeNextDueAt(intervalDays, baseTime, notifyTime);
             }
 
             const doc = await PlantReminder.findOneAndUpdate(
                 { plantId, userId: ctx.user.userId, actionType },
-                { $set: { intervalDays, enabled, nextDueAt }, $setOnInsert: { plantId, userId: ctx.user.userId, actionType } },
+                {
+                    $set: { intervalDays, enabled, nextDueAt, notifyTime: notifyTime ?? null },
+                    $setOnInsert: { plantId, userId: ctx.user.userId, actionType },
+                },
                 { upsert: true, new: true },
             ).lean();
             return mapReminder(doc);

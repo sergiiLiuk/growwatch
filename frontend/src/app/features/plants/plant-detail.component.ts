@@ -200,7 +200,7 @@ import { daysAgo } from '../../core/utils/time';
                     </label>
                   </div>
                   @if (row.reminder?.enabled) {
-                    <div class="flex items-center gap-2 pl-8">
+                    <div class="flex items-center flex-wrap gap-2 pl-8">
                       <span class="text-[11px] text-gray-400">{{ t('reminders.every') }}</span>
                       <select [ngModel]="row.reminder!.intervalDays"
                               (ngModelChange)="changeReminderInterval(row.type, $event)"
@@ -209,6 +209,11 @@ import { daysAgo } from '../../core/utils/time';
                           <option [ngValue]="d">{{ t('reminders.dayCount', { n: d }) }}</option>
                         }
                       </select>
+                      <span class="text-[11px] text-gray-400">{{ t('reminders.atTime') }}</span>
+                      <input type="time"
+                             [ngModel]="row.reminder!.notifyTime ?? ''"
+                             (ngModelChange)="changeReminderTime(row.type, $event)"
+                             class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors" />
                       @if (isReminderDue(row.reminder)) {
                         <button (click)="onActionClick(row.type)"
                                 class="ml-auto text-[11px] font-medium bg-gw-green text-white px-3 py-1 rounded-md hover:bg-gw-green-dark transition-colors">
@@ -496,7 +501,7 @@ export class PlantDetailComponent implements OnInit {
     const existing = this.reminders().find(r => r.actionType === type);
     const interval = existing?.intervalDays ?? (type === 'water' ? 3 : 14);
     const enabled = !(existing?.enabled ?? false);
-    this.reminderService.set(p.id, type, interval, enabled).subscribe(updated => {
+    this.reminderService.set(p.id, type, interval, enabled, existing?.notifyTime ?? null).subscribe(updated => {
       this.reminders.update(list => {
         const without = list.filter(r => r.actionType !== type);
         return [...without, updated];
@@ -507,7 +512,22 @@ export class PlantDetailComponent implements OnInit {
   changeReminderInterval(type: ReminderActionType, days: number) {
     const p = this.plant();
     if (!p) return;
-    this.reminderService.set(p.id, type, days, true).subscribe(updated => {
+    const existing = this.reminders().find(r => r.actionType === type);
+    this.reminderService.set(p.id, type, days, true, existing?.notifyTime ?? null).subscribe(updated => {
+      this.reminders.update(list => {
+        const without = list.filter(r => r.actionType !== type);
+        return [...without, updated];
+      });
+    });
+  }
+
+  changeReminderTime(type: ReminderActionType, time: string) {
+    const p = this.plant();
+    if (!p) return;
+    const existing = this.reminders().find(r => r.actionType === type);
+    if (!existing) return;
+    const notifyTime = time && /^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? time : null;
+    this.reminderService.set(p.id, type, existing.intervalDays, true, notifyTime).subscribe(updated => {
       this.reminders.update(list => {
         const without = list.filter(r => r.actionType !== type);
         return [...without, updated];
