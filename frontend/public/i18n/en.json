@@ -175,6 +175,8 @@
     "off": "Off",
     "every": "Every",
     "atTime": "at",
+    "minuteCount": "{{ n }} min",
+    "hourCount": "{{ n }} hour",
     "dayCount": "{{ n }} days",
     "dueNow": "Due now",
     "dueToday": "Due today",

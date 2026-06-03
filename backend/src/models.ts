@@ -327,7 +327,7 @@ const plantReminderSchema = new Schema<IPlantReminder>(
         plantId: { type: String, required: true, index: true },
         userId: { type: String, required: true, index: true },
         actionType: { type: String, required: true, enum: ['water', 'fertilize'] },
-        intervalDays: { type: Number, required: true, min: 1, max: 365 },
+        intervalDays: { type: Number, required: true, min: 0.0006, max: 365 },
         notifyTime: { type: String, match: /^([01]\d|2[0-3]):[0-5]\d$/ },
         nextDueAt: { type: Date, required: true },
         snoozedUntil: { type: Date },

@@ -14,6 +14,9 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 import { daysAgo } from '../../core/utils/time';
 
+/** Round to 6 decimal places so float-comparisons in `[ngValue]` are stable. */
+const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
+
 @Component({
   selector: 'app-plant-detail',
   imports: [FormsModule, RouterLink, PlantEditModalComponent, PlantNoteModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
@@ -205,15 +208,17 @@ import { daysAgo } from '../../core/utils/time';
                       <select [ngModel]="row.reminder!.intervalDays"
                               (ngModelChange)="changeReminderInterval(row.type, $event)"
                               class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors">
-                        @for (d of intervalOptions; track d) {
-                          <option [ngValue]="d">{{ t('reminders.dayCount', { n: d }) }}</option>
+                        @for (opt of intervalOptions; track opt.days) {
+                          <option [ngValue]="opt.days">{{ t(opt.labelKey, { n: opt.n }) }}</option>
                         }
                       </select>
-                      <span class="text-[11px] text-gray-400">{{ t('reminders.atTime') }}</span>
-                      <input type="time"
-                             [ngModel]="row.reminder!.notifyTime ?? ''"
-                             (ngModelChange)="changeReminderTime(row.type, $event)"
-                             class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors" />
+                      @if (row.reminder!.intervalDays >= 1) {
+                        <span class="text-[11px] text-gray-400">{{ t('reminders.atTime') }}</span>
+                        <input type="time"
+                               [ngModel]="row.reminder!.notifyTime ?? ''"
+                               (ngModelChange)="changeReminderTime(row.type, $event)"
+                               class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors" />
+                      }
                       @if (isReminderDue(row.reminder)) {
                         <button (click)="onActionClick(row.type)"
                                 class="ml-auto text-[11px] font-medium bg-gw-green text-white px-3 py-1 rounded-md hover:bg-gw-green-dark transition-colors">
@@ -338,7 +343,21 @@ export class PlantDetailComponent implements OnInit {
   tier = inject(TierService);
 
   reminders = signal<PlantReminder[]>([]);
-  readonly intervalOptions = [1, 2, 3, 5, 7, 10, 14, 21, 30];
+  // Each option is stored as a fractional number of days so the backend math
+  // (intervalDays * 24h) works uniformly. Sub-day options are mostly for
+  // testing push notifications; day-scale options are the real product.
+  readonly intervalOptions: ReadonlyArray<{ days: number; labelKey: string; n: number }> = [
+    { days: round6(10 / 1440), labelKey: 'reminders.minuteCount', n: 10 },
+    { days: round6(30 / 1440), labelKey: 'reminders.minuteCount', n: 30 },
+    { days: round6(1 / 24),    labelKey: 'reminders.hourCount',   n: 1 },
+    { days: 1,                 labelKey: 'reminders.dayCount',    n: 1 },
+    { days: 2,                 labelKey: 'reminders.dayCount',    n: 2 },
+    { days: 3,                 labelKey: 'reminders.dayCount',    n: 3 },
+    { days: 5,                 labelKey: 'reminders.dayCount',    n: 5 },
+    { days: 7,                 labelKey: 'reminders.dayCount',    n: 7 },
+    { days: 14,                labelKey: 'reminders.dayCount',    n: 14 },
+    { days: 30,                labelKey: 'reminders.dayCount',    n: 30 },
+  ];
 
   waterReminder = computed(() => this.reminders().find(r => r.actionType === 'water') ?? null);
   fertilizeReminder = computed(() => this.reminders().find(r => r.actionType === 'fertilize') ?? null);

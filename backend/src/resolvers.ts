@@ -829,7 +829,8 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             const plant = await Plant.findOne({ _id: plantId, userId: ctx.user.userId });
             if (!plant) throw new Error('Plant not found');
-            if (intervalDays < 1 || intervalDays > 365) throw new Error('Interval must be between 1 and 365 days');
+            // 0.0006 days ≈ 1 minute — short intervals are useful for testing push notifications.
+            if (intervalDays < 0.0006 || intervalDays > 365) throw new Error('Interval must be between 1 minute and 365 days');
             if (notifyTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(notifyTime)) {
                 throw new Error('notifyTime must be in HH:mm 24-hour format');
             }
