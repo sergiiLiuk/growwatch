@@ -31,6 +31,29 @@ export interface PushPayload {
 }
 
 /**
+ * Wraps a flat PushPayload into the envelope Angular's ngsw-worker.js expects.
+ * ngsw inspects the `notification` field and calls showNotification with it.
+ * Click routing uses the `data.onActionClick.default` block.
+ */
+function toNgswEnvelope(payload: PushPayload): Record<string, unknown> {
+    return {
+        notification: {
+            title: payload.title,
+            body: payload.body,
+            icon: payload.icon ?? '/icons/icon-192x192.png',
+            badge: payload.badge ?? '/icons/icon-72x72.png',
+            tag: payload.tag,
+            data: {
+                ...(payload.data ?? {}),
+                onActionClick: payload.url ? {
+                    default: { operation: 'openWindow', url: payload.url },
+                } : undefined,
+            },
+        },
+    };
+}
+
+/**
  * Sends a push to every subscription a user has. Subscriptions that fail with
  * 404 or 410 (Gone) are removed since the browser has unsubscribed.
  */
@@ -40,7 +63,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
     const subs = await PushSubscription.find({ userId }).lean();
     if (subs.length === 0) return { sent: 0, pruned: 0 };
 
-    const json = JSON.stringify(payload);
+    const json = JSON.stringify(toNgswEnvelope(payload));
     let sent = 0;
     let pruned = 0;
 
