@@ -10,7 +10,7 @@ import { StubLlmProvider } from './services/smartTip';
 import { ClaudeLlmProvider } from './services/claudeLlmProvider';
 import { startSmartTipScheduler } from './services/smartTipScheduler';
 import { configurePush } from './services/pushSender';
-import { startReminderScheduler } from './services/reminderScheduler';
+import { startReminderScheduler, maybeTickFromRequest } from './services/reminderScheduler';
 import { ESP32Message } from './types';
 import { connectDB } from './db';
 import { User, Plant, HourlySensorData, UserSettings } from './models';
@@ -209,6 +209,10 @@ async function startServer() {
             if (!authHeader?.startsWith('Bearer ')) return { user: null };
             try {
                 const user = verifyToken(authHeader.slice(7));
+                // Authenticated traffic also drives the reminder scheduler — keeps
+                // pushes flowing on hosts that sleep the dyno between requests.
+                // Internally debounced to once per 10 min; effectively free.
+                maybeTickFromRequest();
                 return { user };
             } catch {
                 return { user: null };
