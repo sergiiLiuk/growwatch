@@ -863,6 +863,14 @@ export const resolvers = {
             ).lean();
             return mapReminder(doc);
         },
+        disableAllReminders: async (_: any, __: unknown, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const result = await PlantReminder.updateMany(
+                { userId: ctx.user.userId, enabled: true },
+                { $set: { enabled: false } },
+            );
+            return result.modifiedCount ?? 0;
+        },
         removePlantReminder: async (_: any, { id }: { id: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             const result = await PlantReminder.findOneAndDelete({ _id: id, userId: ctx.user.userId });

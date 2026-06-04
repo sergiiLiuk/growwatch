@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TierService } from '../../core/services/tier.service';
@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { STORAGE_KEYS } from '../../core/constants/storage-keys';
+import { ReminderService } from '../../core/services/reminder.service';
 
 @Component({
   selector: 'app-settings',
@@ -413,6 +414,27 @@ import { STORAGE_KEYS } from '../../core/constants/storage-keys';
         </div>
       </div>
 
+      @if (disableConfirmOpen()) {
+        <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30 px-4">
+          <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 pb-24 sm:pb-5 max-h-[85vh] overflow-y-auto">
+            <h2 class="text-[15px] font-medium text-gray-800 mb-1">{{ t('settings.disablePushTitle') }}</h2>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-5">{{ t('settings.disablePushBody') }}</p>
+            <div class="flex gap-2 justify-end">
+              <button type="button" (click)="cancelDisablePush()"
+                      [disabled]="disabling()"
+                      class="text-[13px] font-medium text-gray-600 border-[0.5px] border-gray-200 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-40">
+                {{ t('settings.cancel') }}
+              </button>
+              <button type="button" (click)="confirmDisablePush()"
+                      [disabled]="disabling()"
+                      class="text-[13px] font-medium bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors disabled:opacity-40">
+                {{ disabling() ? t('settings.disabling') : t('settings.disablePushConfirm') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
     </div>
   `,
 })
@@ -422,13 +444,37 @@ export class SettingsComponent implements OnInit {
   settings = inject(UserSettingsService);
   tier = inject(TierService);
   push = inject(PushService);
+  private reminders = inject(ReminderService);
+
+  disableConfirmOpen = signal(false);
+  disabling = signal(false);
 
   async togglePush() {
     if (this.push.enabled()) {
-      await this.push.unsubscribe();
+      // Turning push off also disables reminders — confirm first.
+      this.disableConfirmOpen.set(true);
     } else {
       await this.push.subscribe();
     }
+  }
+
+  async confirmDisablePush() {
+    this.disabling.set(true);
+    try {
+      await this.push.unsubscribe();
+      await new Promise<void>((resolve, reject) => {
+        this.reminders.disableAll().subscribe({ next: () => resolve(), error: reject });
+      });
+    } catch (err) {
+      console.error('Failed to disable push / reset reminders:', err);
+    } finally {
+      this.disabling.set(false);
+      this.disableConfirmOpen.set(false);
+    }
+  }
+
+  cancelDisablePush() {
+    this.disableConfirmOpen.set(false);
   }
   private readonly STORAGE_KEY = STORAGE_KEYS.SETTINGS;
 

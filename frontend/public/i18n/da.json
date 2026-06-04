@@ -11,6 +11,11 @@
   "settings": {
     "title": "Indstillinger",
     "subtitle": "Notifikationer og sensor",
+    "disablePushTitle": "Slå push-notifikationer fra?",
+    "disablePushBody": "Det deaktiverer også alle aktive påmindelser på dine planter. Du skal aktivere dem hver for sig igen, hvis du slår push til senere.",
+    "disablePushConfirm": "Slå fra og nulstil påmindelser",
+    "disabling": "Slår fra…",
+    "cancel": "Annuller",
     "notifications": "Notifikationer",
     "dailyDigest": "Daglig oversigt",
     "dailyDigestDescription": "Aftensammendrag af dit drivhus",

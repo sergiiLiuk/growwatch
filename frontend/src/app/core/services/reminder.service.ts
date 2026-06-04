@@ -57,6 +57,8 @@ const SNOOZE_REMINDER = gql`
   }
 `;
 
+const DISABLE_ALL_REMINDERS = gql`mutation DisableAllReminders { disableAllReminders }`;
+
 @Injectable({ providedIn: 'root' })
 export class ReminderService {
   private client: ApolloClient;
@@ -96,6 +98,15 @@ export class ReminderService {
         mutation: SNOOZE_REMINDER,
         variables: { id, hours },
       }).then(r => mapReminder(r.data!.snoozeReminder))
+    );
+  }
+
+  /** Disable every enabled reminder for the current user. Returns the count modified. */
+  disableAll(): Observable<number> {
+    return defer(() =>
+      this.client.mutate<{ disableAllReminders: number }>({
+        mutation: DISABLE_ALL_REMINDERS,
+      }).then(r => r.data?.disableAllReminders ?? 0)
     );
   }
 

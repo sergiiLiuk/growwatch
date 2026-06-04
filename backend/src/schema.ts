@@ -231,6 +231,7 @@ export const typeDefs = gql`
     adminUpdateUser(userId: String!, email: String, role: String, tier: String): User!
     adminDeleteUser(userId: String!): Boolean!
     setPlantReminder(plantId: String!, actionType: ReminderActionType!, intervalDays: Float!, enabled: Boolean!, notifyTime: String): PlantReminder!
+    disableAllReminders: Int!
     removePlantReminder(id: String!): Boolean!
     snoozeReminder(id: String!, hours: Int): PlantReminder!
     subscribeToPush(subscription: PushSubscriptionInput!): Boolean!
