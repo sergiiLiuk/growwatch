@@ -2,7 +2,6 @@ import { Component, signal, inject, computed, HostListener } from '@angular/core
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
-import { PlantActionService, PlantActionType } from '../../core/services/plant-action.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { QuickLogSheetComponent } from './quick-log-sheet.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
@@ -201,23 +200,9 @@ import dayjs from 'dayjs';
       </div>
     }
 
-    <!-- Quick log sheet -->
+    <!-- Quick log sheet (handles its own inline success banner + undo) -->
     <app-quick-log-sheet [open]="quickLogOpen()" [plants]="plants()"
-                         (closed)="quickLogOpen.set(false)"
-                         (logged)="onQuickLogged($event)" />
-
-    <!-- Quick log success toast -->
-    @if (toast(); as t) {
-      <div class="fixed inset-x-0 bottom-24 sm:bottom-6 z-[70] flex justify-center px-4 pointer-events-none" *transloco="let tr">
-        <div class="bg-gray-900 text-white text-[13px] rounded-xl shadow-lg px-4 py-3 flex items-center gap-3 pointer-events-auto">
-          <span>✓ {{ tr('quickLog.toast', { verb: tr('plantDetail.action.' + t.type), n: t.actionIds.length }) }}</span>
-          <button (click)="undoQuickLog()"
-                  class="text-gw-green-light font-medium hover:underline">
-            {{ tr('quickLog.undo') }}
-          </button>
-        </div>
-      </div>
-    }
+                         (closed)="quickLogOpen.set(false)" />
 
     <!-- Edit plant modal -->
     <app-plant-edit-modal [plant]="editingPlant()" (saved)="cancelEdit()" (cancelled)="cancelEdit()" />
@@ -253,7 +238,6 @@ import dayjs from 'dayjs';
 })
 export class PlantsComponent {
   plantService = inject(PlantService);
-  private actionService = inject(PlantActionService);
   private router = inject(Router);
   plants = this.plantService.plants;
   plantsLoading = this.plantService.plantsLoading;
@@ -262,23 +246,6 @@ export class PlantsComponent {
 
   // Quick log batch
   quickLogOpen = signal(false);
-  toast = signal<{ type: PlantActionType; actionIds: string[] } | null>(null);
-  private toastTimer?: ReturnType<typeof setTimeout>;
-
-  onQuickLogged(e: { actionIds: string[]; type: PlantActionType }) {
-    this.toast.set({ type: e.type, actionIds: e.actionIds });
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => this.toast.set(null), 5000);
-  }
-
-  undoQuickLog() {
-    const t = this.toast();
-    if (!t) return;
-    // Fire all removes in parallel; we don't await — undo is best-effort.
-    t.actionIds.forEach(id => this.actionService.remove(id).subscribe());
-    clearTimeout(this.toastTimer);
-    this.toast.set(null);
-  }
 
   getEmoji(type: PlantType): string {
     return PLANT_TYPE_STYLE[type]?.emoji ?? '🌿';

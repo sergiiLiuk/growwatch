@@ -19,6 +19,14 @@ import { PLANT_ACTIONS, PLANT_ACTION_META } from '../../core/constants/plant-act
 
           <h2 class="text-[15px] font-medium text-gray-800 mb-1">{{ t('quickLog.title') }}</h2>
 
+          @if (lastLogged(); as last) {
+            <div class="mb-3 flex items-center gap-3 bg-gw-green-light/40 border border-gw-green-light text-gw-green-dark rounded-xl px-3 py-2 text-[12px]">
+              <span class="flex-1">✓ {{ t('quickLog.toast', { verb: t(actionMetaFor(last.type).labelKey), n: last.actionIds.length }) }}</span>
+              <button (click)="undoLast()"
+                      class="text-[11px] font-medium hover:underline">{{ t('quickLog.undo') }}</button>
+            </div>
+          }
+
           @if (!selectedAction()) {
             <!-- Step 1: pick action -->
             <p class="text-[12px] text-gray-500 mb-4">{{ t('quickLog.pickAction') }}</p>
@@ -108,6 +116,26 @@ export class QuickLogSheetComponent {
   noteText = '';
   saving = signal(false);
 
+  /** Most recent batch — drives the inline success banner with Undo. */
+  lastLogged = signal<{ type: PlantActionType; actionIds: string[] } | null>(null);
+  private lastLoggedTimer?: ReturnType<typeof setTimeout>;
+
+  actionMetaFor(type: PlantActionType) {
+    return PLANT_ACTION_META[type];
+  }
+
+  undoLast() {
+    const last = this.lastLogged();
+    if (!last) return;
+    last.actionIds.forEach(id => this.actionService.remove(id).subscribe());
+    this.clearLastLogged();
+  }
+
+  private clearLastLogged() {
+    clearTimeout(this.lastLoggedTimer);
+    this.lastLogged.set(null);
+  }
+
   /** Only monitored, non-archived plants are batch-targetable. */
   availablePlants = computed(() =>
     this.plants().filter(p => !p.archived && p.monitored)
@@ -128,6 +156,7 @@ export class QuickLogSheetComponent {
         this.selectedIds.set(new Set(this.availablePlants().map(p => p.id)));
         this.noteText = '';
         this.saving.set(false);
+        this.clearLastLogged();
       }
     });
   }
@@ -181,12 +210,16 @@ export class QuickLogSheetComponent {
     forkJoin(ids.map(id => this.actionService.log(id, type, note))).subscribe({
       next: (results: PlantAction[]) => {
         this.saving.set(false);
-        this.logged.emit({
-          verb: type,
-          actionIds: results.map(r => r.id),
-          type,
-        });
-        this.close();
+        const actionIds = results.map(r => r.id);
+        this.logged.emit({ verb: type, actionIds, type });
+        // Keep the sheet open. Jump back to the action picker but preserve the
+        // plant selection so the user can do another batch (e.g. water → fertilize
+        // for the same set). Inline banner with Undo auto-dismisses in 5s.
+        this.lastLogged.set({ type, actionIds });
+        this.selectedAction.set(null);
+        this.noteText = '';
+        clearTimeout(this.lastLoggedTimer);
+        this.lastLoggedTimer = setTimeout(() => this.lastLogged.set(null), 5000);
       },
       error: err => {
         console.error('Quick-log failed:', err);
