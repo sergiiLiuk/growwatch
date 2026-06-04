@@ -16,9 +16,6 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 import { daysAgo } from '../../core/utils/time';
 
-/** Round to 6 decimal places so float-comparisons in `[ngValue]` are stable. */
-const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
-
 @Component({
   selector: 'app-plant-detail',
   imports: [FormsModule, RouterLink, PlantEditModalComponent, PlantNoteModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
@@ -49,6 +46,11 @@ const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
                   <app-icon [name]="plant()!.monitored ? 'pause' : 'play'" class="w-[14px] h-[14px]" />
                   {{ plant()!.monitored ? t('plants.pauseMonitoring') : t('plants.resumeMonitoring') }}
+                </button>
+                <button (click)="startDelete($event)"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gw-red hover:bg-gw-red-light transition-colors">
+                  <app-icon name="trash-simple" class="w-[14px] h-[14px]" />
+                  {{ t('plants.removePlant') }}
                 </button>
               </div>
             }
@@ -216,13 +218,11 @@ const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
                           <option [ngValue]="opt.days">{{ t(opt.labelKey, { n: opt.n }) }}</option>
                         }
                       </select>
-                      @if (row.reminder!.intervalDays >= 1) {
-                        <span class="text-[11px] text-gray-400">{{ t('reminders.atTime') }}</span>
-                        <input type="time"
-                               [ngModel]="row.reminder!.notifyTime ?? ''"
-                               (ngModelChange)="changeReminderTime(row.type, $event)"
-                               class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors" />
-                      }
+                      <span class="text-[11px] text-gray-400">{{ t('reminders.atTime') }}</span>
+                      <input type="time"
+                             [ngModel]="row.reminder!.notifyTime ?? ''"
+                             (ngModelChange)="changeReminderTime(row.type, $event)"
+                             class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors" />
                       @if (isReminderDue(row.reminder)) {
                         <button (click)="onActionClick(row.type)"
                                 class="ml-auto text-[11px] font-medium bg-gw-green text-white px-3 py-1 rounded-md hover:bg-gw-green-dark transition-colors">
@@ -342,6 +342,34 @@ const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
     <app-plant-note-modal [open]="noteModalOpen()"
                           (saved)="onNoteSaved($event)"
                           (cancelled)="noteModalOpen.set(false)" />
+
+    <!-- Delete confirmation -->
+    @if (deleteOpen() && plant(); as p) {
+      <div class="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center px-4"
+           (click)="cancelDelete()" *transloco="let t">
+        <div class="w-full max-w-sm bg-white rounded-xl border-[0.5px] border-gray-200 p-6 text-center"
+             (click)="$event.stopPropagation()">
+          <div class="w-14 h-14 bg-gw-red-light rounded-full flex items-center justify-center mx-auto mb-4">
+            <app-icon name="trash-simple" class="w-[22px] h-[22px] text-gw-red" />
+          </div>
+          <h2 class="text-[16px] font-medium text-gray-900 mb-2">{{ t('plants.removeTitle', { name: p.name }) }}</h2>
+          <p class="text-[13px] text-gray-500 mb-6 leading-relaxed">
+            {{ t('plants.removeBody', { name: p.name }) }}
+          </p>
+          <div class="flex gap-3">
+            <button (click)="cancelDelete()"
+                    class="flex-1 py-3 text-[13px] text-gray-700 bg-white border-[0.5px] border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+              {{ t('plants.keepIt') }}
+            </button>
+            <button (click)="doDelete()"
+                    [disabled]="deleting()"
+                    class="flex-1 py-3 text-[13px] text-white bg-gw-red rounded-xl hover:bg-gw-red-dark disabled:opacity-40 transition-colors font-medium">
+              {{ deleting() ? t('plants.removing') : t('common.remove') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class PlantDetailComponent implements OnInit {
@@ -355,20 +383,14 @@ export class PlantDetailComponent implements OnInit {
   tier = inject(TierService);
 
   reminders = signal<PlantReminder[]>([]);
-  // Each option is stored as a fractional number of days so the backend math
-  // (intervalDays * 24h) works uniformly. Sub-day options are mostly for
-  // testing push notifications; day-scale options are the real product.
   readonly intervalOptions: ReadonlyArray<{ days: number; labelKey: string; n: number }> = [
-    { days: round6(10 / 1440), labelKey: 'reminders.minuteCount', n: 10 },
-    { days: round6(30 / 1440), labelKey: 'reminders.minuteCount', n: 30 },
-    { days: round6(1 / 24),    labelKey: 'reminders.hourCount',   n: 1 },
-    { days: 1,                 labelKey: 'reminders.dayCount',    n: 1 },
-    { days: 2,                 labelKey: 'reminders.dayCount',    n: 2 },
-    { days: 3,                 labelKey: 'reminders.dayCount',    n: 3 },
-    { days: 5,                 labelKey: 'reminders.dayCount',    n: 5 },
-    { days: 7,                 labelKey: 'reminders.dayCount',    n: 7 },
-    { days: 14,                labelKey: 'reminders.dayCount',    n: 14 },
-    { days: 30,                labelKey: 'reminders.dayCount',    n: 30 },
+    { days: 1,  labelKey: 'reminders.dayCount', n: 1 },
+    { days: 2,  labelKey: 'reminders.dayCount', n: 2 },
+    { days: 3,  labelKey: 'reminders.dayCount', n: 3 },
+    { days: 5,  labelKey: 'reminders.dayCount', n: 5 },
+    { days: 7,  labelKey: 'reminders.dayCount', n: 7 },
+    { days: 14, labelKey: 'reminders.dayCount', n: 14 },
+    { days: 30, labelKey: 'reminders.dayCount', n: 30 },
   ];
 
   waterReminder = computed(() => this.reminders().find(r => r.actionType === 'water') ?? null);
@@ -427,6 +449,38 @@ export class PlantDetailComponent implements OnInit {
   }
 
   back() { this.router.navigate(['/plants']); }
+
+  // ── Delete plant ──────────────────────────────────────────────────────────
+  deleteOpen = signal(false);
+  deleting = signal(false);
+
+  startDelete(e: Event) {
+    e.stopPropagation();
+    this.menuOpen.set(false);
+    this.deleteOpen.set(true);
+  }
+
+  cancelDelete() {
+    if (this.deleting()) return;
+    this.deleteOpen.set(false);
+  }
+
+  doDelete() {
+    const p = this.plant();
+    if (!p) return;
+    this.deleting.set(true);
+    this.plantService.remove(p.id).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.deleteOpen.set(false);
+        this.router.navigate(['/plants']);
+      },
+      error: err => {
+        console.error('Failed to remove plant:', err);
+        this.deleting.set(false);
+      },
+    });
+  }
 
   getEmoji(type: PlantType): string {
     return PLANT_TYPE_STYLE[type]?.emoji ?? '🌿';

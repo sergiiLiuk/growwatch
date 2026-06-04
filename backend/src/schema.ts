@@ -165,7 +165,7 @@ export const typeDefs = gql`
     id: String!
     plantId: String!
     actionType: ReminderActionType!
-    intervalDays: Float!
+    intervalDays: Int!
     notifyTime: String
     nextDueAt: String!
     snoozedUntil: String
@@ -230,7 +230,7 @@ export const typeDefs = gql`
     adminCreateUser(email: String!, password: String!, role: String!, tier: String!): User!
     adminUpdateUser(userId: String!, email: String, role: String, tier: String): User!
     adminDeleteUser(userId: String!): Boolean!
-    setPlantReminder(plantId: String!, actionType: ReminderActionType!, intervalDays: Float!, enabled: Boolean!, notifyTime: String): PlantReminder!
+    setPlantReminder(plantId: String!, actionType: ReminderActionType!, intervalDays: Int!, enabled: Boolean!, notifyTime: String): PlantReminder!
     disableAllReminders: Int!
     removePlantReminder(id: String!): Boolean!
     snoozeReminder(id: String!, hours: Int): PlantReminder!

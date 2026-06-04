@@ -44,7 +44,7 @@ const REMINDERS_QUERY = gql`
 `;
 
 const SET_REMINDER = gql`
-  mutation SetPlantReminder($plantId: String!, $actionType: ReminderActionType!, $intervalDays: Float!, $enabled: Boolean!, $notifyTime: String) {
+  mutation SetPlantReminder($plantId: String!, $actionType: ReminderActionType!, $intervalDays: Int!, $enabled: Boolean!, $notifyTime: String) {
     setPlantReminder(plantId: $plantId, actionType: $actionType, intervalDays: $intervalDays, enabled: $enabled, notifyTime: $notifyTime) { ${REMINDER_FIELDS} }
   }
 `;

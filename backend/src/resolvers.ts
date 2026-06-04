@@ -344,11 +344,15 @@ function mapBriefing(doc: any) {
 }
 
 function mapReminder(doc: any) {
+    // Legacy testing rows may have fractional intervalDays (sub-day intervals
+    // were briefly supported). Coerce to a whole number ≥ 1 so the GraphQL
+    // Int! return type doesn't reject the response.
+    const intervalDays = Math.max(1, Math.round(Number(doc.intervalDays) || 1));
     return {
         id: doc._id.toString(),
         plantId: doc.plantId,
         actionType: doc.actionType,
-        intervalDays: doc.intervalDays,
+        intervalDays,
         notifyTime: doc.notifyTime ?? null,
         nextDueAt: doc.nextDueAt instanceof Date ? doc.nextDueAt.toISOString() : String(doc.nextDueAt),
         snoozedUntil: doc.snoozedUntil instanceof Date ? doc.snoozedUntil.toISOString() : (doc.snoozedUntil ?? null),
@@ -832,8 +836,9 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             const plant = await Plant.findOne({ _id: plantId, userId: ctx.user.userId });
             if (!plant) throw new Error('Plant not found');
-            // 0.0006 days ≈ 1 minute — short intervals are useful for testing push notifications.
-            if (intervalDays < 0.0006 || intervalDays > 365) throw new Error('Interval must be between 1 minute and 365 days');
+            if (!Number.isInteger(intervalDays) || intervalDays < 1 || intervalDays > 365) {
+                throw new Error('Interval must be a whole number between 1 and 365 days');
+            }
             if (notifyTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(notifyTime)) {
                 throw new Error('notifyTime must be in HH:mm 24-hour format');
             }

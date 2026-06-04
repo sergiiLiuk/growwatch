@@ -180,8 +180,6 @@
     "off": "Slået fra",
     "every": "Hver",
     "atTime": "kl.",
-    "minuteCount": "{{ n }} min",
-    "hourCount": "{{ n }} time",
     "dayCount": "{{ n }} dage",
     "dueNow": "Skal gøres nu",
     "dueToday": "Skal gøres i dag",
