@@ -185,6 +185,25 @@ async function startServer() {
         res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
 
+    // ─── External cron ping ──────────────────────────────────────────────────
+    // External cron (cron-job.org etc.) hits this every ~10 min to wake the
+    // dyno and drive the reminder scheduler. Requires CRON_SECRET to match.
+    // GET so it's trivial to set up in any cron service.
+    app.get('/api/cron/tick', (req: Request, res: Response) => {
+        const expected = process.env.CRON_SECRET;
+        if (!expected) {
+            res.status(503).json({ error: 'CRON_SECRET not configured' });
+            return;
+        }
+        const supplied = req.header('x-cron-secret') ?? req.query.secret;
+        if (supplied !== expected) {
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+        maybeTickFromRequest();
+        res.json({ status: 'ok', triggered: true });
+    });
+
     // ─── Manual hourly save (testing only) ───────────────────────────────────
     app.post('/api/save-hourly', async (_req: Request, res: Response) => {
         try {
