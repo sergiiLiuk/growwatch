@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
 import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken } from './models';
+import type { EmailLocale } from './services/emailSender';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
 import { signToken, verifyPassword, hashPassword, JwtPayload } from './auth';
@@ -580,7 +581,9 @@ export const resolvers = {
             await PasswordResetToken.create({ userId, tokenHash, expiresAt });
             const baseUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
             const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
-            await sendPasswordResetEmail(trimmedEmail, resetUrl);
+            const settings = await UserSettings.findOne({ userId }).lean();
+            const locale: EmailLocale = settings?.locale === 'en' ? 'en' : 'da';
+            await sendPasswordResetEmail(trimmedEmail, resetUrl, locale);
             return true;
         },
         resetPassword: async (_: any, { token, newPassword }: { token: string; newPassword: string }) => {
