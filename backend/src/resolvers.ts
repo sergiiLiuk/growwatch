@@ -679,7 +679,7 @@ export const resolvers = {
             const doc = await PlantAction.create({ plantId, userId: ctx.user.userId, type, note: note ?? undefined });
 
             // If this action matches a reminder, reset its timer. "Mark done."
-            if (type === 'water' || type === 'fertilize') {
+            if (type === 'water' || type === 'fertilize' || type === 'note') {
                 const reminder = await PlantReminder.findOne({
                     plantId, userId: ctx.user.userId, actionType: type, enabled: true,
                 });

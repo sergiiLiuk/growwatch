@@ -361,10 +361,12 @@ export class PlantDetailComponent implements OnInit {
 
   waterReminder = computed(() => this.reminders().find(r => r.actionType === 'water') ?? null);
   fertilizeReminder = computed(() => this.reminders().find(r => r.actionType === 'fertilize') ?? null);
+  noteReminder = computed(() => this.reminders().find(r => r.actionType === 'note') ?? null);
 
   reminderRows = computed(() => [
     { type: 'water'     as ReminderActionType, emoji: '💧', labelKey: 'plantDetail.action.water',     reminder: this.waterReminder() },
     { type: 'fertilize' as ReminderActionType, emoji: '🌱', labelKey: 'plantDetail.action.fertilize', reminder: this.fertilizeReminder() },
+    { type: 'note'      as ReminderActionType, emoji: '📝', labelKey: 'plantDetail.action.note',      reminder: this.noteReminder() },
   ]);
 
   plant = computed(() => {
@@ -536,7 +538,7 @@ export class PlantDetailComponent implements OnInit {
     const p = this.plant();
     if (!p) return;
     const existing = this.reminders().find(r => r.actionType === type);
-    const interval = existing?.intervalDays ?? (type === 'water' ? 3 : 14);
+    const interval = existing?.intervalDays ?? (type === 'water' ? 3 : type === 'fertilize' ? 14 : 7);
     const enabled = !(existing?.enabled ?? false);
     this.persistReminder(p, type, interval, enabled, existing?.notifyTime ?? null);
   }

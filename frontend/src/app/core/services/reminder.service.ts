@@ -3,7 +3,7 @@ import { ApolloClient, gql } from '@apollo/client/core';
 import { Observable, defer } from 'rxjs';
 import { GraphQLClientService } from './graphql-client.service';
 
-export type ReminderActionType = 'water' | 'fertilize';
+export type ReminderActionType = 'water' | 'fertilize' | 'note';
 
 export interface PlantReminder {
   id: string;

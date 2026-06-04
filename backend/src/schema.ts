@@ -158,6 +158,7 @@ export const typeDefs = gql`
   enum ReminderActionType {
     water
     fertilize
+    note
   }
 
   type PlantReminder {

@@ -4,9 +4,10 @@ import { sendPushToUser } from './pushSender';
 const NOTIFY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const REQUEST_TICK_MIN_INTERVAL_MS = 10 * 60 * 1000; // request-driven ticks debounced to 10 min
 
-const ACTION_TITLE: Record<string, { en: string; emoji: string }> = {
-    water:     { en: 'Time to water', emoji: '💧' },
-    fertilize: { en: 'Time to fertilize', emoji: '🌱' },
+const ACTION_COPY: Record<string, { titlePrefix: string; bodyVerb: string; emoji: string }> = {
+    water:     { titlePrefix: 'Time to water',     bodyVerb: 'water',                   emoji: '💧' },
+    fertilize: { titlePrefix: 'Time to fertilize', bodyVerb: 'fertilize',               emoji: '🌱' },
+    note:      { titlePrefix: 'Check-in due',      bodyVerb: 'check in on and log',     emoji: '📝' },
 };
 
 let lastTickAt = 0;
@@ -48,13 +49,13 @@ async function tick() {
         for (const r of due) {
             const plant: any = plantById.get(r.plantId);
             if (!plant) continue;
-            const meta = ACTION_TITLE[r.actionType];
-            if (!meta) continue;
+            const copy = ACTION_COPY[r.actionType];
+            if (!copy) continue;
 
             try {
                 const result = await sendPushToUser(r.userId, {
-                    title: `${meta.emoji} ${meta.en}: ${plant.name}`,
-                    body: `${plant.name} is due for ${r.actionType}. Tap to mark done.`,
+                    title: `${copy.emoji} ${copy.titlePrefix}: ${plant.name}`,
+                    body: `Time to ${copy.bodyVerb} ${plant.name}. Tap to open.`,
                     tag: `reminder-${r._id}`,
                     url: `/plants/${r.plantId}`,
                     data: { plantId: r.plantId, actionType: r.actionType, reminderId: (r as any)._id.toString() },
