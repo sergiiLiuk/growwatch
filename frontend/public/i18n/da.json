@@ -274,6 +274,21 @@
     "edit": "Rediger",
     "search": "Søg"
   },
+  "quickLog": {
+    "button": "Hurtig log",
+    "title": "Hurtig log",
+    "pickAction": "Vælg en handling",
+    "allSelectedHint": "Alle overvågede planter er valgt. Tryk for at fravælge.",
+    "selectAll": "Vælg alle",
+    "clear": "Ryd",
+    "logForOne": "Log {{ action }} for 1 plante",
+    "logForN": "Log {{ action }} for {{ n }} planter",
+    "logging": "Logger…",
+    "notePlaceholder": "Hvad observerede du?",
+    "noteHint": "Den samme note gemmes på hver valgt plante.",
+    "toast": "{{ verb }} logget for {{ n }} plante(r)",
+    "undo": "Fortryd"
+  },
   "auth": {
     "tagline": "Hold øje med din have, hvor du end er",
     "registerTagline": "Opret din gratis konto",

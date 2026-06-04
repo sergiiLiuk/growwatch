@@ -274,6 +274,21 @@
     "edit": "Edit",
     "search": "Search"
   },
+  "quickLog": {
+    "button": "Quick log",
+    "title": "Quick log",
+    "pickAction": "Pick an action",
+    "allSelectedHint": "All monitored plants selected. Tap to deselect.",
+    "selectAll": "Select all",
+    "clear": "Clear",
+    "logForOne": "Log {{ action }} for 1 plant",
+    "logForN": "Log {{ action }} for {{ n }} plants",
+    "logging": "Logging…",
+    "notePlaceholder": "What did you observe?",
+    "noteHint": "The same note is saved to each selected plant.",
+    "toast": "{{ verb }} logged for {{ n }} plant(s)",
+    "undo": "Undo"
+  },
   "auth": {
     "tagline": "Monitor your garden, anywhere",
     "registerTagline": "Create your free account",

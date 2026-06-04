@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PlantNoteModalComponent } from './plant-note-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
+import { PLANT_ACTION_META, PLANT_ACTIONS } from '../../core/constants/plant-actions';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -375,9 +376,9 @@ export class PlantDetailComponent implements OnInit {
   noteReminder = computed(() => this.reminders().find(r => r.actionType === 'note') ?? null);
 
   reminderRows = computed(() => [
-    { type: 'water'     as ReminderActionType, emoji: '💧', labelKey: 'plantDetail.action.water',     reminder: this.waterReminder() },
-    { type: 'fertilize' as ReminderActionType, emoji: '🌱', labelKey: 'plantDetail.action.fertilize', reminder: this.fertilizeReminder() },
-    { type: 'note'      as ReminderActionType, emoji: '📝', labelKey: 'plantDetail.action.note',      reminder: this.noteReminder() },
+    { type: 'water'     as ReminderActionType, emoji: PLANT_ACTION_META.water.emoji,     labelKey: PLANT_ACTION_META.water.labelKey,     reminder: this.waterReminder() },
+    { type: 'fertilize' as ReminderActionType, emoji: PLANT_ACTION_META.fertilize.emoji, labelKey: PLANT_ACTION_META.fertilize.labelKey, reminder: this.fertilizeReminder() },
+    { type: 'note'      as ReminderActionType, emoji: PLANT_ACTION_META.note.emoji,      labelKey: PLANT_ACTION_META.note.labelKey,      reminder: this.noteReminder() },
   ]);
 
   plant = computed(() => {
@@ -410,14 +411,7 @@ export class PlantDetailComponent implements OnInit {
       return this.transloco.translate('plantDetail.daysAgoShort', { n: days });
     };
     const mostRecent = acts[0]?.type;
-    return ([
-      { type: 'water'     as PlantActionType, emoji: '💧', labelKey: 'plantDetail.action.water',     activeClass: 'border-red-200 bg-red-50/60' },
-      { type: 'fertilize' as PlantActionType, emoji: '🌱', labelKey: 'plantDetail.action.fertilize', activeClass: 'border-gw-green-light bg-gw-green-light/30' },
-      { type: 'prune'     as PlantActionType, emoji: '✂️', labelKey: 'plantDetail.action.prune',     activeClass: 'border-pink-200 bg-pink-50/60' },
-      { type: 'harvest'   as PlantActionType, emoji: '🍅', labelKey: 'plantDetail.action.harvest',   activeClass: 'border-orange-200 bg-orange-50/60' },
-      { type: 'bloom'     as PlantActionType, emoji: '🌸', labelKey: 'plantDetail.action.bloom',     activeClass: 'border-rose-200 bg-rose-50/60' },
-      { type: 'note'      as PlantActionType, emoji: '📝', labelKey: 'plantDetail.action.note',      activeClass: 'border-amber-200 bg-amber-50/60' },
-    ]).map(b => ({
+    return PLANT_ACTIONS.map(b => ({
       ...b,
       subtitle: b.type === 'note' ? this.transloco.translate('plantDetail.action.add') : subtitle(b.type),
       highlighted: b.type === mostRecent,
@@ -611,30 +605,16 @@ export class PlantDetailComponent implements OnInit {
   // ── History rendering helpers ─────────────────────────────────────────────
 
   historyIconEmoji(type: PlantActionType): string {
-    return ({ water: '💧', fertilize: '🌱', prune: '✂️', harvest: '🍅', bloom: '🌸', note: '📝' } as const)[type];
+    return PLANT_ACTION_META[type].emoji;
   }
 
   historyIconBg(type: PlantActionType): string {
-    return ({
-      water: 'bg-red-50',
-      fertilize: 'bg-gw-green-light',
-      prune: 'bg-pink-50',
-      harvest: 'bg-orange-50',
-      bloom: 'bg-rose-50',
-      note: 'bg-amber-50',
-    } as const)[type];
+    return PLANT_ACTION_META[type].iconBg;
   }
 
   historyLabel(a: PlantAction): string {
     if (a.type === 'note') return a.note?.split('\n')[0] ?? this.transloco.translate('plantDetail.history.note');
-    const labelKey = ({
-      water: 'watered',
-      fertilize: 'fertilized',
-      prune: 'pruned',
-      harvest: 'harvested',
-      bloom: 'bloomed',
-    } as const)[a.type];
-    const base = this.transloco.translate(`plantDetail.history.${labelKey}`);
+    const base = this.transloco.translate(PLANT_ACTION_META[a.type].pastTenseKey!);
     return a.note ? `${base} — ${a.note.split('\n')[0]}` : base;
   }
 

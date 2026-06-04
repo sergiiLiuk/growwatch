@@ -2,7 +2,9 @@ import { Component, signal, inject, computed, HostListener } from '@angular/core
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
+import { PlantActionService, PlantActionType } from '../../core/services/plant-action.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
+import { QuickLogSheetComponent } from './quick-log-sheet.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
@@ -12,7 +14,7 @@ import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plants',
-  imports: [FormsModule, RouterLink, PlantEditModalComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, PlantEditModalComponent, QuickLogSheetComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -25,11 +27,19 @@ import dayjs from 'dayjs';
             @if (plants().length > 0) { · {{ t('plants.allMonitored') }} }
           </p>
         </div>
-        <button (click)="showForm.set(true)"
-                [disabled]="showForm()"
-                class="text-[13px] bg-white border-[0.5px] border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          {{ t('plants.addPlantButton') }}
-        </button>
+        <div class="flex items-center gap-2">
+          @if (plants().length > 0) {
+            <button (click)="quickLogOpen.set(true)"
+                    class="text-[13px] bg-gw-green text-white px-4 py-2 rounded-xl hover:bg-gw-green-dark transition-colors">
+              {{ t('quickLog.button') }}
+            </button>
+          }
+          <button (click)="showForm.set(true)"
+                  [disabled]="showForm()"
+                  class="text-[13px] bg-white border-[0.5px] border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            {{ t('plants.addPlantButton') }}
+          </button>
+        </div>
       </div>
 
       <!-- Empty state -->
@@ -191,6 +201,24 @@ import dayjs from 'dayjs';
       </div>
     }
 
+    <!-- Quick log sheet -->
+    <app-quick-log-sheet [open]="quickLogOpen()" [plants]="plants()"
+                         (closed)="quickLogOpen.set(false)"
+                         (logged)="onQuickLogged($event)" />
+
+    <!-- Quick log success toast -->
+    @if (toast(); as t) {
+      <div class="fixed inset-x-0 bottom-24 sm:bottom-6 z-[70] flex justify-center px-4 pointer-events-none" *transloco="let tr">
+        <div class="bg-gray-900 text-white text-[13px] rounded-xl shadow-lg px-4 py-3 flex items-center gap-3 pointer-events-auto">
+          <span>✓ {{ tr('quickLog.toast', { verb: tr('plantDetail.action.' + t.type), n: t.actionIds.length }) }}</span>
+          <button (click)="undoQuickLog()"
+                  class="text-gw-green-light font-medium hover:underline">
+            {{ tr('quickLog.undo') }}
+          </button>
+        </div>
+      </div>
+    }
+
     <!-- Edit plant modal -->
     <app-plant-edit-modal [plant]="editingPlant()" (saved)="cancelEdit()" (cancelled)="cancelEdit()" />
 
@@ -225,11 +253,32 @@ import dayjs from 'dayjs';
 })
 export class PlantsComponent {
   plantService = inject(PlantService);
+  private actionService = inject(PlantActionService);
   private router = inject(Router);
   plants = this.plantService.plants;
   plantsLoading = this.plantService.plantsLoading;
   archivedPlants = this.plantService.archivedPlants;
   showArchived = signal(false);
+
+  // Quick log batch
+  quickLogOpen = signal(false);
+  toast = signal<{ type: PlantActionType; actionIds: string[] } | null>(null);
+  private toastTimer?: ReturnType<typeof setTimeout>;
+
+  onQuickLogged(e: { actionIds: string[]; type: PlantActionType }) {
+    this.toast.set({ type: e.type, actionIds: e.actionIds });
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.toast.set(null), 5000);
+  }
+
+  undoQuickLog() {
+    const t = this.toast();
+    if (!t) return;
+    // Fire all removes in parallel; we don't await — undo is best-effort.
+    t.actionIds.forEach(id => this.actionService.remove(id).subscribe());
+    clearTimeout(this.toastTimer);
+    this.toast.set(null);
+  }
 
   getEmoji(type: PlantType): string {
     return PLANT_TYPE_STYLE[type]?.emoji ?? '🌿';
