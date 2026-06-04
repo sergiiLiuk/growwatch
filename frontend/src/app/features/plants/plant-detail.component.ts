@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
 import { PlantActionService, PlantAction, PlantActionType, SmartTip } from '../../core/services/plant-action.service';
 import { ReminderService, PlantReminder, ReminderActionType } from '../../core/services/reminder.service';
+import { PushService } from '../../core/services/push.service';
 import { TierService } from '../../core/services/tier.service';
 import { FormsModule } from '@angular/forms';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
@@ -177,7 +178,9 @@ const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
             </div>
           }
 
-          <!-- Reminders -->
+          <!-- Reminders — hidden when push is off, since reminders without
+               notifications are useless. Show a CTA pointing to Settings instead. -->
+          @if (push.enabled()) {
           <div class="mb-4">
             <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('reminders.title') }}</div>
             <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
@@ -235,6 +238,13 @@ const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
               }
             </div>
           </div>
+          } @else {
+            <a routerLink="/settings"
+               class="flex items-center gap-2 mb-4 rounded-xl bg-gw-green-light/30 px-3 py-2 hover:bg-gw-green-light/50 transition-colors">
+              <span class="text-[12px] text-gw-green-dark/80 flex-1">{{ t('reminders.enablePushHint') }}</span>
+              <span class="text-[11px] font-medium text-gw-green-dark">{{ t('reminders.openSettings') }}</span>
+            </a>
+          }
 
           <!-- Log action -->
           <div class="mb-4">
@@ -338,6 +348,7 @@ export class PlantDetailComponent implements OnInit {
   private router = inject(Router);
   private actions = inject(PlantActionService);
   private reminderService = inject(ReminderService);
+  push = inject(PushService);
   private transloco = inject(TranslocoService);
   plantService = inject(PlantService);
   tier = inject(TierService);

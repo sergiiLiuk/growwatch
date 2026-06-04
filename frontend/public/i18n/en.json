@@ -185,6 +185,8 @@
     "snoozedFor": "Snoozed for {{ hours }}h",
     "markDone": "Mark done",
     "snooze": "Snooze 1d",
+    "enablePushHint": "Turn on push notifications to use reminders.",
+    "openSettings": "Open Settings",
     "alertWaterTitle": "💧 Water {{ name }}",
     "alertWaterBody": "{{ name }} is due for watering.",
     "alertFertilizeTitle": "🌱 Fertilize {{ name }}",

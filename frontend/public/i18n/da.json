@@ -185,6 +185,8 @@
     "snoozedFor": "Udsat i {{ hours }}t",
     "markDone": "Markér færdig",
     "snooze": "Udsæt 1d",
+    "enablePushHint": "Aktivér push-notifikationer for at bruge påmindelser.",
+    "openSettings": "Åbn indstillinger",
     "alertWaterTitle": "💧 Vand {{ name }}",
     "alertWaterBody": "{{ name }} skal vandes.",
     "alertFertilizeTitle": "🌱 Gød {{ name }}",
