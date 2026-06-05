@@ -92,7 +92,6 @@ export class AlertsComponent implements OnInit, OnDestroy {
   private transloco = inject(TranslocoService);
   private dueReminders = signal<PlantReminder[]>([]);
   private sub?: Subscription;
-  private lastData: SensorData | null = null;
   private readonly STORAGE_KEY = STORAGE_KEYS.ALERTS;
   private localeKey = signal(this.transloco.getActiveLang());
 
@@ -196,15 +195,6 @@ export class AlertsComponent implements OnInit, OnDestroy {
       : this.transloco.translate('alerts.yourPlants');
     const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
 
-    // Light alerts
-    if (data.lightStatus?.status === 'TOO_LOW') {
-      this.addAlert('warn', t('alerts.lowLight'), t('alerts.lowLightMsg', { plants: plantNames }));
-    } else if (data.lightStatus?.status === 'TOO_HIGH') {
-      this.addAlert('warn', t('alerts.intenseLight'), t('alerts.intenseLightMsg', { plants: plantNames }));
-    } else if (data.lightStatus?.status === 'OPTIMAL' && this.lastData?.lightStatus?.status !== 'OPTIMAL') {
-      this.addAlert('info', t('alerts.greatLight'), t('alerts.greatLightMsg', { plants: plantNames }));
-    }
-
     // Humidity alerts
     if (data.humidity != null && data.humidity < 40) {
       this.addAlert('warn', t('alerts.lowHumidity'),
@@ -224,7 +214,6 @@ export class AlertsComponent implements OnInit, OnDestroy {
       }
     }
 
-    this.lastData = data;
   }
 
   ngOnInit() {

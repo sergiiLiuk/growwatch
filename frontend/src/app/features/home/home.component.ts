@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.component';
 import { ForecastStripComponent } from '../../shared/components/atoms/forecast-strip.component';
-import { SensorService, SensorData, HourlySensorData, MoodInfo, PLANT_LIGHT_RANGES } from '../../core/services/sensor.service';
+import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
@@ -69,9 +69,6 @@ interface ActivityEvent {
         <div class="rounded-2xl p-4 border border-transparent flex flex-col" [class]="moodBg()">
           <div class="flex items-start justify-between gap-2 mb-1">
             <span class="text-[10px] font-semibold tracking-widest uppercase opacity-50" [class]="moodIconColor()">{{ t('home.currentPhase') }}</span>
-            @if (co2Status() === 'warn') {
-              <span class="text-[10px] font-medium bg-gw-amber text-white px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">{{ t('home.co2Elevated') }}</span>
-            }
           </div>
           <div class="font-display text-[22px] font-bold leading-tight" [class]="moodIconColor()">{{ mood().label }}</div>
           @if (mood().mood === 'offline') {
@@ -80,9 +77,6 @@ interface ActivityEvent {
             <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ phaseCountdown() }}</div>
           } @else {
             <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
-          }
-          @if (showAlert()) {
-            <p class="text-[11px] mt-2 leading-relaxed opacity-80" [class]="moodIconColor()">{{ voiceMessage() }}</p>
           }
           <!-- Subtle divider at bottom matching mockup -->
           <div class="mt-3 h-px opacity-20 rounded-full" [class]="moodIconColor() === 'text-gw-green-dark' ? 'bg-gw-green-dark' : 'bg-gw-amber-dark'"></div>
@@ -180,7 +174,7 @@ interface ActivityEvent {
       @if (tier.canSeeSensors()) {
       <div class="mb-5">
         <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('home.sensors') }}</p>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 gap-3">
           <app-sensor-card
             [label]="t('home.temp')"
             [value]="tempValue()"
@@ -199,23 +193,6 @@ interface ActivityEvent {
             [rangeMin]="humidRange().min"
             [rangeMax]="humidRange().max"
             link="/humidity" />
-          <app-sensor-card
-            [label]="t('home.co2')"
-            [value]="co2Value()"
-            unit="ppm"
-            [status]="co2Status()"
-            [sparkValues]="co2Spark()"
-            [rangeMin]="co2Range().min"
-            [rangeMax]="co2Range().max" />
-          <app-sensor-card
-            [label]="t('home.light')"
-            [value]="lightValue()"
-            unit="lx"
-            [status]="lightStatus()"
-            [sparkValues]="lightSpark()"
-            [rangeMin]="lightRange().min"
-            [rangeMax]="lightRange().max"
-            link="/light" />
         </div>
       </div>
       }
@@ -349,14 +326,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ── Mood ─────────────────────────────────────────────────────────────────────
 
-  showAlert = computed(() => {
-    const d = this.latestData();
-    if (!d || this.monitoredPlants().length === 0) return false;
-    if (isNight(this.weather()?.sunrise, this.weather()?.sunset) || isDawnOrDusk(this.weather()?.sunrise, this.weather()?.sunset)) return false;
-    const s = d.lightStatus?.status;
-    return s === 'TOO_LOW' || s === 'TOO_HIGH';
-  });
-
   // If the latest hourly record is older than this, escalate from "waiting" → "offline"
   private readonly SILENT_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2h
 
@@ -414,48 +383,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     return 'text-gray-400'; // waiting
   });
 
-  voiceMessage = computed(() => {
-    this.localeKey();
-    const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
-    const d = this.latestData();
-    const plants = this.monitoredPlants();
-    const w = this.weather();
-    const names = plants.map(p => p.name).join(', ');
-    if (!d) return t('voice.waitingSensor');
-    const s = d.lightStatus?.status;
-    if (s === 'TOO_LOW') {
-      const sr = w?.sunrise; const ss = w?.sunset;
-      if (isNight(sr, ss)) return t('voice.lowLightNight');
-      if (isDawnOrDusk(sr, ss)) return new Date().getHours() < 12 ? t('voice.lowLightMorning') : t('voice.lowLightDropping');
-      if (w && w.cloudCover >= 65) return t('voice.heavyCloudCover', { cover: w.cloudCover, plants: names });
-      if (w && w.cloudCover >= 35) return t('voice.partialCloudCover', { plants: names });
-      return t('voice.lightBelowOptimal', { plants: names });
-    }
-    if (s === 'TOO_HIGH') return t('voice.lightExceedsOptimal', { plants: names });
-    if (s === 'OPTIMAL') {
-      return d.humidity != null && d.humidity < 50
-        ? t('voice.lightOptimalLowHum', { plants: names })
-        : t('voice.lightOptimal', { plants: names });
-    }
-    return t('voice.monitoring', { plants: names });
-  });
-
   // ── Sensor values ─────────────────────────────────────────────────────────────
 
   // Each value/status falls back to the most recent hourly average when no live reading is available.
   // The mood card (which depends on latestData being null to detect "waiting"/"silent") is unaffected.
-
-  lightValue = computed(() => {
-    const v = this.latestData()?.lightLevel ?? this.hourlyData()[0]?.avgLight;
-    return v != null ? Math.round(v).toString() : '—';
-  });
-
-  lightStatus = computed<'ok' | 'warn' | 'missing'>(() => {
-    const status = this.latestData()?.lightStatus?.status ?? this.hourlyData()[0]?.lightStatus?.status;
-    if (!status) return 'missing';
-    const suppressWarn = isNight(this.weather()?.sunrise, this.weather()?.sunset) || isDawnOrDusk(this.weather()?.sunrise, this.weather()?.sunset);
-    return this.monitoredPlants().length > 0 && status !== 'OPTIMAL' && !suppressWarn ? 'warn' : 'ok';
-  });
 
   tempValue = computed(() => {
     const t = this.latestData()?.temperature ?? this.hourlyData()[0]?.avgTemperature;
@@ -477,24 +408,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     return h < this.userSettings.effectiveHumidityMin() || h > this.userSettings.effectiveHumidityMax() ? 'warn' : 'ok';
   });
 
-  co2Value = computed(() => {
-    const c = this.latestData()?.co2 ?? this.hourlyData()[0]?.avgCo2;
-    return c != null ? Math.round(c).toString() : '—';
-  });
-  co2Status = computed<'ok' | 'warn' | 'missing'>(() => {
-    const c = this.latestData()?.co2 ?? this.hourlyData()[0]?.avgCo2;
-    if (c == null) return 'missing';
-    return c > 1500 ? 'warn' : 'ok';
-  });
-
   // ── Sparklines ────────────────────────────────────────────────────────────────
 
   private chronological = computed(() => [...this.hourlyData()].reverse());
 
-  lightSpark  = computed(() => this.chronological().map(h => h.avgLight).filter((v): v is number => v != null));
   tempSpark   = computed(() => this.chronological().map(h => h.avgTemperature).filter((v): v is number => v != null));
   humidSpark  = computed(() => this.chronological().map(h => h.avgHumidity).filter((v): v is number => v != null));
-  co2Spark    = computed(() => this.chronological().map(h => h.avgCo2).filter((v): v is number => v != null));
 
   // ── Range labels (calibration cue under sparkline — shows optimal range, not historical) ──
 
@@ -503,24 +422,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     min: `${this.userSettings.effectiveHumidityMin()}%`,
     max: `${this.userSettings.effectiveHumidityMax()}%`,
   }));
-  co2Range   = computed(() => ({ min: '0', max: '1500' }));
-
-  // Light range depends on which plants are being monitored. With multiple plants,
-  // we show the tightest intersection (highest min, lowest max) so all plants are satisfied.
-  // Falls back to the backend default (TOMATO) when nothing is monitored.
-  lightRange = computed(() => {
-    const ranges = this.monitoredPlants()
-      .map(p => PLANT_LIGHT_RANGES[p.type])
-      .filter((r): r is { min: number; max: number; label: string } => !!r);
-    if (ranges.length === 0) {
-      const def = PLANT_LIGHT_RANGES['TOMATO'];
-      return { min: def.min.toString(), max: def.max.toString() };
-    }
-    return {
-      min: Math.max(...ranges.map(r => r.min)).toString(),
-      max: Math.min(...ranges.map(r => r.max)).toString(),
-    };
-  });
 
   // ── Activity feed ─────────────────────────────────────────────────────────────
 
@@ -536,28 +437,19 @@ export class HomeComponent implements OnInit, OnDestroy {
       const curr = data[i];
       const time = this.fmtHour(curr.hour);
 
-      // CO₂ threshold crossings
-      if (prev.avgCo2 != null && curr.avgCo2 != null) {
-        if (prev.avgCo2 <= 1500 && curr.avgCo2 > 1500)
-          events.push({ time, label: this.transloco.translate('home.co2Rising'), ok: false });
-        else if (prev.avgCo2 > 1500 && curr.avgCo2 <= 1500)
-          events.push({ time, label: this.transloco.translate('home.co2Normal'), ok: true });
-      }
-
-      // Light on/off transitions
-      if (prev.avgLight != null && curr.avgLight != null) {
-        if (prev.avgLight < 50 && curr.avgLight >= 50)
-          events.push({ time, label: this.transloco.translate('home.lightCycleStarted'), ok: true });
-        else if (prev.avgLight >= 50 && curr.avgLight < 50)
-          events.push({ time, label: this.transloco.translate('home.lightCycleEnded'), ok: true });
+      // Temperature threshold crossings (in/out of optimal range)
+      if (prev.avgTemperature != null && curr.avgTemperature != null) {
+        const prevOk = prev.avgTemperature >= 15 && prev.avgTemperature <= 30;
+        const currOk = curr.avgTemperature >= 15 && curr.avgTemperature <= 30;
+        if (prevOk && !currOk) events.push({ time, label: this.transloco.translate('home.tempOutOfRange'), ok: false });
+        else if (!prevOk && currOk) events.push({ time, label: this.transloco.translate('home.tempBackInRange'), ok: true });
       }
     }
 
     // Add a baseline "all sensors" event from earliest hour if no other events
     if (events.length === 0 && data.length > 0) {
       const first = data[0];
-      const allOk = (first.avgCo2 == null || first.avgCo2 <= 1500) &&
-                    (first.avgTemperature == null || (first.avgTemperature >= 15 && first.avgTemperature <= 30));
+      const allOk = first.avgTemperature == null || (first.avgTemperature >= 15 && first.avgTemperature <= 30);
       events.push({ time: this.fmtHour(first.hour), label: allOk ? this.transloco.translate('home.allInRange') : this.transloco.translate('home.monitoringStarted'), ok: allOk });
     }
 

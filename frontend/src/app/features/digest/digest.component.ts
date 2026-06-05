@@ -114,23 +114,6 @@ export class DigestComponent implements OnInit {
     const t = (key: string, params?: Record<string, any>) => this.transloco.translate(key, params);
     const items: DigestItem[] = [];
 
-    const avgLight = data.reduce((s, d) => s + d.avgLight, 0) / data.length;
-    const maxLight = Math.max(...data.map(d => d.maxLight));
-    const maxHour = data.find(d => d.maxLight === maxLight);
-    const optimalHours = data.filter(d => d.lightStatus?.status === 'OPTIMAL').length;
-    const lightOk = optimalHours >= data.length * 0.5;
-    const lightAt = maxHour
-      ? t('digest.lightAt', { time: new Date(maxHour.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
-      : '';
-
-    items.push({
-      icon: '☀️',
-      label: t('digest.lightLabel'),
-      status: lightOk ? 'ok' : 'warn',
-      message: lightOk ? t('digest.lightOkMsg', { hours: optimalHours }) : t('digest.lightWarnMsg'),
-      detail: t('digest.lightDetail', { avg: Math.round(avgLight), peak: Math.round(maxLight), at: lightAt }),
-    });
-
     const hasTemp = data.some(d => d.avgTemperature != null);
     if (hasTemp) {
       const userMin = this.userSettings.effectiveTempMin();

@@ -57,17 +57,6 @@ import dayjs from 'dayjs';
                           class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
                 </div>
               </div>
-              <div>
-                <label class="block text-[11px] text-gray-400 mb-0.5">{{ t('plants.dailyLightTarget') }}</label>
-                <p class="text-[11px] text-gray-300 mb-1.5">{{ t('plants.dailyLightTargetHint') }}</p>
-                <div class="flex items-center gap-3">
-                  <button (click)="dailyLightHours.update(n => n > 1 ? n - 1 : 1)"
-                          class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">−</button>
-                  <span class="flex-1 text-center text-[15px] font-medium text-gray-800">{{ dailyLightHours() }} h</span>
-                  <button (click)="dailyLightHours.update(n => n < 24 ? n + 1 : 24)"
-                          class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
-                </div>
-              </div>
               <app-plant-care-fields [(care)]="care" />
               <div class="flex gap-2 pt-1 pb-4">
                 <button (click)="save()"
