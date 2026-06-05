@@ -238,6 +238,7 @@ export const typeDefs = gql`
     myUserSettings: UserSettings!
     allUsers: [User!]!
     me: AuthPayload!
+    exportMyData: String!
   }
 
   type AuthPayload {

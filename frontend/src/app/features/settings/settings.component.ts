@@ -414,6 +414,27 @@ import { ReminderService } from '../../core/services/reminder.service';
         </div>
       </div>
 
+      <!-- Privacy — data export (GDPR Art. 20). Hidden for demo accounts. -->
+      @if (!tier.isDemo()) {
+        <div class="mt-6">
+          <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.privacy') }}</div>
+          <div class="bg-white border-[0.5px] border-gw-border rounded-2xl p-4 flex items-start gap-3">
+            <div class="flex-1">
+              <div class="text-[13px] font-medium text-gray-800">{{ t('settings.exportData') }}</div>
+              <p class="text-[12px] text-gray-500 mt-0.5 leading-relaxed">{{ t('settings.exportDataDescription') }}</p>
+              @if (exportError()) {
+                <p class="text-[12px] text-gw-red mt-1.5">{{ t(exportError()!) }}</p>
+              }
+            </div>
+            <button type="button" (click)="downloadExport()"
+                    [disabled]="exporting()"
+                    class="shrink-0 text-[12px] font-medium text-gw-green-dark border-[0.5px] border-gw-green-light px-3 py-1.5 rounded-md hover:bg-gw-green-light/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              {{ exporting() ? t('settings.exporting') : t('settings.download') }}
+            </button>
+          </div>
+        </div>
+      }
+
       <!-- Danger zone — permanent account deletion. Hidden for demo accounts. -->
       @if (!tier.isDemo()) {
         <div class="mt-6">
@@ -497,6 +518,22 @@ export class SettingsComponent implements OnInit {
 
   // Account deletion flow
   deleteAccountOpen = signal(false);
+  exporting = signal(false);
+  exportError = signal<string | null>(null);
+
+  async downloadExport() {
+    if (this.exporting()) return;
+    this.exportError.set(null);
+    this.exporting.set(true);
+    try {
+      await this.auth.exportMyData();
+    } catch (err: any) {
+      const msg = String(err?.message ?? '');
+      this.exportError.set(msg.startsWith('account.') ? msg : 'settings.exportFailed');
+    } finally {
+      this.exporting.set(false);
+    }
+  }
   deletePassword = '';
   deleting = signal(false);
   deleteError = signal('');

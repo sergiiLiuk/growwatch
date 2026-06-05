@@ -30,6 +30,12 @@
     "disablePushConfirm": "Slå fra og nulstil påmindelser",
     "disabling": "Slår fra…",
     "cancel": "Annuller",
+    "privacy": "Privatliv",
+    "exportData": "Eksportér mine data",
+    "exportDataDescription": "Download en JSON-fil med alt vi gemmer om din konto: planter, logposter, påmindelser, enheder, indstillinger og historiske sensordata.",
+    "download": "Download",
+    "exporting": "Forbereder…",
+    "exportFailed": "Kunne ikke forberede din eksport. Prøv igen.",
     "dangerZone": "Farezone",
     "deleteAccount": "Slet konto",
     "deleteAccountDescription": "Fjern permanent din konto og alle planter, målinger, påmindelser og tips, vi har gemt. Det kan ikke fortrydes.",
@@ -208,6 +214,7 @@
   },
   "account": {
     "demoCannotDelete": "Demo-konti kan ikke slettes.",
+    "demoCannotExport": "Demo-konti kan ikke eksporteres.",
     "notFound": "Konto blev ikke fundet. Log ind igen."
   },
   "verifyEmail": {

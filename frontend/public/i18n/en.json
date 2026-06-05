@@ -30,6 +30,12 @@
     "disablePushConfirm": "Turn off & reset reminders",
     "disabling": "Disabling…",
     "cancel": "Cancel",
+    "privacy": "Privacy",
+    "exportData": "Export my data",
+    "exportDataDescription": "Download a JSON file with everything we store about your account: plants, log entries, reminders, devices, settings, and historical sensor data.",
+    "download": "Download",
+    "exporting": "Preparing…",
+    "exportFailed": "Could not prepare your export. Please try again.",
     "dangerZone": "Danger zone",
     "deleteAccount": "Delete account",
     "deleteAccountDescription": "Permanently remove your account and every plant, reading, reminder, and tip we've stored. This can't be undone.",
@@ -208,6 +214,7 @@
   },
   "account": {
     "demoCannotDelete": "Demo accounts can't be deleted.",
+    "demoCannotExport": "Demo accounts can't be exported.",
     "notFound": "Account not found. Try signing in again."
   },
   "verifyEmail": {

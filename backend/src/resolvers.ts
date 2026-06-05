@@ -448,6 +448,38 @@ export async function cascadeDeleteUser(userId: string): Promise<void> {
 }
 
 /**
+ * Build a portable JSON snapshot of everything we hold for a user (GDPR Art. 20).
+ * Excludes auth secrets (passwordHash), short-lived tokens, push keys, and
+ * internal AI billing rows — none qualify as the user's own personal data.
+ */
+export async function exportUserData(userId: string): Promise<Record<string, unknown>> {
+    const [user, settings, plants, plantActions, reminders, devices, dailyBriefings, smartTips, hourlySensorData] = await Promise.all([
+        User.findById(userId).select('-passwordHash -__v').lean(),
+        UserSettings.findOne({ userId }).select('-__v').lean(),
+        Plant.find({ userId }).select('-__v').lean(),
+        PlantAction.find({ userId }).select('-__v').lean(),
+        PlantReminder.find({ userId }).select('-__v').lean(),
+        Device.find({ userId }).select('-__v').lean(),
+        DailyBriefing.find({ userId }).select('-__v').lean(),
+        SmartTip.find({ userId }).select('-__v').lean(),
+        HourlySensorData.find({ userId }).select('-__v').lean(),
+    ]);
+    return {
+        exportedAt: new Date().toISOString(),
+        format: 'growwatch-export-v1',
+        user,
+        settings,
+        plants,
+        plantActions,
+        reminders,
+        devices,
+        dailyBriefings,
+        smartTips,
+        hourlySensorData,
+    };
+}
+
+/**
  * Invalidate any prior unused verification tokens, mint a new one (24h expiry),
  * and send the verification email. Centralised so register, refresh, and
  * "Send again" all behave identically.
@@ -634,6 +666,14 @@ export const resolvers = {
                 subscriptionTier: user.subscriptionTier ?? 'free',
                 emailVerified: user.emailVerified ?? false,
             };
+        },
+        exportMyData: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const user = await User.findById(ctx.user.userId).lean();
+            if (!user) throw new Error('account.notFound');
+            if (user.role === 'demo') throw new Error('account.demoCannotExport');
+            const data = await exportUserData(ctx.user.userId);
+            return JSON.stringify(data, null, 2);
         },
     },
 

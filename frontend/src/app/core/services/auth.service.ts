@@ -152,6 +152,30 @@ export class AuthService {
     this.logout();
   }
 
+  /** Fetch the signed-in user's full data dump and trigger a browser download. */
+  async exportMyData(): Promise<void> {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) throw new Error('Not signed in');
+    const res = await fetch(environment.backendHttpUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        query: `query ExportMyData { exportMyData }`,
+      }),
+    });
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+    const blob = new Blob([json.data.exportMyData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `growwatch-export-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   private async plainMutation(query: string, variables: Record<string, unknown>): Promise<void> {
     const res = await fetch(environment.backendHttpUrl, {
       method: 'POST',
