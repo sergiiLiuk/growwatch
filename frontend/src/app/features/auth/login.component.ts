@@ -1,7 +1,7 @@
 import { Component, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 
@@ -86,6 +86,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 export class LoginComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private transloco = inject(TranslocoService);
 
   email = '';
   password = '';
@@ -101,7 +102,11 @@ export class LoginComponent {
       await this.auth.login(this.email, this.password);
       this.router.navigate(['/']);
     } catch (err: any) {
-      this.error.set(err.message || 'Login failed');
+      // Backend throws i18n keys (e.g. 'auth.userNotFound') for known cases.
+      // Anything else falls back to a generic translated message.
+      const msg = String(err?.message ?? '');
+      const key = msg.startsWith('auth.') ? msg : 'auth.loginFailed';
+      this.error.set(this.transloco.translate(key));
     } finally {
       this.loading.set(false);
     }

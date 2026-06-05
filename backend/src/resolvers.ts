@@ -560,9 +560,14 @@ export const resolvers = {
 
     Mutation: {
         login: async (_: any, { email, password }: { email: string; password: string }) => {
-            const user = await User.findOne({ email });
-            if (!user || !(await verifyPassword(password, user.passwordHash))) {
-                throw new Error('Invalid credentials');
+            const trimmedEmail = email.trim().toLowerCase();
+            const user = await User.findOne({ email: trimmedEmail });
+            // Throw error messages as i18n keys so the frontend can translate
+            // them. Differentiates the two failures (user enumeration is fine
+            // here — the product surfaces it deliberately for clearer UX).
+            if (!user) throw new Error('auth.userNotFound');
+            if (!(await verifyPassword(password, user.passwordHash))) {
+                throw new Error('auth.invalidPassword');
             }
             const userId = user._id.toString();
             const token = signToken({ userId, email: user.email, role: user.role });
