@@ -153,8 +153,12 @@ export class PlantService {
   plantsLoading = signal(true);
 
   // Default `plants` excludes archived for backwards compatibility with all existing callers
-  plants = computed(() => this.allPlants().filter(p => !p.archived));
-  archivedPlants = computed(() => this.allPlants().filter(p => p.archived));
+  // Sort by type then by name so plants of the same kind cluster together.
+  private byTypeThenName = (a: Plant, b: Plant) =>
+    a.type.localeCompare(b.type) || a.name.localeCompare(b.name);
+
+  plants = computed(() => this.allPlants().filter(p => !p.archived).sort(this.byTypeThenName));
+  archivedPlants = computed(() => this.allPlants().filter(p => p.archived).sort(this.byTypeThenName));
 
   constructor(gqlClient: GraphQLClientService) {
     this.client = gqlClient.client;
