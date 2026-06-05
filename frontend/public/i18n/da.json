@@ -138,6 +138,7 @@
     "title": "Planter",
     "myPlants": "Mine planter",
     "searchPlaceholder": "Søg planter…",
+    "clearSearch": "Ryd søgning",
     "noMatches": "Ingen planter matcher din søgning.",
     "sortBy": {
       "name": "Navn (A–Å)",

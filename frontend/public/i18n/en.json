@@ -138,6 +138,7 @@
     "title": "Plants",
     "myPlants": "My plants",
     "searchPlaceholder": "Search plants…",
+    "clearSearch": "Clear search",
     "noMatches": "No plants match your search.",
     "sortBy": {
       "name": "Name (A–Z)",

@@ -26,7 +26,7 @@ export type IconName =
   // Domain
   | 'wifi' | 'device' | 'refresh' | 'thermometer'
   // Search / filter
-  | 'search' | 'sliders';
+  | 'search' | 'sliders' | 'x';
 
 @Component({
   selector: 'app-icon',
@@ -161,6 +161,10 @@ export type IconName =
         @case ('search') {
           <circle cx="11" cy="11" r="7"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        }
+        @case ('x') {
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
         }
         @case ('sliders') {
           <line x1="4" y1="21" x2="4" y2="14"/>

@@ -51,7 +51,14 @@ import dayjs from 'dayjs';
             </span>
             <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)"
                    [placeholder]="t('plants.searchPlaceholder')"
-                   class="w-full pl-10 pr-3 py-2.5 bg-white border-[0.5px] border-gray-200 rounded-xl text-[13px] outline-none focus:border-gw-green transition-colors" />
+                   class="w-full pl-10 pr-9 py-2.5 bg-white border-[0.5px] border-gray-200 rounded-xl text-[13px] outline-none focus:border-gw-green transition-colors" />
+            @if (search()) {
+              <button type="button" (click)="search.set('')"
+                      [attr.aria-label]="t('plants.clearSearch')"
+                      class="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                <app-icon name="x" class="w-3.5 h-3.5" />
+              </button>
+            }
           </div>
           <button (click)="sortMenuOpen.set(!sortMenuOpen()); $event.stopPropagation()"
                   class="w-10 h-10 flex items-center justify-center bg-white border-[0.5px] border-gray-200 rounded-xl text-gray-500 hover:border-gray-300 transition-colors shrink-0">
