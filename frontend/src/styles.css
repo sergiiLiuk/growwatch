@@ -1,32 +1,34 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Green — health / ok / primary action (warm botanical forest green) */
-  --color-gw-green: #2a7a52;
-  --color-gw-green-light: #d4e9d9;
-  --color-gw-green-dark: #0e3624;
+  /* ── Greens — health / ok / primary action (fresh leaf) ─────────────────── */
+  --color-gw-green: #16a34a;
+  --color-gw-green-light: #dcfce7;
+  --color-gw-green-dark: #14532d;
 
-  /* Amber — warning / attention (warm honey) */
-  --color-gw-amber: #c07820;
-  --color-gw-amber-light: #faecd8;
-  --color-gw-amber-dark: #5c3600;
+  /* ── Amber → orange — warning / attention (warm peach) ──────────────────── */
+  --color-gw-amber: #ea580c;
+  --color-gw-amber-light: #ffedd5;
+  --color-gw-amber-dark: #7c2d12;
 
-  /* Red — critical (earthy terracotta) */
-  --color-gw-red: #c04040;
-  --color-gw-red-light: #fce8e8;
-  --color-gw-red-dark: #6e1a1a;
+  /* ── Red — critical (cool clean) ────────────────────────────────────────── */
+  --color-gw-red: #dc2626;
+  --color-gw-red-light: #fee2e2;
+  --color-gw-red-dark: #7f1d1d;
 
-  /* Blue — weather only */
-  --color-gw-blue: #3380cc;
-  --color-gw-blue-light: #e4f0fa;
-  --color-gw-blue-dark: #0c4278;
+  /* ── Blue — weather / informational accents ─────────────────────────────── */
+  --color-gw-blue: #2563eb;
+  --color-gw-blue-light: #dbeafe;
+  --color-gw-blue-dark: #1e3a8a;
 
-  /* Warm surfaces */
-  --color-gw-parchment: #f7f3ec;
-  --color-gw-surface: #fefcf7;
-  --color-gw-border: #e4ddd0;
+  /* ── Surfaces — pure white app background, near-white cards ─────────────── */
+  --color-gw-parchment: #ffffff;
+  --color-gw-surface: #ffffff;
+  --color-gw-border: #f1f5f9;
 
-
+  /* ── Text scale — slate family ──────────────────────────────────────────── */
+  --color-gw-text: #0f172a;
+  --color-gw-muted: #64748b;
 }
 
 *,
@@ -40,13 +42,25 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03'; /* slashed-zero + alt 1, cleaner numerals */
   -webkit-font-smoothing: antialiased;
-  background: #f7f3ec;
-  color: #1a1510;
+  -moz-osx-font-smoothing: grayscale;
+  background: #ffffff;
+  color: #0f172a;
 }
 
-/* Warm golden tint for the active light metric card */
+/* Tabular numerics for sensor values + times */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Soft elevation for floating cards (mockup uses subtle, not heavy shadows) */
+.gw-card-shadow {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+/* Warm golden tint kept for compatibility (no longer used after light removal) */
 .gw-light-card {
-  background: linear-gradient(150deg, #fefcf7 0%, #faf5e6 100%);
+  background: linear-gradient(150deg, #ffffff 0%, #fafafa 100%);
 }
