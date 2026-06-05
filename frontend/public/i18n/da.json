@@ -175,6 +175,14 @@
     "upgrade": "Opgradér",
     "comingSoon": "Betalinger kommer snart — kontakt os for at opgradere manuelt."
   },
+  "verifyEmail": {
+    "checking": "Bekræfter din e-mail…",
+    "successTitle": "E-mail bekræftet",
+    "successBody": "Tak — din e-mail er bekræftet. Du kan nu bruge alle funktioner i GrowWatch.",
+    "continue": "Fortsæt til GrowWatch",
+    "errorTitle": "Kunne ikke bekræfte dette link",
+    "backHome": "Tilbage til GrowWatch"
+  },
   "reminders": {
     "title": "Påmindelser",
     "off": "Slået fra",
@@ -327,6 +335,10 @@
     "upgradeCta": "Se planer",
     "smartTipLocked": "Daglige plejetips til denne plante følger med Plus.",
     "smartTipLockedCta": "Opgradér",
+    "verifyEmailHint": "Bekræft din e-mail — tjek din indbakke for et link.",
+    "verifyEmailResend": "Send igen",
+    "verifyEmailSending": "Sender…",
+    "verifyEmailResent": "Ny bekræftelses-e-mail sendt. Tjek din indbakke.",
     "seasonalTipTitle": "Sæsonens tip",
     "seasonalTips": {
       "0": "Beskyt sarte stauder mod frost — dæk med fiberdug på de koldeste nætter.",

@@ -2,13 +2,13 @@ import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken } from './models';
+import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken } from './models';
 import type { EmailLocale } from './services/emailSender';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
 import { signToken, verifyPassword, hashPassword, JwtPayload } from './auth';
 import { pushReading, getAll as getAllReadings, getAllForUser as getReadingsForUser } from './sensorStore';
-import { sendPasswordResetEmail } from './services/emailSender';
+import { sendPasswordResetEmail, sendEmailVerificationEmail } from './services/emailSender';
 
 let lastSavedHour: number = -1;
 
@@ -388,6 +388,25 @@ function computeNextDueAt(intervalDays: number, from: Date, notifyTime?: string 
     return target;
 }
 
+/**
+ * Invalidate any prior unused verification tokens, mint a new one (24h expiry),
+ * and send the verification email. Centralised so register, refresh, and
+ * "Send again" all behave identically.
+ */
+async function issueVerificationEmail(userId: string, email: string, locale: EmailLocale): Promise<void> {
+    await EmailVerificationToken.updateMany(
+        { userId, usedAt: null },
+        { $set: { usedAt: new Date() } }
+    );
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await EmailVerificationToken.create({ userId, tokenHash, expiresAt });
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    const verifyUrl = `${baseUrl}/verify-email?token=${rawToken}`;
+    await sendEmailVerificationEmail(email, verifyUrl, locale);
+}
+
 function currentCycle(settings: any): 'morning' | 'evening' {
     // Pick whichever configured time is closer to "now" and not in the future.
     const morning = settings?.morningTipTime ?? '07:00';
@@ -554,6 +573,7 @@ export const resolvers = {
                 role: user.role,
                 userId: ctx.user.userId,
                 subscriptionTier: user.subscriptionTier ?? 'free',
+                emailVerified: user.emailVerified ?? false,
             };
         },
     },
@@ -571,7 +591,7 @@ export const resolvers = {
             }
             const userId = user._id.toString();
             const token = signToken({ userId, email: user.email, role: user.role });
-            return { token, email: user.email, role: user.role, userId, subscriptionTier: user.subscriptionTier ?? 'free' };
+            return { token, email: user.email, role: user.role, userId, subscriptionTier: user.subscriptionTier ?? 'free', emailVerified: user.emailVerified ?? false };
         },
         requestPasswordReset: async (_: any, { email }: { email: string }) => {
             const trimmedEmail = email.trim().toLowerCase();
@@ -615,6 +635,33 @@ export const resolvers = {
             await record.save();
             return true;
         },
+        requestEmailVerification: async (_: any, __: unknown, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const user = await User.findById(ctx.user.userId).lean();
+            if (!user) throw new Error('Unauthorized');
+            if (user.emailVerified) return true; // No-op if already verified.
+            const settings = await UserSettings.findOne({ userId: ctx.user.userId }).lean();
+            const locale: EmailLocale = settings?.locale === 'en' ? 'en' : 'da';
+            await issueVerificationEmail(ctx.user.userId, user.email, locale);
+            return true;
+        },
+        verifyEmail: async (_: any, { token }: { token: string }) => {
+            if (!token) throw new Error('Verification token is required');
+            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+            const record = await EmailVerificationToken.findOne({ tokenHash });
+            if (!record) throw new Error('Invalid or expired verification link');
+            if (record.usedAt) throw new Error('This verification link has already been used');
+            if (record.expiresAt.getTime() < Date.now()) {
+                throw new Error('This verification link has expired');
+            }
+            const user = await User.findById(record.userId);
+            if (!user) throw new Error('Account not found');
+            user.emailVerified = true;
+            await user.save();
+            record.usedAt = new Date();
+            await record.save();
+            return true;
+        },
         register: async (_: any, { email, password }: { email: string; password: string }) => {
             const trimmedEmail = email.trim().toLowerCase();
             if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
@@ -631,10 +678,15 @@ export const resolvers = {
                 passwordHash,
                 role: 'user',
                 subscriptionTier: 'free',
+                emailVerified: false,
             });
             const userId = doc._id.toString();
+            // Fire the verification email — best effort, don't block signup on failure.
+            issueVerificationEmail(userId, doc.email, 'da').catch(err =>
+                console.error('verification email on register failed:', err)
+            );
             const token = signToken({ userId, email: doc.email, role: doc.role });
-            return { token, email: doc.email, role: doc.role, userId, subscriptionTier: doc.subscriptionTier ?? 'free' };
+            return { token, email: doc.email, role: doc.role, userId, subscriptionTier: doc.subscriptionTier ?? 'free', emailVerified: false };
         },
         addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');

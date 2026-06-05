@@ -175,6 +175,14 @@
     "upgrade": "Upgrade",
     "comingSoon": "Payments coming soon — contact us to upgrade manually."
   },
+  "verifyEmail": {
+    "checking": "Confirming your email…",
+    "successTitle": "Email confirmed",
+    "successBody": "Thanks — your email is verified. You can use everything in GrowWatch now.",
+    "continue": "Continue to GrowWatch",
+    "errorTitle": "Couldn't confirm this link",
+    "backHome": "Back to GrowWatch"
+  },
   "reminders": {
     "title": "Reminders",
     "off": "Off",
@@ -327,6 +335,10 @@
     "upgradeCta": "See plans",
     "smartTipLocked": "Daily care tips for this plant come with Plus.",
     "smartTipLockedCta": "Upgrade",
+    "verifyEmailHint": "Confirm your email — check your inbox for a link.",
+    "verifyEmailResend": "Send again",
+    "verifyEmailSending": "Sending…",
+    "verifyEmailResent": "New verification email sent. Check your inbox.",
     "seasonalTipTitle": "Tip of the season",
     "seasonalTips": {
       "0": "Protect tender perennials from frost — fleece on the coldest nights.",

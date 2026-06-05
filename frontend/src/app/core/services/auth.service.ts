@@ -15,6 +15,7 @@ export interface User {
   userId: string;
   role: UserRole;
   subscriptionTier: SubscriptionTier;
+  emailVerified: boolean;
 }
 
 interface TokenPayload {
@@ -47,6 +48,8 @@ export class AuthService {
             role,
             userId: payload.userId,
             subscriptionTier: tier,
+            // JWT doesn't carry emailVerified; assume true and let refreshMe() correct it.
+            emailVerified: true,
           });
           // Refresh from server so role/tier changes from another session apply
           this.refreshMe().catch(() => {/* non-fatal */});
@@ -66,7 +69,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<void> {
     await this.authMutation(
       `mutation Login($email: String!, $password: String!) {
-        login(email: $email, password: $password) { token email role userId subscriptionTier }
+        login(email: $email, password: $password) { token email role userId subscriptionTier emailVerified }
       }`,
       { email, password },
       'login',
@@ -76,7 +79,7 @@ export class AuthService {
   async register(email: string, password: string): Promise<void> {
     await this.authMutation(
       `mutation Register($email: String!, $password: String!) {
-        register(email: $email, password: $password) { token email role userId subscriptionTier }
+        register(email: $email, password: $password) { token email role userId subscriptionTier emailVerified }
       }`,
       { email, password },
       'register',
@@ -99,6 +102,29 @@ export class AuthService {
     );
   }
 
+  async requestEmailVerification(): Promise<void> {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) throw new Error('Not signed in');
+    const res = await fetch(environment.backendHttpUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        query: `mutation RequestEmailVerification { requestEmailVerification }`,
+      }),
+    });
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    await this.plainMutation(
+      `mutation VerifyEmail($token: String!) { verifyEmail(token: $token) }`,
+      { token },
+    );
+    // Refresh the local user so emailVerified flips to true immediately.
+    await this.refreshMe();
+  }
+
   private async plainMutation(query: string, variables: Record<string, unknown>): Promise<void> {
     const res = await fetch(environment.backendHttpUrl, {
       method: 'POST',
@@ -118,13 +144,13 @@ export class AuthService {
     const json = await res.json();
     if (json.errors?.length) throw new Error(json.errors[0].message);
 
-    const { token, email: userEmail, role, userId, subscriptionTier } = json.data[field];
+    const { token, email: userEmail, role, userId, subscriptionTier, emailVerified } = json.data[field];
     const tier: SubscriptionTier = subscriptionTier ?? 'free';
     const userRole: UserRole = (role as UserRole) ?? 'user';
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(TIER_KEY, tier);
     localStorage.setItem(ROLE_KEY, userRole);
-    this._user.set({ email: userEmail, role: userRole, userId, subscriptionTier: tier });
+    this._user.set({ email: userEmail, role: userRole, userId, subscriptionTier: tier, emailVerified: !!emailVerified });
   }
 
   async refreshMe(): Promise<void> {
@@ -135,7 +161,7 @@ export class AuthService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          query: `query Me { me { email role userId subscriptionTier } }`,
+          query: `query Me { me { email role userId subscriptionTier emailVerified } }`,
         }),
       });
       const json = await res.json();
@@ -145,7 +171,7 @@ export class AuthService {
       const userRole: UserRole = (m.role as UserRole) ?? 'user';
       localStorage.setItem(TIER_KEY, tier);
       localStorage.setItem(ROLE_KEY, userRole);
-      this._user.set({ email: m.email, role: userRole, userId: m.userId, subscriptionTier: tier });
+      this._user.set({ email: m.email, role: userRole, userId: m.userId, subscriptionTier: tier, emailVerified: !!m.emailVerified });
     } catch {
       // non-fatal
     }

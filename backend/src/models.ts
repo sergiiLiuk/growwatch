@@ -14,6 +14,7 @@ export interface IUser extends Document {
     passwordHash: string;
     role: UserRole;
     subscriptionTier: SubscriptionTier;
+    emailVerified: boolean;
 }
 
 const userSchema = new Schema<IUser>(
@@ -22,6 +23,7 @@ const userSchema = new Schema<IUser>(
         passwordHash: { type: String, required: true },
         role: { type: String, required: true, enum: ['superuser', 'user', 'demo'], default: 'user' },
         subscriptionTier: { type: String, required: true, enum: ['free', 'plus', 'pro'], default: 'free' },
+        emailVerified: { type: Boolean, required: true, default: false },
     },
     { timestamps: true }
 );
@@ -48,6 +50,27 @@ const passwordResetTokenSchema = new Schema<IPasswordResetToken>(
 );
 
 export const PasswordResetToken = mongoose.model<IPasswordResetToken>('PasswordResetToken', passwordResetTokenSchema);
+
+// ── EmailVerificationToken ──────────────────────────────────────────────────
+
+export interface IEmailVerificationToken extends Document {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+    usedAt?: Date | null;
+}
+
+const emailVerificationTokenSchema = new Schema<IEmailVerificationToken>(
+    {
+        userId: { type: String, required: true, index: true },
+        tokenHash: { type: String, required: true, unique: true },
+        expiresAt: { type: Date, required: true },
+        usedAt: { type: Date, default: null },
+    },
+    { timestamps: true }
+);
+
+export const EmailVerificationToken = mongoose.model<IEmailVerificationToken>('EmailVerificationToken', emailVerificationTokenSchema);
 
 // ── Plant ───────────────────────────────────────────────────────────────────
 

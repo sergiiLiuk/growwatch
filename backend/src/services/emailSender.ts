@@ -14,7 +14,15 @@ function getClient(): Resend | null {
 
 const FROM = process.env.FROM_EMAIL ?? 'GrowWatch <no-reply@growwatch.app>';
 
-const COPY: Record<EmailLocale, { subject: string; heading: string; body: string; cta: string; footer: string }> = {
+interface EmailCopy {
+    subject: string;
+    heading: string;
+    body: string;
+    cta: string;
+    footer: string;
+}
+
+const RESET_COPY: Record<EmailLocale, EmailCopy> = {
     en: {
         subject: 'Reset your GrowWatch password',
         heading: 'Reset your password',
@@ -31,8 +39,24 @@ const COPY: Record<EmailLocale, { subject: string; heading: string; body: string
     },
 };
 
-function renderHtml(locale: EmailLocale, resetUrl: string): string {
-    const c = COPY[locale];
+const VERIFY_COPY: Record<EmailLocale, EmailCopy> = {
+    en: {
+        subject: 'Confirm your GrowWatch email',
+        heading: 'Confirm your email',
+        body: 'Welcome to GrowWatch! Tap the button below to confirm this is your email address. The link works for 24 hours.',
+        cta: 'Confirm email',
+        footer: "If you didn't sign up for GrowWatch, you can ignore this email.",
+    },
+    da: {
+        subject: 'Bekræft din GrowWatch-e-mail',
+        heading: 'Bekræft din e-mail',
+        body: 'Velkommen til GrowWatch! Tryk på knappen nedenfor for at bekræfte, at dette er din e-mailadresse. Linket virker i 24 timer.',
+        cta: 'Bekræft e-mail',
+        footer: 'Hvis du ikke har oprettet en GrowWatch-konto, kan du ignorere denne e-mail.',
+    },
+};
+
+function renderHtml(c: EmailCopy, locale: EmailLocale, url: string): string {
     return `<!DOCTYPE html>
 <html lang="${locale}">
 <body style="margin:0;padding:0;background:#f5f1ea;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2937;">
@@ -44,10 +68,10 @@ function renderHtml(locale: EmailLocale, resetUrl: string): string {
           <h2 style="margin:0 0 16px;font-size:18px;font-weight:500;">${c.heading}</h2>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">${c.body}</p>
           <p style="margin:0 0 24px;">
-            <a href="${resetUrl}" style="display:inline-block;background:#15803d;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:10px;">${c.cta}</a>
+            <a href="${url}" style="display:inline-block;background:#15803d;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:10px;">${c.cta}</a>
           </p>
           <p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#6b7280;">${c.footer}</p>
-          <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;word-break:break-all;">${resetUrl}</p>
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;word-break:break-all;">${url}</p>
         </td></tr>
       </table>
     </td></tr>
@@ -56,36 +80,38 @@ function renderHtml(locale: EmailLocale, resetUrl: string): string {
 </html>`;
 }
 
-function renderText(locale: EmailLocale, resetUrl: string): string {
-    const c = COPY[locale];
-    return `${c.heading}\n\n${c.body}\n\n${c.cta}: ${resetUrl}\n\n${c.footer}`;
+function renderText(c: EmailCopy, url: string): string {
+    return `${c.heading}\n\n${c.body}\n\n${c.cta}: ${url}\n\n${c.footer}`;
 }
 
-/**
- * Sends a password reset email via Resend. Falls back to a console log if
- * RESEND_API_KEY is not configured (useful in local dev).
- */
-export async function sendPasswordResetEmail(email: string, resetUrl: string, locale: EmailLocale = 'da'): Promise<void> {
+async function sendOrStub(label: string, email: string, locale: EmailLocale, url: string, c: EmailCopy): Promise<void> {
     const client = getClient();
     if (!client) {
-        console.log('────────── [STUB EMAIL] Password reset ──────────');
+        console.log(`────────── [STUB EMAIL] ${label} ──────────`);
         console.log(`To:      ${email}`);
         console.log(`Locale:  ${locale}`);
-        console.log(`Link:    ${resetUrl}`);
+        console.log(`Link:    ${url}`);
         console.log('(RESEND_API_KEY not set — set it in env to send real email)');
         console.log('─────────────────────────────────────────────────');
         return;
     }
-    const c = COPY[locale];
     const { error } = await client.emails.send({
         from: FROM,
         to: email,
         subject: c.subject,
-        html: renderHtml(locale, resetUrl),
-        text: renderText(locale, resetUrl),
+        html: renderHtml(c, locale, url),
+        text: renderText(c, url),
     });
     if (error) {
-        console.error('Resend send failed:', error);
-        throw new Error('Failed to send password reset email');
+        console.error(`Resend ${label} send failed:`, error);
+        throw new Error(`Failed to send ${label.toLowerCase()} email`);
     }
+}
+
+export async function sendPasswordResetEmail(email: string, resetUrl: string, locale: EmailLocale = 'da'): Promise<void> {
+    await sendOrStub('Password reset', email, locale, resetUrl, RESET_COPY[locale]);
+}
+
+export async function sendEmailVerificationEmail(email: string, verifyUrl: string, locale: EmailLocale = 'da'): Promise<void> {
+    await sendOrStub('Email verification', email, locale, verifyUrl, VERIFY_COPY[locale]);
 }

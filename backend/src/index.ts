@@ -45,6 +45,17 @@ async function seedAndMigrate(): Promise<string> {
         console.log(`🔄 Backfilled ${tierMigrated.modifiedCount} users → free tier`);
     }
 
+    // Backfill emailVerified for users created before this feature existed.
+    // They've already proven they can receive emails (via password reset etc.)
+    // so trust their address — don't pester them with a banner.
+    const verifiedBackfill = await User.updateMany(
+        { emailVerified: { $exists: false } },
+        { $set: { emailVerified: true } },
+    );
+    if (verifiedBackfill.modifiedCount > 0) {
+        console.log(`🔄 Backfilled ${verifiedBackfill.modifiedCount} legacy users → emailVerified:true`);
+    }
+
     // One-shot migration: windThreshold switched from km/h to m/s. Any saved value
     // >= 25 was almost certainly a km/h number (no one sets 25 m/s threshold).
     // Convert by dividing by 3.6 and rounding.

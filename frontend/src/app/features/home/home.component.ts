@@ -9,6 +9,7 @@ import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PlantActionService, DailyBriefing } from '../../core/services/plant-action.service';
 import { TierService } from '../../core/services/tier.service';
+import { AuthService } from '../../core/services/auth.service';
 import { isNight, isDawnOrDusk, daysAgo } from '../../core/utils/time';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -134,6 +135,27 @@ interface ActivityEvent {
         </div>
       }
 
+      <!-- Verify-email banner — shown until the user clicks the link from
+           their inbox. Unobtrusive yellow strip with a Resend button. -->
+      @if (!emailVerified()) {
+        <div class="mb-5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 flex items-center gap-3">
+          <span class="text-[12px] text-amber-800 flex-1">
+            @if (resentVerification()) {
+              {{ t('home.verifyEmailResent') }}
+            } @else {
+              {{ t('home.verifyEmailHint') }}
+            }
+          </span>
+          @if (!resentVerification()) {
+            <button (click)="resendVerification()"
+                    [disabled]="resendingVerification()"
+                    class="text-[11px] font-medium text-amber-900 hover:underline disabled:opacity-40">
+              {{ resendingVerification() ? t('home.verifyEmailSending') : t('home.verifyEmailResend') }}
+            </button>
+          }
+        </div>
+      }
+
       <!-- Seasonal tip — static daily content for free users. Plus/Pro users
            see the AI briefing instead. Demo also gets the seasonal tip. -->
       @if (!tier.canSeeAi()) {
@@ -251,6 +273,25 @@ export class HomeComponent implements OnInit, OnDestroy {
   private plantActions = inject(PlantActionService);
   private transloco = inject(TranslocoService);
   tier = inject(TierService);
+  private auth = inject(AuthService);
+
+  // Email verification banner: visible only when the signed-in user hasn't verified.
+  emailVerified = computed(() => this.auth.user()?.emailVerified ?? true);
+  resendingVerification = signal(false);
+  resentVerification = signal(false);
+
+  async resendVerification() {
+    if (this.resendingVerification()) return;
+    this.resendingVerification.set(true);
+    try {
+      await this.auth.requestEmailVerification();
+      this.resentVerification.set(true);
+    } catch (err) {
+      console.error('Resend verification failed:', err);
+    } finally {
+      this.resendingVerification.set(false);
+    }
+  }
   briefing = signal<DailyBriefing | null>(null);
 
   formatBriefingTime(d: Date): string {
