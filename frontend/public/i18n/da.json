@@ -1,4 +1,18 @@
 {
+  "legal": {
+    "back": "Tilbage til log ind",
+    "lastUpdated": "Sidst opdateret:"
+  },
+  "privacy": {
+    "title": "Privatlivspolitik",
+    "lastUpdated": "5. juni 2026",
+    "body": "GrowWatch er en smart-drivhus-app drevet af SL, en soloudvikler baseret i Danmark. Denne politik forklarer hvilke data vi indsamler, hvorfor, hvor længe vi gemmer dem, og dine rettigheder under EU GDPR.\n\n1. Data vi indsamler\n• Konto: e-mailadresse og en envejs-hashet adgangskode. E-mailen bruges også til at sende bekræftelseslinks og nulstilling af adgangskode.\n• Planter du tilføjer: navn, type, plantedato, antal, brugerkode og din handlingslog (vanding, gødning, beskæring, noter osv.).\n• Valgfri placering: bredde- og længdegrad du gemmer i Indstillinger, bruges kun til at hente lokalt vejr og solopgangs-/solnedgangstider.\n• Sensormålinger: temperatur, fugtighed, lys, tryk og CO₂-værdier din ESP32-enhed sender. Gemmes i hukommelsen til live-brug og som timeaggregater i MongoDB.\n• Indstillinger: alarmgrænser, notifikationspræferencer, sprog.\n• Push-abonnementer: teknisk endpoint + nøgler udstedt af din browser, bruges til at levere push-notifikationer.\n\n2. Hvorfor vi behandler det (lovligt grundlag)\n• Aftaleopfyldelse (GDPR Art. 6(1)(b)) — at drive den app, du tilmeldte dig.\n• Legitim interesse (Art. 6(1)(f)) — sikkerhedslogning, misbrugsforebyggelse, levering af transaktions-e-mails.\n• Samtykke (Art. 6(1)(a)) — push-notifikationer (du tilvælger i Indstillinger), placeringslagring (du indtaster den).\n\n3. Hvor det opbevares\n• Primær database: MongoDB Atlas.\n• Backend-hosting: Railway.\n• E-maillevering: Resend (EU/Irland-region).\n• AI-smarte tips (Plus-abonnement): Anthropic (Claude API).\n• Vejrdata: Open-Meteo (ingen persondata, kun lat/lng).\n• Frontend-hosting: Vercel; DNS: Porkbun via Cloudflare.\n\n4. Hvor længe\n• Kontodata gemmes indtil du sletter din konto, hvorefter de slettes permanent — inklusive alle planter, handlinger, påmindelser, sensorhistorik, indstillinger, push-abonnementer og tokens.\n• Time-aggregater af sensordata gemmes så længe din konto eksisterer.\n• Tokens til adgangskode-nulstilling og e-mail-bekræftelse udløber automatisk (henholdsvis 1 time og 24 timer).\n\n5. Dine rettigheder\n• Indsigt: se dine data i appen og anmod om eksport via e-mail.\n• Berigtigelse: rediger planter, indstillinger og e-mail fra appen.\n• Sletning: slet din konto fra Indstillinger → Farezone (uigenkaldelig).\n• Dataportabilitet: anmod om en JSON-eksport via e-mail.\n• Indsigelse/begrænsning: stop med at bruge appen, deaktiver push, eller kontakt os.\n• Klage: Datatilsynet (datatilsynet.dk) er den danske databeskyttelsesmyndighed.\n\n6. Børn\nGrowWatch er ikke beregnet til børn under 13 år. Hvis du er under 13, skal du ikke oprette en konto.\n\n7. Sikkerhed\nTransport er kun HTTPS. Adgangskoder hashes med bcrypt. Nulstillings- og bekræftelsestokens gemmes som SHA-256-hashes. Databaselagring er krypteret i hvile af MongoDB Atlas.\n\n8. Kontakt\nSpørgsmål eller dataanmodninger: sergiiliuk@gmail.com.\n\n9. Ændringer\nVi opdaterer datoen øverst, når denne politik ændres. Væsentlige ændringer meddeles via e-mail."
+  },
+  "terms": {
+    "title": "Brugervilkår",
+    "lastUpdated": "5. juni 2026",
+    "body": "Ved at oprette en GrowWatch-konto eller bruge appen accepterer du disse vilkår.\n\n1. Tjenesten\nGrowWatch er en hobby-grade drivhus-overvågningsapp. Funktioner inkluderer plantesporing, handlingslog, påmindelser, vejradvarsler og (med Plus-abonnement) AI-genererede plejetips. Tjenesten leveres \"som den er\" uden nogen form for garanti.\n\n2. Din konto\n• Du er ansvarlig for at holde din adgangskode hemmelig.\n• Del ikke din konto, forsøg ikke at få adgang til andres data, og misbrug ikke tjenesten.\n• Vi kan suspendere eller slette konti, der overtræder disse vilkår.\n• Du kan slette din konto når som helst fra Indstillinger → Farezone.\n\n3. Nøjagtighed\nGrowWatch er informativ. Sensordata, vejrudsigter og AI-plejetips kan være forkerte, forsinkede eller utilgængelige. Stol ikke på dem ved sikkerhedskritiske beslutninger om dine planter, især værdifulde.\n\n4. Abonnementsniveauer\n• Gratis: kernefunktioner.\n• Plus: AI-smarte tips og 3-dages vejradvarsler.\n• Pro: hardware-bundlede funktioner til brugere med en ESP32-sensor.\nFunktioner inden for hvert niveau kan ændres, efterhånden som produktet udvikler sig. Betalte abonnementer er endnu ikke tilgængelige til onlinekøb — kontakt os, hvis interesseret.\n\n5. Hardware og tredjepartsdata\nVejrdata leveres af Open-Meteo. AI-tips genereres af Anthropics Claude API. Vi er ikke ansvarlige for nøjagtigheden eller tilgængeligheden af disse tredjepartstjenester.\n\n6. Ansvar\nI det maksimale omfang loven tillader, er SL (udvikleren) ikke ansvarlig for tab af planter, data, tid eller andre skader, der opstår som følge af din brug af GrowWatch.\n\n7. Ændringer\nVi kan opdatere disse vilkår. Væsentlige ændringer vil blive meddelt via e-mail. Fortsat brug efter en ændring betyder, at du accepterer de nye vilkår.\n\n8. Gældende lov\nDansk ret finder anvendelse. Tvister er underlagt danske domstoles jurisdiktion.\n\n9. Kontakt\nsergiiliuk@gmail.com"
+  },
   "nav": {
     "home": "Hjem",
     "plants": "Planter",
@@ -323,6 +337,14 @@
     "loginFailed": "Kunne ikke logge dig ind. Prøv igen.",
     "userNotFound": "Ingen konto fundet med denne e-mail.",
     "invalidPassword": "Forkert adgangskode. Prøv igen eller nulstil den.",
+    "emailNotVerified": "Bekræft først din e-mail. Tjek din indbakke for bekræftelseslinket.",
+    "resendVerification": "Send bekræftelses-e-mail igen",
+    "verificationResent": "Bekræftelses-e-mail sendt. Tjek din indbakke.",
+    "sending": "Sender…",
+    "consentPrefix": "Jeg accepterer",
+    "consentTerms": "Brugervilkår",
+    "consentAnd": "og",
+    "consentPrivacy": "Privatlivspolitik",
     "createAccount": "Opret konto",
     "creating": "Opretter konto…",
     "noAccount": "Ny på GrowWatch?",

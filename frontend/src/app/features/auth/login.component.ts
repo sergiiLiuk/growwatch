@@ -13,9 +13,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 
       <!-- Logo + branding -->
       <div class="flex flex-col items-center mb-10">
-        <div class="w-20 h-20 rounded-full bg-gw-green flex items-center justify-center mb-5 shadow-sm text-white">
-          <app-icon name="leaf" class="w-9 h-9" strokeWidth="1.8" />
-        </div>
+        <img src="/icons/icon-192x192.png" alt="GrowWatch" class="w-20 h-20 rounded-2xl shadow-sm mb-5" />
         <h1 class="text-[1.75rem] tracking-tight">
           <span class="font-bold text-gw-green-dark">Grow</span><span class="font-normal text-gray-500">Watch</span>
         </h1>
@@ -63,6 +61,21 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
           <p class="text-sm text-red-500 mb-4 text-center">{{ error() }}</p>
         }
 
+        <!-- Inline "email not verified" resend prompt -->
+        @if (showResendVerification()) {
+          <div class="text-center mb-4">
+            @if (resendSent()) {
+              <p class="text-[12px] text-gw-green-dark">{{ t('auth.verificationResent') }}</p>
+            } @else {
+              <button type="button" (click)="resendVerification()"
+                      [disabled]="resending()"
+                      class="text-[12px] font-medium text-gw-green-dark hover:underline disabled:opacity-40">
+                {{ resending() ? t('auth.sending') : t('auth.resendVerification') }}
+              </button>
+            }
+          </div>
+        }
+
         <div class="text-right -mt-4 mb-5">
           <a routerLink="/forgot-password" class="text-[12px] text-gw-green-dark hover:underline">{{ t('auth.forgotPassword') }}</a>
         </div>
@@ -93,22 +106,43 @@ export class LoginComponent {
   showPassword = signal(false);
   error = signal('');
   loading = signal(false);
+  showResendVerification = signal(false);
+  resending = signal(false);
+  resentSentSig = signal(false);
+
+  resendSent() { return this.resentSentSig(); }
 
   async signIn() {
     if (!this.email || !this.password) return;
     this.error.set('');
+    this.showResendVerification.set(false);
+    this.resentSentSig.set(false);
     this.loading.set(true);
     try {
       await this.auth.login(this.email, this.password);
       this.router.navigate(['/']);
     } catch (err: any) {
-      // Backend throws i18n keys (e.g. 'auth.userNotFound') for known cases.
-      // Anything else falls back to a generic translated message.
       const msg = String(err?.message ?? '');
       const key = msg.startsWith('auth.') ? msg : 'auth.loginFailed';
       this.error.set(this.transloco.translate(key));
+      if (key === 'auth.emailNotVerified') {
+        this.showResendVerification.set(true);
+      }
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async resendVerification() {
+    if (this.resending() || !this.email) return;
+    this.resending.set(true);
+    try {
+      await this.auth.resendVerificationByEmail(this.email);
+      this.resentSentSig.set(true);
+    } catch (err) {
+      console.error('Resend verification failed:', err);
+    } finally {
+      this.resending.set(false);
     }
   }
 }

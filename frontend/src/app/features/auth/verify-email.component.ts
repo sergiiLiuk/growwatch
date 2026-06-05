@@ -2,19 +2,16 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
-import { IconComponent } from '../../shared/components/atoms/icon.component';
 
 type Status = 'pending' | 'success' | 'error';
 
 @Component({
   selector: 'app-verify-email',
-  imports: [RouterLink, IconComponent, TranslocoDirective],
+  imports: [RouterLink, TranslocoDirective],
   template: `
     <div class="min-h-screen bg-gw-parchment flex flex-col items-center justify-center px-6 py-10" *transloco="let t">
       <div class="flex flex-col items-center mb-8">
-        <div class="w-20 h-20 rounded-full bg-gw-green flex items-center justify-center mb-5 shadow-sm text-white">
-          <app-icon name="leaf" class="w-9 h-9" strokeWidth="1.8" />
-        </div>
+        <img src="/icons/icon-192x192.png" alt="GrowWatch" class="w-20 h-20 rounded-2xl shadow-sm mb-5" />
         <h1 class="text-[1.75rem] tracking-tight">
           <span class="font-bold text-gw-green-dark">Grow</span><span class="font-normal text-gray-500">Watch</span>
         </h1>

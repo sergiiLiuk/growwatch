@@ -26,6 +26,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/verify-email.component').then(m => m.VerifyEmailComponent),
   },
   {
+    path: 'privacy',
+    loadComponent: () => import('./features/legal/privacy.component').then(m => m.PrivacyComponent),
+  },
+  {
+    path: 'terms',
+    loadComponent: () => import('./features/legal/terms.component').then(m => m.TermsComponent),
+  },
+  {
     path: '',
     component: ShellComponent,
     canActivate: [authGuard],

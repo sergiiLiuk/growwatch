@@ -389,6 +389,30 @@ function computeNextDueAt(intervalDays: number, from: Date, notifyTime?: string 
 }
 
 /**
+ * Hard-delete a user and every per-user document they own. Used by both
+ * deleteMyAccount (self-serve) and adminDeleteUser (superuser). Done in
+ * parallel — none depend on each other; the User doc is removed last so a
+ * partial failure leaves the account intact and retryable.
+ */
+export async function cascadeDeleteUser(userId: string): Promise<void> {
+    await Promise.all([
+        Plant.deleteMany({ userId }),
+        PlantAction.deleteMany({ userId }),
+        PlantReminder.deleteMany({ userId }),
+        PushSubscription.deleteMany({ userId }),
+        PasswordResetToken.deleteMany({ userId }),
+        EmailVerificationToken.deleteMany({ userId }),
+        Device.deleteMany({ userId }),
+        DailyBriefing.deleteMany({ userId }),
+        SmartTip.deleteMany({ userId }),
+        AiUsage.deleteMany({ userId }),
+        HourlySensorData.deleteMany({ userId }),
+        UserSettings.deleteMany({ userId }),
+    ]);
+    await User.deleteOne({ _id: userId });
+}
+
+/**
  * Invalidate any prior unused verification tokens, mint a new one (24h expiry),
  * and send the verification email. Centralised so register, refresh, and
  * "Send again" all behave identically.
@@ -589,6 +613,12 @@ export const resolvers = {
             if (!(await verifyPassword(password, user.passwordHash))) {
                 throw new Error('auth.invalidPassword');
             }
+            // Block login until the email has been verified. The frontend
+            // catches this key and offers an inline "resend verification"
+            // button (calls resendVerificationEmail which doesn't require auth).
+            if (!user.emailVerified) {
+                throw new Error('auth.emailNotVerified');
+            }
             const userId = user._id.toString();
             const token = signToken({ userId, email: user.email, role: user.role });
             return { token, email: user.email, role: user.role, userId, subscriptionTier: user.subscriptionTier ?? 'free', emailVerified: user.emailVerified ?? false };
@@ -645,6 +675,23 @@ export const resolvers = {
             await issueVerificationEmail(ctx.user.userId, user.email, locale);
             return true;
         },
+        resendVerificationEmail: async (_: any, { email }: { email: string }) => {
+            // Unauthenticated — needed because users who can't log in (because
+            // they're unverified) need a way to get the email re-sent. Always
+            // returns true so this can't be used to enumerate accounts.
+            const trimmedEmail = email.trim().toLowerCase();
+            const user = await User.findOne({ email: trimmedEmail });
+            if (!user || user.emailVerified) return true;
+            const settings = await UserSettings.findOne({ userId: user._id.toString() }).lean();
+            const locale: EmailLocale = settings?.locale === 'en' ? 'en' : 'da';
+            try {
+                await issueVerificationEmail(user._id.toString(), user.email, locale);
+            } catch (err) {
+                console.error('resendVerificationEmail failed:', err);
+                // Still return true — don't leak the failure.
+            }
+            return true;
+        },
         verifyEmail: async (_: any, { token }: { token: string }) => {
             if (!token) throw new Error('Verification token is required');
             const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -672,26 +719,7 @@ export const resolvers = {
             if (!(await verifyPassword(password, user.passwordHash))) {
                 throw new Error('auth.invalidPassword');
             }
-            const userId = ctx.user.userId;
-            // Cascade: every collection that carries userId. Done in parallel —
-            // none of them depend on each other; failure of one shouldn't block
-            // the others, but if anything throws the user row stays so they can
-            // try again. The User doc is removed last for that reason.
-            await Promise.all([
-                Plant.deleteMany({ userId }),
-                PlantAction.deleteMany({ userId }),
-                PlantReminder.deleteMany({ userId }),
-                PushSubscription.deleteMany({ userId }),
-                PasswordResetToken.deleteMany({ userId }),
-                EmailVerificationToken.deleteMany({ userId }),
-                Device.deleteMany({ userId }),
-                DailyBriefing.deleteMany({ userId }),
-                SmartTip.deleteMany({ userId }),
-                AiUsage.deleteMany({ userId }),
-                HourlySensorData.deleteMany({ userId }),
-                UserSettings.deleteMany({ userId }),
-            ]);
-            await User.deleteOne({ _id: userId });
+            await cascadeDeleteUser(ctx.user.userId);
             return true;
         },
         register: async (_: any, { email, password }: { email: string; password: string }) => {
@@ -1008,7 +1036,9 @@ export const resolvers = {
                 const superCount = await User.countDocuments({ role: 'superuser' });
                 if (superCount <= 1) throw new Error('Cannot delete the last superuser');
             }
-            await User.findByIdAndDelete(userId);
+            // Full cascade — plants, actions, reminders, sensor history, tokens,
+            // everything. Same helper as the self-serve deletion.
+            await cascadeDeleteUser(userId);
             return true;
         },
         openDeviceClaim: (_: any, __: any, ctx: Ctx) => {

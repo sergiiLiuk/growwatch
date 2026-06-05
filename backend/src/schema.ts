@@ -220,6 +220,7 @@ export const typeDefs = gql`
     requestPasswordReset(email: String!): Boolean!
     resetPassword(token: String!, newPassword: String!): Boolean!
     requestEmailVerification: Boolean!
+    resendVerificationEmail(email: String!): Boolean!
     verifyEmail(token: String!): Boolean!
     deleteMyAccount(password: String!): Boolean!
     addPlant(name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!

@@ -116,6 +116,15 @@ export class AuthService {
     if (json.errors?.length) throw new Error(json.errors[0].message);
   }
 
+  /** Unauthenticated — used by the login screen when the user gets
+   *  'auth.emailNotVerified' and needs the verification email re-sent. */
+  async resendVerificationByEmail(email: string): Promise<void> {
+    await this.plainMutation(
+      `mutation ResendVerificationEmail($email: String!) { resendVerificationEmail(email: $email) }`,
+      { email },
+    );
+  }
+
   async verifyEmail(token: string): Promise<void> {
     await this.plainMutation(
       `mutation VerifyEmail($token: String!) { verifyEmail(token: $token) }`,
