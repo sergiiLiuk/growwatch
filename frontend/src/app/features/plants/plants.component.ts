@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { PlantService, Plant, PlantType } from '../../core/services/plant.service';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { QuickLogSheetComponent } from './quick-log-sheet.component';
+import { PlantCareFieldsComponent, emptyCare } from './plant-care-fields.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
@@ -13,7 +14,7 @@ import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plants',
-  imports: [FormsModule, RouterLink, PlantEditModalComponent, QuickLogSheetComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, PlantEditModalComponent, QuickLogSheetComponent, PlantCareFieldsComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -183,6 +184,7 @@ import dayjs from 'dayjs';
                 </div>
                 <p class="text-[11px] text-gray-400 mt-1.5">{{ t('plants.countHint') }}</p>
               </div>
+              <app-plant-care-fields [(care)]="formCare" />
               <div class="flex gap-2 pt-1 pb-4">
                 <button (click)="addPlant()"
                         [disabled]="!canSubmit() || saving()"
@@ -257,6 +259,7 @@ export class PlantsComponent {
   formType = signal('' as PlantType | '');
   formDate = signal('');
   formCount = signal(1);
+  formCare = signal(emptyCare());
   saving = signal(false);
 
   // 3-dot menu
@@ -302,7 +305,7 @@ export class PlantsComponent {
     const type = this.formType();
     if (!this.canSubmit() || !type) return;
     this.saving.set(true);
-    this.plantService.add(this.formName(), type, dayjs(this.formDate()).toDate(), this.formCount())
+    this.plantService.add(this.formName(), type, dayjs(this.formDate()).toDate(), this.formCount(), 12, this.formCare())
       .subscribe({
         next: () => this.cancelForm(),
         error: err => { console.error('Failed to add plant:', err); this.saving.set(false); },
@@ -314,6 +317,7 @@ export class PlantsComponent {
     this.formType.set('');
     this.formDate.set('');
     this.formCount.set(1);
+    this.formCare.set(emptyCare());
     this.saving.set(false);
     this.showForm.set(false);
   }

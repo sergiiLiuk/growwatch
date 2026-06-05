@@ -44,6 +44,27 @@ export const PLANT_TYPE_OPTIONS: PlantTypeOption[] = [
   { value: 'WATERMELON', label: 'Watermelon',   group: 'Fruit' },
 ];
 
+export type WaterAmount = 1 | 2 | 3;
+export type WateringFrequency = 'once_week' | 'twice_week' | 'once_two_weeks' | 'other';
+export type HarvestRecommendation = 'yes' | 'maybe' | 'no';
+
+export interface PlantCare {
+  waterAmount: WaterAmount | null;
+  waterFrequency: WateringFrequency | null;
+  waterFrequencyOther: string | null;
+  fertilizerAmount: WaterAmount | null;
+  fertilizerFrequency: string | null;
+  fertilizerType: string | null;
+}
+
+export interface HarvestSummary {
+  taste: number;
+  fertility: number;
+  recommendation: HarvestRecommendation;
+  notes: string | null;
+  archivedAt: string;
+}
+
 export interface Plant {
   id: string;
   name: string;
@@ -54,9 +75,13 @@ export interface Plant {
   archived: boolean;
   dailyLightHours: number;
   code: string | null;
+  care: PlantCare | null;
+  harvestSummary: HarvestSummary | null;
 }
 
-const PLANT_FIELDS = `id name type plantedDate count monitored archived dailyLightHours code`;
+const PLANT_FIELDS = `id name type plantedDate count monitored archived dailyLightHours code
+  care { waterAmount waterFrequency waterFrequencyOther fertilizerAmount fertilizerFrequency fertilizerType }
+  harvestSummary { taste fertility recommendation notes archivedAt }`;
 
 const SET_MONITORED = gql`
   mutation SetPlantMonitored($id: String!, $monitored: Boolean!) {
@@ -77,14 +102,20 @@ const PLANTS_QUERY_ALL = gql`
 `;
 
 const ADD_PLANT = gql`
-  mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
-    addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) { ${PLANT_FIELDS} }
+  mutation AddPlant($name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int, $care: PlantCareInput) {
+    addPlant(name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours, care: $care) { ${PLANT_FIELDS} }
   }
 `;
 
 const UPDATE_PLANT = gql`
-  mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int) {
-    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours) { ${PLANT_FIELDS} }
+  mutation UpdatePlant($id: String!, $name: String!, $type: PlantType!, $plantedDate: String!, $count: Int!, $dailyLightHours: Int, $care: PlantCareInput) {
+    updatePlant(id: $id, name: $name, type: $type, plantedDate: $plantedDate, count: $count, dailyLightHours: $dailyLightHours, care: $care) { ${PLANT_FIELDS} }
+  }
+`;
+
+const ARCHIVE_PLANT_WITH_SUMMARY = gql`
+  mutation ArchivePlantWithSummary($id: String!, $summary: HarvestSummaryInput!) {
+    archivePlantWithSummary(id: $id, summary: $summary) { ${PLANT_FIELDS} }
   }
 `;
 
@@ -94,7 +125,25 @@ const REMOVE_PLANT = gql`
   }
 `;
 
-interface RawPlant { id: string; name: string; type: string; plantedDate: string; count: number; monitored: boolean; archived: boolean; dailyLightHours: number; code: string | null; }
+/** Drop empty strings/nulls so the input matches the optional schema fields. */
+function stripCare(care: PlantCare | null): PlantCare | null {
+  if (!care) return null;
+  const out: any = {};
+  if (care.waterAmount) out.waterAmount = care.waterAmount;
+  if (care.waterFrequency) out.waterFrequency = care.waterFrequency;
+  if (care.waterFrequencyOther?.trim()) out.waterFrequencyOther = care.waterFrequencyOther.trim();
+  if (care.fertilizerAmount) out.fertilizerAmount = care.fertilizerAmount;
+  if (care.fertilizerFrequency?.trim()) out.fertilizerFrequency = care.fertilizerFrequency.trim();
+  if (care.fertilizerType?.trim()) out.fertilizerType = care.fertilizerType.trim();
+  return Object.keys(out).length > 0 ? out : null;
+}
+
+interface RawPlant {
+  id: string; name: string; type: string; plantedDate: string;
+  count: number; monitored: boolean; archived: boolean; dailyLightHours: number; code: string | null;
+  care: PlantCare | null;
+  harvestSummary: HarvestSummary | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class PlantService {
@@ -137,15 +186,17 @@ export class PlantService {
         archived: p.archived ?? false,
         dailyLightHours: p.dailyLightHours ?? 12,
         code: p.code ?? null,
+        care: p.care ?? null,
+        harvestSummary: p.harvestSummary ?? null,
       };
     });
   }
 
-  add(name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12): Observable<Plant> {
+  add(name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12, care: PlantCare | null = null): Observable<Plant> {
     return defer(() =>
       this.client.mutate<{ addPlant: RawPlant }>({
         mutation: ADD_PLANT,
-        variables: { name: name.trim(), type: type.trim(), plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours },
+        variables: { name: name.trim(), type: type.trim(), plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours, care: stripCare(care) },
       }).then(result => {
         const mapped = this.mapPlants([result.data!.addPlant])[0];
         this.allPlants.update(ps => [...ps, mapped]);
@@ -154,13 +205,26 @@ export class PlantService {
     );
   }
 
-  update(id: string, name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12): Observable<Plant> {
+  update(id: string, name: string, type: PlantType, plantedDate: Date, count: number, dailyLightHours = 12, care: PlantCare | null = null): Observable<Plant> {
     return defer(() =>
       this.client.mutate<{ updatePlant: RawPlant }>({
         mutation: UPDATE_PLANT,
-        variables: { id, name: name.trim(), type, plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours },
+        variables: { id, name: name.trim(), type, plantedDate: dayjs(plantedDate).toISOString(), count, dailyLightHours, care: stripCare(care) },
       }).then(result => {
         const mapped = this.mapPlants([result.data!.updatePlant])[0];
+        this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
+        return mapped;
+      })
+    );
+  }
+
+  archiveWithSummary(id: string, summary: { taste: number; fertility: number; recommendation: HarvestRecommendation; notes?: string }): Observable<Plant> {
+    return defer(() =>
+      this.client.mutate<{ archivePlantWithSummary: RawPlant }>({
+        mutation: ARCHIVE_PLANT_WITH_SUMMARY,
+        variables: { id, summary: { ...summary, notes: summary.notes?.trim() || undefined } },
+      }).then(result => {
+        const mapped = this.mapPlants([result.data!.archivePlantWithSummary])[0];
         this.allPlants.update(ps => ps.map(p => p.id === id ? mapped : p));
         return mapped;
       })

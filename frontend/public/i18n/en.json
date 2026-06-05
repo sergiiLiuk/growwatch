@@ -682,5 +682,60 @@
       "heat": "Heat",
       "wind": "Wind"
     }
+  },
+  "plantCare": {
+    "waterTitle": "Watering",
+    "fertilizerTitle": "Fertilizer",
+    "optional": "optional",
+    "waterAmount": "How much water",
+    "waterFrequency": "How often",
+    "fertilizerAmount": "How much fertilizer",
+    "fertilizerFrequency": "How often (e.g. every 2 weeks)",
+    "fertilizerType": "What kind",
+    "fertilizerTypePlaceholder": "e.g. compost tea, NPK 10-10-10",
+    "fertilizerFreqPlaceholder": "e.g. every 2 weeks, monthly",
+    "freqOtherPlaceholder": "Describe your schedule",
+    "amount": {
+      "1": "A little",
+      "2": "Medium",
+      "3": "A lot"
+    },
+    "freq": {
+      "once_week": "Once a week",
+      "twice_week": "Twice a week",
+      "once_two_weeks": "Every 2 weeks",
+      "other": "Other"
+    }
+  },
+  "harvest": {
+    "title": "Archiving {{ name }}",
+    "subtitle": "Quick recap so you remember what worked next season.",
+    "summaryTitle": "Harvest summary",
+    "taste": "Taste",
+    "fertility": "Yield",
+    "recommendation": "Grow next season?",
+    "notes": "Notes",
+    "notesPlaceholder": "What would you do differently? Any pests, tips, or lessons?",
+    "confirm": "Archive plant",
+    "saving": "Saving…",
+    "rec": {
+      "yes": "Yes",
+      "maybe": "Maybe",
+      "no": "No"
+    },
+    "tasteScale": {
+      "1": "Disappointing",
+      "2": "Below average",
+      "3": "Decent",
+      "4": "Good",
+      "5": "Excellent"
+    },
+    "fertilityScale": {
+      "1": "Very low",
+      "2": "Below average",
+      "3": "Average",
+      "4": "Good",
+      "5": "Abundant"
+    }
   }
 }

@@ -71,6 +71,39 @@ export const typeDefs = gql`
     deviceId: String
   }
 
+  type PlantCare {
+    waterAmount: Int
+    waterFrequency: String
+    waterFrequencyOther: String
+    fertilizerAmount: Int
+    fertilizerFrequency: String
+    fertilizerType: String
+  }
+
+  input PlantCareInput {
+    waterAmount: Int
+    waterFrequency: String
+    waterFrequencyOther: String
+    fertilizerAmount: Int
+    fertilizerFrequency: String
+    fertilizerType: String
+  }
+
+  type HarvestSummary {
+    taste: Int!
+    fertility: Int!
+    recommendation: String!
+    notes: String
+    archivedAt: String!
+  }
+
+  input HarvestSummaryInput {
+    taste: Int!
+    fertility: Int!
+    recommendation: String!
+    notes: String
+  }
+
   type Plant {
     id: String!
     name: String!
@@ -81,6 +114,8 @@ export const typeDefs = gql`
     archived: Boolean!
     dailyLightHours: Int!
     code: String
+    care: PlantCare
+    harvestSummary: HarvestSummary
   }
 
   enum PlantActionType {
@@ -223,11 +258,12 @@ export const typeDefs = gql`
     resendVerificationEmail(email: String!): Boolean!
     verifyEmail(token: String!): Boolean!
     deleteMyAccount(password: String!): Boolean!
-    addPlant(name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!
-    updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int): Plant!
+    addPlant(name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int, care: PlantCareInput): Plant!
+    updatePlant(id: String!, name: String!, type: PlantType!, plantedDate: String!, count: Int!, dailyLightHours: Int, care: PlantCareInput): Plant!
     removePlant(id: String!): Boolean!
     setPlantMonitored(id: String!, monitored: Boolean!): Plant!
     setPlantArchived(id: String!, archived: Boolean!): Plant!
+    archivePlantWithSummary(id: String!, summary: HarvestSummaryInput!): Plant!
     logPlantAction(plantId: String!, type: PlantActionType!, note: String): PlantAction!
     removePlantAction(id: String!): Boolean!
     regenerateBriefing: DailyBriefing

@@ -8,6 +8,7 @@ import { TierService } from '../../core/services/tier.service';
 import { FormsModule } from '@angular/forms';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { PlantNoteModalComponent } from './plant-note-modal.component';
+import { HarvestSummaryModalComponent } from './harvest-summary-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { PLANT_ACTION_META, PLANT_ACTIONS } from '../../core/constants/plant-actions';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
@@ -18,7 +19,7 @@ import { daysAgo } from '../../core/utils/time';
 
 @Component({
   selector: 'app-plant-detail',
-  imports: [FormsModule, RouterLink, PlantEditModalComponent, PlantNoteModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, PlantEditModalComponent, PlantNoteModalComponent, HarvestSummaryModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -300,7 +301,29 @@ import { daysAgo } from '../../core/utils/time';
           </div>
 
         } @else {
-          <!-- Archived plant: unarchive only -->
+          <!-- Archived plant: harvest summary + unarchive -->
+          @if (p.harvestSummary; as h) {
+            <div class="mt-4 bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+              <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">{{ t('harvest.summaryTitle') }}</div>
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <div class="text-[11px] text-gray-400">{{ t('harvest.taste') }}</div>
+                  <div class="text-[14px] text-gw-green-dark font-medium mt-0.5">{{ stars(h.taste) }}</div>
+                </div>
+                <div>
+                  <div class="text-[11px] text-gray-400">{{ t('harvest.fertility') }}</div>
+                  <div class="text-[14px] text-gw-green-dark font-medium mt-0.5">{{ stars(h.fertility) }}</div>
+                </div>
+              </div>
+              <div class="text-[12px] text-gray-600">
+                <span class="text-gray-400">{{ t('harvest.recommendation') }}:</span>
+                <span class="ml-1 font-medium">{{ t('harvest.rec.' + h.recommendation) }}</span>
+              </div>
+              @if (h.notes) {
+                <p class="mt-2 text-[12px] text-gray-600 whitespace-pre-line leading-relaxed">{{ h.notes }}</p>
+              }
+            </div>
+          }
           <div class="mt-5 border-[0.5px] border-dashed border-gray-300 rounded-xl p-4 flex items-center gap-3">
             <p class="text-[12px] text-gray-500 flex-1 leading-relaxed">{{ t('common.archived') }}</p>
             <button (click)="unarchive()"
@@ -342,6 +365,11 @@ import { daysAgo } from '../../core/utils/time';
     <app-plant-note-modal [open]="noteModalOpen()"
                           (saved)="onNoteSaved($event)"
                           (cancelled)="noteModalOpen.set(false)" />
+
+    <!-- Harvest summary on archive -->
+    <app-harvest-summary-modal [plant]="archivingPlant()" [saving]="archiving()"
+                               (confirmed)="confirmArchive($event)"
+                               (cancelled)="archivingPlant.set(null)" />
 
     <!-- Delete confirmation -->
     @if (deleteOpen() && plant(); as p) {
@@ -644,10 +672,27 @@ export class PlantDetailComponent implements OnInit {
 
   // ── Archive ────────────────────────────────────────────────────────────────
 
+  archivingPlant = signal<Plant | null>(null);
+  archiving = signal(false);
+
+  stars(n: number): string {
+    return '★'.repeat(Math.max(0, Math.min(5, n))) + '☆'.repeat(Math.max(0, 5 - n));
+  }
+
   archive() {
     const p = this.plant();
     if (!p) return;
-    this.plantService.setArchived(p.id, true).subscribe();
+    this.archivingPlant.set(p);
+  }
+
+  confirmArchive(summary: { taste: number; fertility: number; recommendation: 'yes' | 'maybe' | 'no'; notes?: string }) {
+    const p = this.archivingPlant();
+    if (!p) return;
+    this.archiving.set(true);
+    this.plantService.archiveWithSummary(p.id, summary).subscribe({
+      next: () => { this.archiving.set(false); this.archivingPlant.set(null); },
+      error: err => { console.error('Failed to archive plant:', err); this.archiving.set(false); },
+    });
   }
 
   unarchive() {

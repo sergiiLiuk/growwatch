@@ -74,6 +74,28 @@ export const EmailVerificationToken = mongoose.model<IEmailVerificationToken>('E
 
 // ── Plant ───────────────────────────────────────────────────────────────────
 
+export type WaterAmount = 1 | 2 | 3;
+export type WateringFrequency = 'once_week' | 'twice_week' | 'once_two_weeks' | 'other';
+
+export interface IPlantCare {
+    waterAmount?: WaterAmount;
+    waterFrequency?: WateringFrequency;
+    waterFrequencyOther?: string;
+    fertilizerAmount?: WaterAmount;
+    fertilizerFrequency?: string;
+    fertilizerType?: string;
+}
+
+export type HarvestRecommendation = 'yes' | 'maybe' | 'no';
+
+export interface IHarvestSummary {
+    taste: number;       // 1-5
+    fertility: number;   // 1-5
+    recommendation: HarvestRecommendation;
+    notes?: string;
+    archivedAt: Date;
+}
+
 export interface IPlant extends Document {
     name: string;
     type: PlantType;
@@ -84,6 +106,8 @@ export interface IPlant extends Document {
     dailyLightHours: number;
     code?: string;
     userId?: string;
+    care?: IPlantCare;
+    harvestSummary?: IHarvestSummary;
 }
 
 const plantSchema = new Schema<IPlant>(
@@ -97,6 +121,21 @@ const plantSchema = new Schema<IPlant>(
         dailyLightHours: { type: Number, required: true, default: 12 },
         code: { type: String, index: true },
         userId: { type: String, index: true },
+        care: {
+            waterAmount: { type: Number, min: 1, max: 3 },
+            waterFrequency: { type: String, enum: ['once_week', 'twice_week', 'once_two_weeks', 'other'] },
+            waterFrequencyOther: { type: String },
+            fertilizerAmount: { type: Number, min: 1, max: 3 },
+            fertilizerFrequency: { type: String },
+            fertilizerType: { type: String },
+        },
+        harvestSummary: {
+            taste: { type: Number, min: 1, max: 5 },
+            fertility: { type: Number, min: 1, max: 5 },
+            recommendation: { type: String, enum: ['yes', 'maybe', 'no'] },
+            notes: { type: String },
+            archivedAt: { type: Date },
+        },
     },
     { timestamps: true }
 );

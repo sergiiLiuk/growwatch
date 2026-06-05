@@ -281,7 +281,42 @@ function mapPlant(doc: any) {
         archived: doc.archived ?? false,
         dailyLightHours: doc.dailyLightHours ?? 12,
         code: doc.code ?? null,
+        care: doc.care && (doc.care.waterAmount || doc.care.waterFrequency || doc.care.fertilizerAmount || doc.care.fertilizerFrequency || doc.care.fertilizerType)
+            ? {
+                waterAmount: doc.care.waterAmount ?? null,
+                waterFrequency: doc.care.waterFrequency ?? null,
+                waterFrequencyOther: doc.care.waterFrequencyOther ?? null,
+                fertilizerAmount: doc.care.fertilizerAmount ?? null,
+                fertilizerFrequency: doc.care.fertilizerFrequency ?? null,
+                fertilizerType: doc.care.fertilizerType ?? null,
+            }
+            : null,
+        harvestSummary: doc.harvestSummary && doc.harvestSummary.taste
+            ? {
+                taste: doc.harvestSummary.taste,
+                fertility: doc.harvestSummary.fertility,
+                recommendation: doc.harvestSummary.recommendation,
+                notes: doc.harvestSummary.notes ?? null,
+                archivedAt: dateAsString(doc.harvestSummary.archivedAt ?? new Date()),
+            }
+            : null,
     };
+}
+
+interface PlantCareInput {
+    waterAmount?: number;
+    waterFrequency?: string;
+    waterFrequencyOther?: string;
+    fertilizerAmount?: number;
+    fertilizerFrequency?: string;
+    fertilizerType?: string;
+}
+
+interface HarvestSummaryInput {
+    taste: number;
+    fertility: number;
+    recommendation: 'yes' | 'maybe' | 'no';
+    notes?: string;
 }
 
 /**
@@ -748,18 +783,43 @@ export const resolvers = {
             const token = signToken({ userId, email: doc.email, role: doc.role });
             return { token, email: doc.email, role: doc.role, userId, subscriptionTier: doc.subscriptionTier ?? 'free', emailVerified: false };
         },
-        addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12 }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
+        addPlant: async (_: any, { name, type, plantedDate, count, dailyLightHours = 12, care }: { name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number; care?: PlantCareInput }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             const code = await generatePlantCode(ctx.user.userId, type);
-            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours, code, userId: ctx.user.userId });
+            const doc = await Plant.create({ name, type, plantedDate: new Date(plantedDate), count, monitored: true, dailyLightHours, code, userId: ctx.user.userId, care: care as any });
             await refreshPrimaryPlant();
             return mapPlant(doc);
         },
-        updatePlant: async (_: any, { id, name, type, plantedDate, count, dailyLightHours = 12 }: { id: string; name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number }, ctx: Ctx) => {
+        updatePlant: async (_: any, { id, name, type, plantedDate, count, dailyLightHours = 12, care }: { id: string; name: string; type: PlantType; plantedDate: string; count: number; dailyLightHours?: number; care?: PlantCareInput }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
+            const update: any = { name, type, plantedDate: new Date(plantedDate), count, dailyLightHours };
+            if (care !== undefined) update.care = care;
             const doc = await Plant.findOneAndUpdate(
                 { _id: id, userId: ctx.user.userId },
-                { name, type, plantedDate: new Date(plantedDate), count, dailyLightHours },
+                update,
+                { new: true }
+            );
+            if (!doc) throw new Error('Plant not found');
+            await refreshPrimaryPlant();
+            return mapPlant(doc);
+        },
+        archivePlantWithSummary: async (_: any, { id, summary }: { id: string; summary: HarvestSummaryInput }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            if (summary.taste < 1 || summary.taste > 5) throw new Error('Invalid taste rating');
+            if (summary.fertility < 1 || summary.fertility > 5) throw new Error('Invalid fertility rating');
+            if (!['yes', 'maybe', 'no'].includes(summary.recommendation)) throw new Error('Invalid recommendation');
+            const doc = await Plant.findOneAndUpdate(
+                { _id: id, userId: ctx.user.userId },
+                {
+                    archived: true,
+                    harvestSummary: {
+                        taste: summary.taste,
+                        fertility: summary.fertility,
+                        recommendation: summary.recommendation,
+                        notes: summary.notes,
+                        archivedAt: new Date(),
+                    },
+                },
                 { new: true }
             );
             if (!doc) throw new Error('Plant not found');

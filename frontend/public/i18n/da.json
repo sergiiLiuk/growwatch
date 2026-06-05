@@ -682,5 +682,60 @@
       "heat": "Varme",
       "wind": "Vind"
     }
+  },
+  "plantCare": {
+    "waterTitle": "Vanding",
+    "fertilizerTitle": "Gødning",
+    "optional": "valgfrit",
+    "waterAmount": "Hvor meget vand",
+    "waterFrequency": "Hvor ofte",
+    "fertilizerAmount": "Hvor meget gødning",
+    "fertilizerFrequency": "Hvor ofte (fx hver 2. uge)",
+    "fertilizerType": "Hvilken slags",
+    "fertilizerTypePlaceholder": "fx kompostte, NPK 10-10-10",
+    "fertilizerFreqPlaceholder": "fx hver 2. uge, månedligt",
+    "freqOtherPlaceholder": "Beskriv din rytme",
+    "amount": {
+      "1": "Lidt",
+      "2": "Middel",
+      "3": "Meget"
+    },
+    "freq": {
+      "once_week": "En gang om ugen",
+      "twice_week": "To gange om ugen",
+      "once_two_weeks": "Hver 2. uge",
+      "other": "Andet"
+    }
+  },
+  "harvest": {
+    "title": "Arkiverer {{ name }}",
+    "subtitle": "Lille opsamling så du husker hvad der virkede til næste sæson.",
+    "summaryTitle": "Høstopsamling",
+    "taste": "Smag",
+    "fertility": "Udbytte",
+    "recommendation": "Dyrk igen næste sæson?",
+    "notes": "Noter",
+    "notesPlaceholder": "Hvad ville du gøre anderledes? Skadedyr, tips eller erfaringer?",
+    "confirm": "Arkivér plante",
+    "saving": "Gemmer…",
+    "rec": {
+      "yes": "Ja",
+      "maybe": "Måske",
+      "no": "Nej"
+    },
+    "tasteScale": {
+      "1": "Skuffende",
+      "2": "Under middel",
+      "3": "OK",
+      "4": "God",
+      "5": "Fremragende"
+    },
+    "fertilityScale": {
+      "1": "Meget lavt",
+      "2": "Under middel",
+      "3": "Gennemsnitligt",
+      "4": "Godt",
+      "5": "Rigeligt"
+    }
   }
 }
