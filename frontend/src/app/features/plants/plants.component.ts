@@ -42,15 +42,52 @@ import dayjs from 'dayjs';
         </div>
       </div>
 
+      <!-- Search + sort -->
+      @if (plants().length > 0) {
+        <div class="flex items-center gap-2 mb-3 relative">
+          <div class="flex-1 relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <app-icon name="search" class="w-4 h-4" />
+            </span>
+            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)"
+                   [placeholder]="t('plants.searchPlaceholder')"
+                   class="w-full pl-10 pr-3 py-2.5 bg-white border-[0.5px] border-gray-200 rounded-xl text-[13px] outline-none focus:border-gw-green transition-colors" />
+          </div>
+          <button (click)="sortMenuOpen.set(!sortMenuOpen()); $event.stopPropagation()"
+                  class="w-10 h-10 flex items-center justify-center bg-white border-[0.5px] border-gray-200 rounded-xl text-gray-500 hover:border-gray-300 transition-colors shrink-0">
+            <app-icon name="sliders" class="w-4 h-4" />
+          </button>
+          @if (sortMenuOpen()) {
+            <div class="absolute right-0 top-12 z-50 bg-white rounded-xl border-[0.5px] border-gray-200 w-44 py-1"
+                 style="box-shadow: 0 2px 12px rgba(0,0,0,0.08)"
+                 (click)="$event.stopPropagation()">
+              @for (opt of sortOptions; track opt.value) {
+                <button (click)="setSort(opt.value)"
+                        class="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
+                  <span>{{ t('plants.sortBy.' + opt.value) }}</span>
+                  @if (sort() === opt.value) {
+                    <span class="text-gw-green-dark">✓</span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
       <!-- Empty state -->
       @if (!plantsLoading() && plants().length === 0) {
         <app-empty-state emoji="🌱" [title]="t('plants.noPlantsYet')"
                          [subtitle]="t('plants.noPlantsSubtitle')" />
       }
 
+      @if (plants().length > 0 && visiblePlants().length === 0) {
+        <p class="text-[12px] text-gray-400 text-center py-6">{{ t('plants.noMatches') }}</p>
+      }
+
       <!-- Plant list -->
       <div class="flex flex-col gap-2">
-        @for (plant of plants(); track plant.id) {
+        @for (plant of visiblePlants(); track plant.id) {
           <div class="relative">
             <!-- Card -->
             <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:border-gray-300 transition-colors"
@@ -249,6 +286,34 @@ export class PlantsComponent {
   // Quick log batch
   quickLogOpen = signal(false);
 
+  // Search + sort
+  search = signal('');
+  sort = signal<'name' | 'type' | 'recent'>('name');
+  sortMenuOpen = signal(false);
+  sortOptions: { value: 'name' | 'type' | 'recent' }[] = [
+    { value: 'name' }, { value: 'type' }, { value: 'recent' },
+  ];
+
+  visiblePlants = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    const filtered = q
+      ? this.plants().filter(p =>
+          p.name.toLowerCase().includes(q) ||
+          this.getTypeLabel(p.type).toLowerCase().includes(q))
+      : this.plants();
+    const list = [...filtered];
+    const s = this.sort();
+    if (s === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
+    else if (s === 'type') list.sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name));
+    else list.sort((a, b) => b.plantedDate.getTime() - a.plantedDate.getTime());
+    return list;
+  });
+
+  setSort(value: 'name' | 'type' | 'recent') {
+    this.sort.set(value);
+    this.sortMenuOpen.set(false);
+  }
+
   getEmoji(type: PlantType): string {
     return PLANT_TYPE_STYLE[type]?.emoji ?? '🌿';
   }
@@ -283,6 +348,7 @@ export class PlantsComponent {
   @HostListener('document:click')
   closeMenu() {
     this.menuOpenId.set(null);
+    this.sortMenuOpen.set(false);
   }
 
   toggleMenu(plantId: string) {

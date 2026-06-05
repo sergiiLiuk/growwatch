@@ -137,6 +137,13 @@
   "plants": {
     "title": "Plants",
     "myPlants": "My plants",
+    "searchPlaceholder": "Search plants…",
+    "noMatches": "No plants match your search.",
+    "sortBy": {
+      "name": "Name (A–Z)",
+      "type": "Type",
+      "recent": "Recently planted"
+    },
     "addPlant": "Add a plant",
     "addPlantSubtitle": "Tell me what you're growing.",
     "addPlantButton": "+ Add plant",

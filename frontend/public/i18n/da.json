@@ -137,6 +137,13 @@
   "plants": {
     "title": "Planter",
     "myPlants": "Mine planter",
+    "searchPlaceholder": "Søg planter…",
+    "noMatches": "Ingen planter matcher din søgning.",
+    "sortBy": {
+      "name": "Navn (A–Å)",
+      "type": "Type",
+      "recent": "Senest plantet"
+    },
     "addPlant": "Tilføj en plante",
     "addPlantSubtitle": "Fortæl mig hvad du dyrker.",
     "addPlantButton": "+ Tilføj plante",
