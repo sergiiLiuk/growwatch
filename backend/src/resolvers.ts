@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken } from './models';
+import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken, SmartTip, AiUsage } from './models';
 import type { EmailLocale } from './services/emailSender';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
@@ -660,6 +660,38 @@ export const resolvers = {
             await user.save();
             record.usedAt = new Date();
             await record.save();
+            return true;
+        },
+        deleteMyAccount: async (_: any, { password }: { password: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            // Demo accounts are shared/illustrative — deletion would erase the
+            // canonical sample data for everyone else. Block at the resolver.
+            if (ctx.user.role === 'demo') throw new Error('account.demoCannotDelete');
+            const user = await User.findById(ctx.user.userId);
+            if (!user) throw new Error('account.notFound');
+            if (!(await verifyPassword(password, user.passwordHash))) {
+                throw new Error('auth.invalidPassword');
+            }
+            const userId = ctx.user.userId;
+            // Cascade: every collection that carries userId. Done in parallel —
+            // none of them depend on each other; failure of one shouldn't block
+            // the others, but if anything throws the user row stays so they can
+            // try again. The User doc is removed last for that reason.
+            await Promise.all([
+                Plant.deleteMany({ userId }),
+                PlantAction.deleteMany({ userId }),
+                PlantReminder.deleteMany({ userId }),
+                PushSubscription.deleteMany({ userId }),
+                PasswordResetToken.deleteMany({ userId }),
+                EmailVerificationToken.deleteMany({ userId }),
+                Device.deleteMany({ userId }),
+                DailyBriefing.deleteMany({ userId }),
+                SmartTip.deleteMany({ userId }),
+                AiUsage.deleteMany({ userId }),
+                HourlySensorData.deleteMany({ userId }),
+                UserSettings.deleteMany({ userId }),
+            ]);
+            await User.deleteOne({ _id: userId });
             return true;
         },
         register: async (_: any, { email, password }: { email: string; password: string }) => {

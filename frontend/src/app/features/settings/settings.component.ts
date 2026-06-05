@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TierService } from '../../core/services/tier.service';
 import { PushService } from '../../core/services/push.service';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
@@ -414,6 +414,52 @@ import { ReminderService } from '../../core/services/reminder.service';
         </div>
       </div>
 
+      <!-- Danger zone — permanent account deletion. Hidden for demo accounts. -->
+      @if (!tier.isDemo()) {
+        <div class="mt-6">
+          <div class="text-[11px] text-gw-red mb-2 font-medium uppercase tracking-wide">{{ t('settings.dangerZone') }}</div>
+          <div class="bg-white border-[0.5px] border-red-200 rounded-2xl p-4 flex items-start gap-3">
+            <div class="flex-1">
+              <div class="text-[13px] font-medium text-gray-800">{{ t('settings.deleteAccount') }}</div>
+              <p class="text-[12px] text-gray-500 mt-0.5 leading-relaxed">{{ t('settings.deleteAccountDescription') }}</p>
+            </div>
+            <button type="button" (click)="openDeleteAccount()"
+                    class="shrink-0 text-[12px] font-medium text-gw-red border-[0.5px] border-red-200 px-3 py-1.5 rounded-md hover:bg-red-50 transition-colors">
+              {{ t('settings.deleteAccount') }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (deleteAccountOpen()) {
+        <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30 px-4">
+          <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 pb-24 sm:pb-5 max-h-[85vh] overflow-y-auto">
+            <h2 class="text-[15px] font-medium text-gray-800 mb-1">{{ t('settings.deleteAccountTitle') }}</h2>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-4">{{ t('settings.deleteAccountBody') }}</p>
+            <label class="block text-[12px] font-medium text-gray-700 mb-1.5">{{ t('settings.confirmPassword') }}</label>
+            <input type="password"
+                   [(ngModel)]="deletePassword"
+                   autocomplete="current-password"
+                   class="w-full px-3 py-2 rounded-lg border border-gray-200 text-[13px] outline-none focus:border-gw-red focus:ring-1 focus:ring-red-100 transition-colors mb-1" />
+            @if (deleteError()) {
+              <p class="text-[12px] text-gw-red mb-2">{{ deleteError() }}</p>
+            }
+            <div class="flex gap-2 justify-end mt-4">
+              <button type="button" (click)="cancelDeleteAccount()"
+                      [disabled]="deleting()"
+                      class="text-[13px] font-medium text-gray-600 border-[0.5px] border-gray-200 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-40">
+                {{ t('settings.cancel') }}
+              </button>
+              <button type="button" (click)="confirmDeleteAccount()"
+                      [disabled]="deleting() || !deletePassword"
+                      class="text-[13px] font-medium bg-gw-red text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors disabled:opacity-40">
+                {{ deleting() ? t('settings.deletingAccount') : t('settings.confirmDeleteAccount') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (disableConfirmOpen()) {
         <div class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30 px-4">
           <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 pb-24 sm:pb-5 max-h-[85vh] overflow-y-auto">
@@ -448,6 +494,39 @@ export class SettingsComponent implements OnInit {
 
   disableConfirmOpen = signal(false);
   disabling = signal(false);
+
+  // Account deletion flow
+  deleteAccountOpen = signal(false);
+  deletePassword = '';
+  deleting = signal(false);
+  deleteError = signal('');
+  private transloco = inject(TranslocoService);
+
+  openDeleteAccount() {
+    this.deletePassword = '';
+    this.deleteError.set('');
+    this.deleteAccountOpen.set(true);
+  }
+
+  cancelDeleteAccount() {
+    if (this.deleting()) return;
+    this.deleteAccountOpen.set(false);
+  }
+
+  async confirmDeleteAccount() {
+    if (this.deleting() || !this.deletePassword) return;
+    this.deleting.set(true);
+    this.deleteError.set('');
+    try {
+      await this.auth.deleteAccount(this.deletePassword);
+      // auth.deleteAccount calls logout() which navigates to /login.
+    } catch (err: any) {
+      const msg = String(err?.message ?? '');
+      const key = msg.startsWith('auth.') || msg.startsWith('account.') ? msg : 'settings.deleteAccountFailed';
+      this.deleteError.set(String(this.transloco.translate(key)));
+      this.deleting.set(false);
+    }
+  }
 
   async togglePush() {
     if (this.push.enabled()) {

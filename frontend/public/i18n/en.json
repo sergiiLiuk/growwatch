@@ -16,6 +16,15 @@
     "disablePushConfirm": "Turn off & reset reminders",
     "disabling": "Disabling…",
     "cancel": "Cancel",
+    "dangerZone": "Danger zone",
+    "deleteAccount": "Delete account",
+    "deleteAccountDescription": "Permanently remove your account and every plant, reading, reminder, and tip we've stored. This can't be undone.",
+    "deleteAccountTitle": "Delete your GrowWatch account?",
+    "deleteAccountBody": "All your plants, action history, reminders, sensor readings, and settings will be permanently erased. Enter your password to confirm.",
+    "confirmPassword": "Password",
+    "confirmDeleteAccount": "Delete forever",
+    "deletingAccount": "Deleting…",
+    "deleteAccountFailed": "Couldn't delete your account. Please try again.",
     "notifications": "Notifications",
     "dailyDigest": "Daily digest",
     "dailyDigestDescription": "Evening summary of your greenhouse",
@@ -174,6 +183,10 @@
     "joinWaitlist": "Join waitlist",
     "upgrade": "Upgrade",
     "comingSoon": "Payments coming soon — contact us to upgrade manually."
+  },
+  "account": {
+    "demoCannotDelete": "Demo accounts can't be deleted.",
+    "notFound": "Account not found. Try signing in again."
   },
   "verifyEmail": {
     "checking": "Confirming your email…",

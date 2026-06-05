@@ -125,6 +125,24 @@ export class AuthService {
     await this.refreshMe();
   }
 
+  /** Permanently delete the signed-in user's account and all related data. */
+  async deleteAccount(password: string): Promise<void> {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) throw new Error('Not signed in');
+    const res = await fetch(environment.backendHttpUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        query: `mutation DeleteMyAccount($password: String!) { deleteMyAccount(password: $password) }`,
+        variables: { password },
+      }),
+    });
+    const json = await res.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+    // Wipe local state — same as logout — and bounce to login.
+    this.logout();
+  }
+
   private async plainMutation(query: string, variables: Record<string, unknown>): Promise<void> {
     const res = await fetch(environment.backendHttpUrl, {
       method: 'POST',

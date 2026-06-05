@@ -16,6 +16,15 @@
     "disablePushConfirm": "Slå fra og nulstil påmindelser",
     "disabling": "Slår fra…",
     "cancel": "Annuller",
+    "dangerZone": "Farezone",
+    "deleteAccount": "Slet konto",
+    "deleteAccountDescription": "Fjern permanent din konto og alle planter, målinger, påmindelser og tips, vi har gemt. Det kan ikke fortrydes.",
+    "deleteAccountTitle": "Slet din GrowWatch-konto?",
+    "deleteAccountBody": "Alle dine planter, handlingshistorik, påmindelser, sensormålinger og indstillinger slettes permanent. Indtast din adgangskode for at bekræfte.",
+    "confirmPassword": "Adgangskode",
+    "confirmDeleteAccount": "Slet for altid",
+    "deletingAccount": "Sletter…",
+    "deleteAccountFailed": "Kunne ikke slette din konto. Prøv igen.",
     "notifications": "Notifikationer",
     "dailyDigest": "Daglig oversigt",
     "dailyDigestDescription": "Aftensammendrag af dit drivhus",
@@ -174,6 +183,10 @@
     "joinWaitlist": "Tilmeld venteliste",
     "upgrade": "Opgradér",
     "comingSoon": "Betalinger kommer snart — kontakt os for at opgradere manuelt."
+  },
+  "account": {
+    "demoCannotDelete": "Demo-konti kan ikke slettes.",
+    "notFound": "Konto blev ikke fundet. Log ind igen."
   },
   "verifyEmail": {
     "checking": "Bekræfter din e-mail…",
