@@ -16,6 +16,7 @@
   "nav": {
     "home": "Hjem",
     "plants": "Planter",
+    "calendar": "Kalender",
     "digest": "Dagsoversigt",
     "alerts": "Beskeder",
     "settings": "Indstillinger",
@@ -760,6 +761,28 @@
       "3": "Gennemsnitligt",
       "4": "Godt",
       "5": "Rigeligt"
+    }
+  },
+  "calendar": {
+    "title": "Plantekalender",
+    "prevWeek": "Forrige uge",
+    "nextWeek": "Næste uge",
+    "filterAll": "Alle",
+    "loading": "Indlæser begivenheder…",
+    "noEvents": "Ingen begivenheder",
+    "noEventsThisDay": "Intet planlagt denne dag.",
+    "eventCount": "{{ n }} begivenheder",
+    "eventCountOne": "1 begivenhed",
+    "upcomingTitle": "Kommende",
+    "upcomingSubtitle": "Næste 7 dage",
+    "noUpcomingTitle": "Ingen kommende",
+    "noUpcomingBody": "Intet planlagt i den næste uge.",
+    "weekday": {
+      "mon": "Man", "tue": "Tir", "wed": "Ons", "thu": "Tor", "fri": "Fre", "sat": "Lør", "sun": "Søn"
+    },
+    "status": {
+      "completed": "Fuldført",
+      "upcoming": "Kommende"
     }
   }
 }

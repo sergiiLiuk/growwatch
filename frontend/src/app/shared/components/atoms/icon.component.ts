@@ -16,7 +16,7 @@ export type IconName =
   // Brand
   | 'logo' | 'leaf'
   // Nav
-  | 'home' | 'plants' | 'digest' | 'alerts' | 'settings' | 'logout' | 'admin'
+  | 'home' | 'plants' | 'digest' | 'alerts' | 'settings' | 'logout' | 'admin' | 'calendar'
   // Chevrons
   | 'chevron-right' | 'chevron-left' | 'chevron-down' | 'chevron-up'
   // Actions
@@ -157,6 +157,12 @@ export type IconName =
         }
         @case ('thermometer') {
           <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0z"/>
+        }
+        @case ('calendar') {
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
         }
         @case ('search') {
           <circle cx="11" cy="11" r="7"/>

@@ -602,6 +602,73 @@ export const resolvers = {
             const docs = await PlantReminder.find(query).sort({ nextDueAt: 1 }).lean();
             return docs.map(mapReminder);
         },
+        plantEvents: async (_: any, { from, to }: { from: string; to: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const userId = ctx.user.userId;
+            const fromDate = new Date(from);
+            const toDate = new Date(to);
+            if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime()) || fromDate > toDate) {
+                throw new Error('Invalid date range');
+            }
+
+            const [plants, actions, reminders] = await Promise.all([
+                Plant.find({ userId }).select('name type').lean(),
+                PlantAction.find({
+                    userId,
+                    createdAt: { $gte: fromDate, $lte: toDate },
+                }).sort({ createdAt: 1 }).lean(),
+                PlantReminder.find({ userId, enabled: true }).lean(),
+            ]);
+
+            const plantMap = new Map<string, { name: string; type: string }>();
+            for (const p of plants) plantMap.set((p as any)._id.toString(), { name: p.name, type: p.type });
+
+            const events: any[] = [];
+
+            // Past actions → "completed" events
+            for (const a of actions) {
+                const meta = plantMap.get(a.plantId);
+                if (!meta) continue;
+                events.push({
+                    id: `action-${(a as any)._id.toString()}`,
+                    plantId: a.plantId,
+                    plantName: meta.name,
+                    plantType: meta.type,
+                    type: a.type,
+                    scheduledAt: a.createdAt.toISOString(),
+                    status: 'completed',
+                    note: a.note ?? null,
+                });
+            }
+
+            // Project reminder occurrences forward into the window
+            for (const r of reminders) {
+                const meta = plantMap.get(r.plantId);
+                if (!meta) continue;
+                let cursor = new Date(r.nextDueAt);
+                const step = r.intervalDays * 86_400_000;
+                // Cap projections at 50 to avoid runaway loops on absurd ranges
+                let safety = 0;
+                while (cursor <= toDate && safety < 50) {
+                    if (cursor >= fromDate) {
+                        events.push({
+                            id: `reminder-${(r as any)._id.toString()}-${cursor.toISOString()}`,
+                            plantId: r.plantId,
+                            plantName: meta.name,
+                            plantType: meta.type,
+                            type: r.actionType,
+                            scheduledAt: cursor.toISOString(),
+                            status: 'upcoming',
+                            note: null,
+                        });
+                    }
+                    cursor = new Date(cursor.getTime() + step);
+                    safety++;
+                }
+            }
+
+            return events.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+        },
         vapidPublicKey: () => process.env.VAPID_PUBLIC_KEY ?? null,
         myDevices: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) return [];

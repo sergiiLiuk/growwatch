@@ -196,6 +196,22 @@ export const typeDefs = gql`
     note
   }
 
+  enum PlantEventStatus {
+    completed
+    upcoming
+  }
+
+  type PlantEvent {
+    id: String!
+    plantId: String!
+    plantName: String!
+    plantType: PlantType!
+    type: PlantActionType!
+    scheduledAt: String!
+    status: PlantEventStatus!
+    note: String
+  }
+
   type PlantReminder {
     id: String!
     plantId: String!
@@ -233,6 +249,7 @@ export const typeDefs = gql`
     smartTip(plantId: String!): SmartTip
     dailyBriefing: DailyBriefing
     plantReminders(plantId: String): [PlantReminder!]!
+    plantEvents(from: String!, to: String!): [PlantEvent!]!
     vapidPublicKey: String
     myDevices: [Device!]!
     myUserSettings: UserSettings!

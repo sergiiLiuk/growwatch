@@ -16,6 +16,7 @@
   "nav": {
     "home": "Home",
     "plants": "Plants",
+    "calendar": "Calendar",
     "digest": "Digest",
     "alerts": "Alerts",
     "settings": "Settings",
@@ -760,6 +761,28 @@
       "3": "Average",
       "4": "Good",
       "5": "Abundant"
+    }
+  },
+  "calendar": {
+    "title": "Plants calendar",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "filterAll": "All",
+    "loading": "Loading events…",
+    "noEvents": "No events",
+    "noEventsThisDay": "Nothing scheduled here.",
+    "eventCount": "{{ n }} events",
+    "eventCountOne": "1 event",
+    "upcomingTitle": "Upcoming",
+    "upcomingSubtitle": "Next 7 days",
+    "noUpcomingTitle": "All clear",
+    "noUpcomingBody": "Nothing scheduled in the next week.",
+    "weekday": {
+      "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun"
+    },
+    "status": {
+      "completed": "Completed",
+      "upcoming": "Upcoming"
     }
   }
 }

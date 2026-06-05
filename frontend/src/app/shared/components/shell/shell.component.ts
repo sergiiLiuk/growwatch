@@ -106,10 +106,11 @@ export class ShellComponent implements OnInit {
   }
 
   navItems = [
-    { path: '/',       label: 'Home',     icon: 'home' as const    },
-    { path: '/plants', label: 'Plants',   icon: 'plants' as const  },
-    { path: '/digest', label: 'Digest',   icon: 'digest' as const  },
-    { path: '/alerts', label: 'Alerts',   icon: 'alerts' as const  },
+    { path: '/',         label: 'Home',     icon: 'home'     as const },
+    { path: '/plants',   label: 'Plants',   icon: 'plants'   as const },
+    { path: '/calendar', label: 'Calendar', icon: 'calendar' as const },
+    { path: '/digest',   label: 'Digest',   icon: 'digest'   as const },
+    { path: '/alerts',   label: 'Alerts',   icon: 'alerts'   as const },
   ];
 
   allNavItems = [
