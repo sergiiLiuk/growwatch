@@ -82,6 +82,36 @@ import dayjs from 'dayjs';
         </div>
       }
 
+      <!-- Type filter chips — only types the user actually owns -->
+      @if (availableTypes().length > 1) {
+        <div class="flex gap-2 mb-3 overflow-x-auto pb-1 -mx-1 px-1" style="scrollbar-width:none">
+          <button (click)="typeFilter.set('all')"
+                  class="shrink-0 text-[12px] px-3 py-1.5 rounded-full border-[0.5px] transition-colors"
+                  [class.bg-gw-green]="typeFilter() === 'all'"
+                  [class.text-white]="typeFilter() === 'all'"
+                  [class.border-gw-green]="typeFilter() === 'all'"
+                  [class.bg-white]="typeFilter() !== 'all'"
+                  [class.text-gray-600]="typeFilter() !== 'all'"
+                  [class.border-gray-200]="typeFilter() !== 'all'">
+            {{ t('plants.filterAll') }} · {{ plants().length }}
+          </button>
+          @for (entry of availableTypes(); track entry.type) {
+            <button (click)="typeFilter.set(entry.type)"
+                    class="shrink-0 text-[12px] px-3 py-1.5 rounded-full border-[0.5px] flex items-center gap-1.5 transition-colors"
+                    [class.bg-gw-green]="typeFilter() === entry.type"
+                    [class.text-white]="typeFilter() === entry.type"
+                    [class.border-gw-green]="typeFilter() === entry.type"
+                    [class.bg-white]="typeFilter() !== entry.type"
+                    [class.text-gray-600]="typeFilter() !== entry.type"
+                    [class.border-gray-200]="typeFilter() !== entry.type">
+              <span>{{ getStyle(entry.type).emoji }}</span>
+              <span>{{ getTypeLabel(entry.type) }}</span>
+              <span class="opacity-60">{{ entry.count }}</span>
+            </button>
+          }
+        </div>
+      }
+
       <!-- Empty state -->
       @if (!plantsLoading() && plants().length === 0) {
         <app-empty-state emoji="🌱" [title]="t('plants.noPlantsYet')"
@@ -293,21 +323,32 @@ export class PlantsComponent {
   // Quick log batch
   quickLogOpen = signal(false);
 
-  // Search + sort
+  // Search + sort + type filter
   search = signal('');
   sort = signal<'name' | 'type' | 'recent'>('name');
   sortMenuOpen = signal(false);
+  typeFilter = signal<PlantType | 'all'>('all');
   sortOptions: { value: 'name' | 'type' | 'recent' }[] = [
     { value: 'name' }, { value: 'type' }, { value: 'recent' },
   ];
 
+  /** Distinct types present in the user's collection, with a count of each. */
+  availableTypes = computed(() => {
+    const counts = new Map<PlantType, number>();
+    for (const p of this.plants()) counts.set(p.type, (counts.get(p.type) ?? 0) + 1);
+    return Array.from(counts.entries())
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => this.getTypeLabel(a.type).localeCompare(this.getTypeLabel(b.type)));
+  });
+
   visiblePlants = computed(() => {
     const q = this.search().trim().toLowerCase();
-    const filtered = q
-      ? this.plants().filter(p =>
-          p.name.toLowerCase().includes(q) ||
-          this.getTypeLabel(p.type).toLowerCase().includes(q))
-      : this.plants();
+    const type = this.typeFilter();
+    const filtered = this.plants().filter(p => {
+      if (type !== 'all' && p.type !== type) return false;
+      if (q && !p.name.toLowerCase().includes(q) && !this.getTypeLabel(p.type).toLowerCase().includes(q)) return false;
+      return true;
+    });
     const list = [...filtered];
     const s = this.sort();
     if (s === 'name') list.sort((a, b) => a.name.localeCompare(b.name));

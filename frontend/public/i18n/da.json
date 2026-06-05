@@ -145,6 +145,7 @@
     "myPlants": "Mine planter",
     "searchPlaceholder": "Søg planter…",
     "clearSearch": "Ryd søgning",
+    "filterAll": "Alle",
     "noMatches": "Ingen planter matcher din søgning.",
     "sortBy": {
       "name": "Navn (A–Å)",

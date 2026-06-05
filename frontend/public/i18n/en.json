@@ -145,6 +145,7 @@
     "myPlants": "My plants",
     "searchPlaceholder": "Search plants…",
     "clearSearch": "Clear search",
+    "filterAll": "All",
     "noMatches": "No plants match your search.",
     "sortBy": {
       "name": "Name (A–Z)",
