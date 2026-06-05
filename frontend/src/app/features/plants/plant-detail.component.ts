@@ -182,6 +182,49 @@ import { daysAgo } from '../../core/utils/time';
             </div>
           }
 
+          <!-- Care plan — reference chips for water + fertilizer. Hidden if
+               nothing's set; shows a subtle "+ Add care plan" link instead. -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{{ t('plantCare.sectionTitle') }}</div>
+              @if (hasCarePlan()) {
+                <button (click)="startEdit($event)"
+                        class="text-[11px] text-gray-400 hover:text-gw-green-dark transition-colors">
+                  {{ t('common.edit') }}
+                </button>
+              }
+            </div>
+            @if (hasCarePlan()) {
+              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
+                @if (waterChips().length) {
+                  <div class="flex items-center gap-3 p-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-base shrink-0">💧</div>
+                    <div class="flex-1 min-w-0 flex flex-wrap gap-1.5">
+                      @for (chip of waterChips(); track chip) {
+                        <span class="text-[11px] text-gray-600 bg-gray-50 border-[0.5px] border-gray-200 rounded-md px-2 py-0.5">{{ chip }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+                @if (fertilizerChips().length) {
+                  <div class="flex items-center gap-3 p-3">
+                    <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-base shrink-0">🌿</div>
+                    <div class="flex-1 min-w-0 flex flex-wrap gap-1.5">
+                      @for (chip of fertilizerChips(); track chip) {
+                        <span class="text-[11px] text-gray-600 bg-gray-50 border-[0.5px] border-gray-200 rounded-md px-2 py-0.5">{{ chip }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <button (click)="startEdit($event)"
+                      class="w-full bg-white border-[0.5px] border-dashed border-gray-300 rounded-xl px-3 py-2.5 text-[12px] text-gray-400 hover:border-gw-green/60 hover:text-gw-green-dark transition-colors text-left">
+                {{ t('plantCare.addLink') }}
+              </button>
+            }
+          </div>
+
           <!-- Reminders — hidden when push is off, since reminders without
                notifications are useless. Show a CTA pointing to Settings instead. -->
           @if (push.enabled()) {
@@ -674,6 +717,32 @@ export class PlantDetailComponent implements OnInit {
 
   archivingPlant = signal<Plant | null>(null);
   archiving = signal(false);
+
+  // ── Care plan chips ────────────────────────────────────────────────────────
+
+  waterChips = computed<string[]>(() => {
+    const c = this.plant()?.care;
+    if (!c) return [];
+    this.localeKey();
+    const out: string[] = [];
+    if (c.waterAmount) out.push(this.transloco.translate(`plantCare.amount.${c.waterAmount}`));
+    if (c.waterFrequency === 'other' && c.waterFrequencyOther?.trim()) out.push(c.waterFrequencyOther.trim());
+    else if (c.waterFrequency) out.push(this.transloco.translate(`plantCare.freq.${c.waterFrequency}`));
+    return out;
+  });
+
+  fertilizerChips = computed<string[]>(() => {
+    const c = this.plant()?.care;
+    if (!c) return [];
+    this.localeKey();
+    const out: string[] = [];
+    if (c.fertilizerAmount) out.push(this.transloco.translate(`plantCare.amount.${c.fertilizerAmount}`));
+    if (c.fertilizerType?.trim()) out.push(c.fertilizerType.trim());
+    if (c.fertilizerFrequency?.trim()) out.push(c.fertilizerFrequency.trim());
+    return out;
+  });
+
+  hasCarePlan = computed(() => this.waterChips().length > 0 || this.fertilizerChips().length > 0);
 
   stars(n: number): string {
     return '★'.repeat(Math.max(0, Math.min(5, n))) + '☆'.repeat(Math.max(0, 5 - n));

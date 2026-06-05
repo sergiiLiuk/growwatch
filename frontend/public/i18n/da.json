@@ -684,6 +684,8 @@
     }
   },
   "plantCare": {
+    "sectionTitle": "Plejeplan",
+    "addLink": "+ Tilføj plejeplan",
     "waterTitle": "Vanding",
     "fertilizerTitle": "Gødning",
     "optional": "valgfrit",

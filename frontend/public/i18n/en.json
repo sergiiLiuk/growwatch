@@ -684,6 +684,8 @@
     }
   },
   "plantCare": {
+    "sectionTitle": "Care plan",
+    "addLink": "+ Add care plan",
     "waterTitle": "Watering",
     "fertilizerTitle": "Fertilizer",
     "optional": "optional",
