@@ -181,8 +181,8 @@ interface ActivityEvent {
             unit="°C"
             [status]="tempStatus()"
             [sparkValues]="tempSpark()"
-            [rangeMin]="tempRange().min"
-            [rangeMax]="tempRange().max"
+            [statusLabel]="t('home.statusLabel.' + tempStatus())"
+            tone="green"
             link="/temperature" />
           <app-sensor-card
             [label]="t('home.humidity')"
@@ -190,8 +190,8 @@ interface ActivityEvent {
             unit="%"
             [status]="humidStatus()"
             [sparkValues]="humidSpark()"
-            [rangeMin]="humidRange().min"
-            [rangeMax]="humidRange().max"
+            [statusLabel]="t('home.statusLabel.' + humidStatus())"
+            tone="blue"
             link="/humidity" />
         </div>
       </div>

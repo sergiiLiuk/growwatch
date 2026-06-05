@@ -397,8 +397,13 @@
     "addYourFirstPlant": "Add your first plant",
     "addYourFirstPlantBody": "Tell GrowWatch what you're growing and you'll get personalised light advice, a mood ring, and alerts tailored to your plant's needs.",
     "addAPlant": "+ Add a plant",
-    "sensors": "Sensors",
-    "temp": "Temp",
+    "sensors": "Key metrics",
+    "statusLabel": {
+      "ok": "Optimal",
+      "warn": "Needs attention",
+      "missing": "No data"
+    },
+    "temp": "Temperature",
     "humidity": "Humidity",
     "co2": "CO₂",
     "light": "Light",

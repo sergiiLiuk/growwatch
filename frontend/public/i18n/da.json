@@ -397,8 +397,13 @@
     "addYourFirstPlant": "Tilføj din første plante",
     "addYourFirstPlantBody": "Fortæl GrowWatch hvad du dyrker, så får du personlige lysråd, en humørring og beskeder skræddersyet til dine planters behov.",
     "addAPlant": "+ Tilføj en plante",
-    "sensors": "Sensorer",
-    "temp": "Temp",
+    "sensors": "Nøgletal",
+    "statusLabel": {
+      "ok": "Optimal",
+      "warn": "Kræver opmærksomhed",
+      "missing": "Ingen data"
+    },
+    "temp": "Temperatur",
     "humidity": "Fugt",
     "co2": "CO₂",
     "light": "Lys",

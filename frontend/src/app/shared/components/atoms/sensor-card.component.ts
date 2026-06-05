@@ -1,39 +1,58 @@
-import { Component, input } from '@angular/core';
+import { Component, input, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SparklineComponent } from './sparkline.component';
 
+type Tone = 'green' | 'blue' | 'purple' | 'orange';
+
+const TONE_COLORS: Record<Tone, string> = {
+  green:  '#16a34a',
+  blue:   '#2563eb',
+  purple: '#8b5cf6',
+  orange: '#f97316',
+};
+
+const TONE_TEXT: Record<Tone, string> = {
+  green:  'text-emerald-600',
+  blue:   'text-blue-600',
+  purple: 'text-violet-600',
+  orange: 'text-orange-500',
+};
 
 @Component({
   selector: 'app-sensor-card',
   imports: [RouterLink, SparklineComponent],
   template: `
-    <div class="rounded-2xl p-3 border transition-all h-full flex flex-col"
-         [class]="cardClass()"
+    <div class="rounded-2xl p-4 border border-gw-border bg-white transition-all h-full flex flex-col gw-card-shadow"
+         [class.cursor-pointer]="!!link()"
+         [class.hover:border-gray-200]="!!link()"
          [routerLink]="link() ?? null">
-      <!-- Label row -->
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{{ label() }}</span>
-        <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="dotClass()"></span>
-      </div>
+
+      <!-- Label -->
+      <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{{ label() }}</span>
+
       <!-- Value -->
       @if (status() !== 'missing') {
-        <div class="font-data text-[20px] font-medium text-gray-800 leading-none tabular-nums mb-3">
-          {{ value() }}<span class="text-[11px] text-gray-400 ml-0.5">{{ unit() }}</span>
+        <div class="mt-1 text-[22px] font-bold text-gray-900 leading-none tabular-nums">
+          {{ value() }}<span class="text-[12px] font-medium text-gray-400 ml-0.5">{{ unit() }}</span>
         </div>
       } @else {
-        <div class="font-data text-[20px] text-gray-300 leading-none mb-3">—</div>
+        <div class="mt-1 text-[22px] font-bold text-gray-300 leading-none">—</div>
       }
+
       <!-- Sparkline -->
-      <div class="mt-auto">
-        <app-sparkline [values]="sparkValues()" [status]="status()" [height]="32" />
-        <!-- Range labels -->
-        @if (rangeMin() && rangeMax()) {
-          <div class="flex justify-between mt-1">
-            <span class="text-[9px] text-gray-300">{{ rangeMin() }}</span>
-            <span class="text-[9px] text-gray-300">{{ rangeMax() }}</span>
-          </div>
-        }
+      <div class="mt-3 -mx-1">
+        <app-sparkline [values]="sparkValues()" [status]="status()" [height]="34" [color]="sparkColor()" />
       </div>
+
+      <!-- Status label (replaces range labels) -->
+      @if (statusLabel()) {
+        <span class="mt-1 text-[11px] font-medium" [class]="statusTextClass()">{{ statusLabel() }}</span>
+      } @else if (rangeMin() && rangeMax()) {
+        <div class="mt-1 flex justify-between">
+          <span class="text-[9px] text-gray-300">{{ rangeMin() }}</span>
+          <span class="text-[9px] text-gray-300">{{ rangeMax() }}</span>
+        </div>
+      }
     </div>
   `,
   host: { '[class]': '"block"' },
@@ -47,17 +66,19 @@ export class SensorCardComponent {
   rangeMin = input<string>('');
   rangeMax = input<string>('');
   link = input<string | null>(null);
+  tone = input<Tone>('green');
+  /** Optional colored label under the sparkline ("Optimal", "Needs attention" …). When set, replaces range labels. */
+  statusLabel = input<string>('');
 
-  cardClass() {
-    const warn = this.status() === 'warn';
-    const base = warn ? 'bg-gw-amber-light border-gw-amber' : 'bg-gw-surface border-gw-border';
-    const cursor = this.link() ? ' cursor-pointer hover:border-gray-300' : '';
-    return base + cursor;
-  }
+  sparkColor = computed(() => {
+    if (this.status() === 'missing') return '#e5e7eb';
+    if (this.status() === 'warn') return TONE_COLORS.orange;
+    return TONE_COLORS[this.tone()];
+  });
 
-  dotClass() {
-    if (this.status() === 'ok') return 'bg-gw-green';
-    if (this.status() === 'warn') return 'bg-gw-amber';
-    return 'bg-gray-300';
-  }
+  statusTextClass = computed(() => {
+    if (this.status() === 'warn') return TONE_TEXT.orange;
+    if (this.status() === 'missing') return 'text-gray-400';
+    return TONE_TEXT[this.tone()];
+  });
 }
