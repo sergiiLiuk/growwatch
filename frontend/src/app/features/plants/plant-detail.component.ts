@@ -15,7 +15,6 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import dayjs from 'dayjs';
-import { daysAgo } from '../../core/utils/time';
 
 @Component({
   selector: 'app-plant-detail',
@@ -499,8 +498,9 @@ export class PlantDetailComponent implements OnInit {
     const subtitle = (type: PlantActionType): string => {
       const last = lastByType(type);
       if (!last) return this.transloco.translate('plantDetail.never');
-      const days = Math.floor((Date.now() - last.createdAt.getTime()) / (24 * 60 * 60 * 1000));
-      if (days === 0) return this.transloco.translate('plantDetail.today');
+      const days = dayjs().startOf('day').diff(dayjs(last.createdAt).startOf('day'), 'day');
+      if (days <= 0) return this.transloco.translate('plantDetail.today');
+      if (days === 1) return this.transloco.translate('plantDetail.yesterday');
       return this.transloco.translate('plantDetail.daysAgoShort', { n: days });
     };
     const mostRecent = acts[0]?.type;
@@ -788,9 +788,12 @@ export class PlantDetailComponent implements OnInit {
 
   historyDateLabel(d: Date): string {
     const day = dayjs(d);
-    const days = daysAgo(d);
-    const dateStr = day.format('D MMM');
-    if (days === 0) return this.transloco.translate('plantDetail.today') + ' · ' + dateStr;
+    const now = dayjs();
+    // Calendar-day diff: "yesterday at 23:00" should read as 1 day, not 0.
+    const days = now.startOf('day').diff(day.startOf('day'), 'day');
+    const dateStr = day.format('D MMM HH:mm');
+    if (days <= 0) return this.transloco.translate('plantDetail.today') + ' · ' + dateStr;
+    if (days === 1) return this.transloco.translate('plantDetail.yesterday') + ' · ' + dateStr;
     return dateStr + ' · ' + this.transloco.translate('home.daysAgo', { n: days });
   }
 

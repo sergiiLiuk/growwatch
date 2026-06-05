@@ -252,6 +252,7 @@
     "historyTitle": "Historik",
     "seeAllActions": "Se alle handlinger ›",
     "today": "i dag",
+    "yesterday": "i går",
     "never": "Aldrig",
     "daysAgoShort": "{{ n }} dage",
     "rec": {

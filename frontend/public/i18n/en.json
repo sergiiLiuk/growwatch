@@ -252,6 +252,7 @@
     "historyTitle": "History",
     "seeAllActions": "See all actions ›",
     "today": "today",
+    "yesterday": "yesterday",
     "never": "Never",
     "daysAgoShort": "{{ n }}d",
     "rec": {
