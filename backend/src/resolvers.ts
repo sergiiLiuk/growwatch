@@ -575,9 +575,11 @@ export const resolvers = {
             const docs = await Plant.find(query).sort({ createdAt: 1 }).lean();
             return docs.map(mapPlant);
         },
-        plantActions: async (_: any, { plantId, limit }: { plantId: string; limit?: number }, ctx: Ctx) => {
+        plantActions: async (_: any, { plantId, limit }: { plantId?: string; limit?: number }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
-            const docs = await PlantAction.find({ plantId, userId: ctx.user.userId })
+            const filter: any = { userId: ctx.user.userId };
+            if (plantId) filter.plantId = plantId;
+            const docs = await PlantAction.find(filter)
                 .sort({ createdAt: -1 })
                 .limit(limit ?? 100)
                 .lean();

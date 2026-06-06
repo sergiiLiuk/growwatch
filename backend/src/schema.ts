@@ -245,7 +245,7 @@ export const typeDefs = gql`
     hourlyData(limit: Int): [HourlySensorData!]!
     hourlyDataRange(from: String!, to: String!): [HourlySensorData!]!
     plants(includeArchived: Boolean): [Plant!]!
-    plantActions(plantId: String!, limit: Int): [PlantAction!]!
+    plantActions(plantId: String, limit: Int): [PlantAction!]!
     smartTip(plantId: String!): SmartTip
     dailyBriefing: DailyBriefing
     plantReminders(plantId: String): [PlantReminder!]!

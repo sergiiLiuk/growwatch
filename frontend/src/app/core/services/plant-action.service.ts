@@ -23,7 +23,7 @@ export interface SmartTip {
 }
 
 const ACTIONS_QUERY = gql`
-  query PlantActions($plantId: String!, $limit: Int) {
+  query PlantActions($plantId: String, $limit: Int) {
     plantActions(plantId: $plantId, limit: $limit) {
       id plantId type note createdAt
     }
@@ -92,6 +92,17 @@ export class PlantActionService {
       this.client.query<{ plantActions: RawAction[] }>({
         query: ACTIONS_QUERY,
         variables: { plantId, limit },
+        fetchPolicy: 'network-only',
+      }).then(r => (r.data?.plantActions ?? []).map(mapAction))
+    );
+  }
+
+  /** Latest actions across every plant (omit plantId on the backend). */
+  listAll(limit = 200): Observable<PlantAction[]> {
+    return defer(() =>
+      this.client.query<{ plantActions: RawAction[] }>({
+        query: ACTIONS_QUERY,
+        variables: { plantId: null, limit },
         fetchPolicy: 'network-only',
       }).then(r => (r.data?.plantActions ?? []).map(mapAction))
     );

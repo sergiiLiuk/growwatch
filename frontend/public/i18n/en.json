@@ -424,6 +424,8 @@
     "verifyEmailSending": "Sending…",
     "verifyEmailResent": "New verification email sent. Check your inbox.",
     "seasonalTipTitle": "Tip of the season",
+    "streakOne": "1 day care streak — keep it going!",
+    "streakN": "{{ n }} day care streak — keep it going!",
     "seasonalTips": {
       "0": "Protect tender perennials from frost — fleece on the coldest nights.",
       "1": "Plan your spring sowing. Order seeds before stock runs low.",

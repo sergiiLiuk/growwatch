@@ -424,6 +424,8 @@
     "verifyEmailSending": "Sender…",
     "verifyEmailResent": "Ny bekræftelses-e-mail sendt. Tjek din indbakke.",
     "seasonalTipTitle": "Sæsonens tip",
+    "streakOne": "1 dags plejestribe — bliv ved!",
+    "streakN": "{{ n }} dages plejestribe — bliv ved!",
     "seasonalTips": {
       "0": "Beskyt sarte stauder mod frost — dæk med fiberdug på de koldeste nætter.",
       "1": "Planlæg forårssåning. Bestil frø før de er udsolgt.",

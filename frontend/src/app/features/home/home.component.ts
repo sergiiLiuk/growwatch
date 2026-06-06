@@ -6,6 +6,7 @@ import { ForecastStripComponent } from '../../shared/components/atoms/forecast-s
 import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { getSeasonInfo } from '../../core/utils/season';
+import { calculateStreak } from '../../core/utils/streak';
 import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PlantActionService, DailyBriefing } from '../../core/services/plant-action.service';
@@ -160,6 +161,17 @@ interface ActivityEvent {
         </div>
       }
 
+      <!-- Care streak — only visible once the user has some history. -->
+      @if (streakDays() > 0 && plants().length > 0) {
+        <div class="mb-5 rounded-2xl bg-gradient-to-br from-gw-green-light/70 to-amber-50 border border-gw-green/30 p-4 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl shrink-0">🔥</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[20px] font-semibold text-gw-green-dark leading-none tabular-nums">{{ streakDays() }}</div>
+            <div class="text-[12px] text-gw-green-dark/80 mt-1">{{ streakDays() === 1 ? t('home.streakOne') : t('home.streakN', { n: streakDays() }) }}</div>
+          </div>
+        </div>
+      }
+
       <!-- Free-tier nudge — only when the user has plants and so could
            actually benefit from smart tips. Hidden for empty accounts (focus
            on the "Add your first plant" CTA) and for demo. -->
@@ -255,6 +267,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   private transloco = inject(TranslocoService);
   tier = inject(TierService);
   private auth = inject(AuthService);
+
+  // Cross-plant care streak — refreshed on init; recomputed when actions change.
+  streakDays = signal(0);
 
   // Email verification banner: visible only when the signed-in user hasn't verified.
   emailVerified = computed(() => this.auth.user()?.emailVerified ?? true);
@@ -508,6 +523,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.weatherService.fetchWeather();
     if (this.tier.canSeeWeatherWarnings()) this.weatherService.fetchForecast();
     if (this.tier.canSeeAi()) this.plantActions.getDailyBriefing().subscribe(b => this.briefing.set(b));
+    this.plantActions.listAll(200).subscribe(list => this.streakDays.set(calculateStreak(list.map(a => a.createdAt))));
     this.weatherTimer = setInterval(() => {
       this.weatherService.fetchWeather();
       this.weatherService.fetchForecast();
