@@ -667,6 +667,13 @@
     "tempTitle": "Temperature insights",
     "tempSubtitle": "Live reading and daily/weekly history",
     "liveReading": "Live reading",
+    "range": {
+      "7d": "7 days",
+      "30d": "30 days",
+      "90d": "90 days"
+    },
+    "unlockTitle": "More history with Plus or Pro",
+    "unlockBody": "Upgrade to see 30 or 90 days of sensor data.",
     "today": "Today",
     "weekHistory": "Week history",
     "noHourlyData": "No hourly data yet for today.",

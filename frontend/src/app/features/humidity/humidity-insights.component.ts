@@ -1,8 +1,9 @@
 import { Component, OnDestroy, signal, computed, effect, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorService, SensorData, HourlySensorData } from '../../core/services/sensor.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
+import { TierService } from '../../core/services/tier.service';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -34,7 +35,7 @@ interface OptimalLine {
 
 @Component({
   selector: 'app-humidity-insights',
-  imports: [PageContainerComponent, StatusBadgeComponent, TranslocoDirective],
+  imports: [PageContainerComponent, StatusBadgeComponent, RouterLink, TranslocoDirective],
   template: `
     <app-page-container>
       <ng-container *transloco="let t">
@@ -44,10 +45,33 @@ interface OptimalLine {
         ‹ {{ t('nav.home') }}
       </button>
 
-      <div class="mb-6">
+      <div class="mb-3">
         <h1 class="text-[18px] font-medium text-gray-800">{{ t('insights.humidityTitle') }}</h1>
         <p class="text-[11px] text-gray-400 mt-0.5">{{ t('insights.humiditySubtitle') }}</p>
       </div>
+
+      <!-- Time-range segmented control. 30/90d gated by Plus/Pro. -->
+      <div class="mb-5 flex gap-1 bg-gray-100 rounded-xl p-1">
+        @for (r of rangeOptions; track r.value) {
+          <button (click)="selectRange(r.value)"
+                  [disabled]="r.value === '30d' && !tier.canSee30Days() || r.value === '90d' && !tier.canSee90Days()"
+                  class="flex-1 text-[12px] font-medium py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  [class.bg-white]="range() === r.value"
+                  [class.text-gw-green-dark]="range() === r.value"
+                  [class.shadow-sm]="range() === r.value"
+                  [class.text-gray-500]="range() !== r.value">
+            {{ t('insights.range.' + r.value) }}
+          </button>
+        }
+      </div>
+
+      @if (range() === '30d' && !tier.canSee30Days() || range() === '90d' && !tier.canSee90Days()) {
+        <a routerLink="/upgrade"
+           class="mb-5 block bg-white border-[0.5px] border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-gw-green/60 hover:bg-gw-green-light/10 transition-colors">
+          <div class="text-[13px] text-gray-700 font-medium">{{ t('insights.unlockTitle') }}</div>
+          <div class="text-[11px] text-gray-400 mt-0.5">{{ t('insights.unlockBody') }}</div>
+        </a>
+      }
 
       <!-- Live reading -->
       <div class="mb-5">
@@ -208,7 +232,19 @@ export class HumidityInsightsComponent implements OnDestroy {
   private router = inject(Router);
   private userSettings = inject(UserSettingsService);
   private transloco = inject(TranslocoService);
+  tier = inject(TierService);
   private localeKey = signal(this.transloco.getActiveLang());
+
+  readonly rangeOptions: { value: '7d' | '30d' | '90d' }[] = [
+    { value: '7d' }, { value: '30d' }, { value: '90d' },
+  ];
+  range = signal<'7d' | '30d' | '90d'>('7d');
+
+  selectRange(v: '7d' | '30d' | '90d') {
+    if (v === '30d' && !this.tier.canSee30Days()) return;
+    if (v === '90d' && !this.tier.canSee90Days()) return;
+    this.range.set(v);
+  }
   private weekSub?: Subscription;
   private liveSub?: Subscription;
   private tickTimer?: ReturnType<typeof setInterval>;

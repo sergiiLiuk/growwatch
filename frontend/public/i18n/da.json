@@ -667,6 +667,13 @@
     "tempTitle": "Temperatur-indsigt",
     "tempSubtitle": "Live-aflæsning og daglig/ugentlig historik",
     "liveReading": "Live-aflæsning",
+    "range": {
+      "7d": "7 dage",
+      "30d": "30 dage",
+      "90d": "90 dage"
+    },
+    "unlockTitle": "Mere historik med Plus eller Pro",
+    "unlockBody": "Opgradér for at se 30 eller 90 dage med sensordata.",
     "today": "I dag",
     "weekHistory": "Uge-historik",
     "noHourlyData": "Ingen timedata for i dag endnu.",
