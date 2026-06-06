@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, signal, inject, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -27,7 +27,7 @@ import { renderGsiButton } from './gsi-helper';
 
         @if (googleEnabled) {
           <div class="mb-5 flex flex-col items-center gap-3">
-            <div #gsi class="flex justify-center"></div>
+            <div class="gsi-host flex justify-center"></div>
             @if (googleError()) {
               <p class="text-[12px] text-red-500">{{ t('auth.googleFailed') }}</p>
             }
@@ -115,6 +115,7 @@ export class LoginComponent implements AfterViewInit {
   private auth = inject(AuthService);
   private router = inject(Router);
   private transloco = inject(TranslocoService);
+  private host = inject(ElementRef<HTMLElement>);
 
   email = '';
   password = '';
@@ -128,14 +129,18 @@ export class LoginComponent implements AfterViewInit {
   // Google sign-in
   readonly googleEnabled = !!GOOGLE_CLIENT_ID;
   googleError = signal(false);
-  gsi = viewChild<ElementRef<HTMLDivElement>>('gsi');
 
   resendSent() { return this.resentSentSig(); }
 
   async ngAfterViewInit() {
     if (!this.googleEnabled) return;
-    const el = this.gsi()?.nativeElement;
-    if (!el) return;
+    // Use a plain DOM query — `viewChild` doesn't reach into embedded views
+    // such as the one *transloco creates, so the template ref returns null.
+    const el = (this.host.nativeElement as HTMLElement).querySelector<HTMLElement>('.gsi-host');
+    if (!el) {
+      this.googleError.set(true);
+      return;
+    }
     try {
       await renderGsiButton({
         clientId: GOOGLE_CLIENT_ID,

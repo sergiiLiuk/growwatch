@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, signal, inject, computed, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, signal, inject, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
@@ -25,7 +25,7 @@ import { renderGsiButton } from './gsi-helper';
 
         @if (googleEnabled) {
           <div class="mb-5 flex flex-col items-center gap-3">
-            <div #gsi class="flex justify-center"></div>
+            <div class="gsi-host flex justify-center"></div>
             @if (googleError()) {
               <p class="text-[12px] text-red-500">{{ t('auth.googleFailed') }}</p>
             }
@@ -115,6 +115,7 @@ import { renderGsiButton } from './gsi-helper';
 export class RegisterComponent implements AfterViewInit {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private host = inject(ElementRef<HTMLElement>);
 
   email = '';
   password = '';
@@ -127,14 +128,16 @@ export class RegisterComponent implements AfterViewInit {
   // Google sign-in
   readonly googleEnabled = !!GOOGLE_CLIENT_ID;
   googleError = signal(false);
-  gsi = viewChild<ElementRef<HTMLDivElement>>('gsi');
 
   canSubmit = computed(() => true);
 
   async ngAfterViewInit() {
     if (!this.googleEnabled) return;
-    const el = this.gsi()?.nativeElement;
-    if (!el) return;
+    const el = (this.host.nativeElement as HTMLElement).querySelector<HTMLElement>('.gsi-host');
+    if (!el) {
+      this.googleError.set(true);
+      return;
+    }
     try {
       await renderGsiButton({
         clientId: GOOGLE_CLIENT_ID,
