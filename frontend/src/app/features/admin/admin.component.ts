@@ -19,9 +19,9 @@ interface UserFormState {
   selector: 'app-admin',
   imports: [FormsModule, TranslocoDirective, IconComponent],
   template: `
-    <div class="max-w-4xl mx-auto px-4 py-6" *transloco="let t">
+    <div class="max-w-4xl mx-auto px-4 pb-6" *transloco="let t">
 
-      <div class="flex items-start justify-between mb-6 gap-3">
+      <div class="sticky top-0 z-30 -mx-4 px-4 pt-5 pb-3 mb-3 flex items-start justify-between gap-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
         <div>
           <h1 class="text-[18px] font-medium text-gray-800">{{ t('admin.title') }}</h1>
           <p class="text-[11px] text-gray-400 mt-0.5">{{ t('admin.subtitle') }}</p>
