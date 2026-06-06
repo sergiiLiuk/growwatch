@@ -148,7 +148,8 @@ export class LoginComponent implements AfterViewInit {
         text: 'signin_with',
         onCredential: (credential) => this.handleGoogleCredential(credential),
       });
-    } catch {
+    } catch (err) {
+      console.error('[GSI] renderGsiButton failed:', err);
       this.googleError.set(true);
     }
   }
