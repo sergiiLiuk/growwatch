@@ -356,6 +356,8 @@
     "confirmPlaceholder": "Indtast adgangskoden igen",
     "signIn": "Log ind",
     "signingIn": "Logger ind…",
+    "or": "eller",
+    "googleFailed": "Google-login mislykkedes. Prøv igen.",
     "loginFailed": "Kunne ikke logge dig ind. Prøv igen.",
     "userNotFound": "Ingen konto fundet med denne e-mail.",
     "invalidPassword": "Forkert adgangskode. Prøv igen eller nulstil den.",

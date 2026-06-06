@@ -11,7 +11,10 @@ export type UserRole = 'superuser' | 'user' | 'demo';
 
 export interface IUser extends Document {
     email: string;
+    /** Empty string for Google-only accounts that never set a local password. */
     passwordHash: string;
+    /** Google `sub` (stable subject ID) — present when the account was created or linked via Google sign-in. */
+    googleId?: string;
     role: UserRole;
     subscriptionTier: SubscriptionTier;
     emailVerified: boolean;
@@ -20,7 +23,9 @@ export interface IUser extends Document {
 const userSchema = new Schema<IUser>(
     {
         email: { type: String, required: true, unique: true },
-        passwordHash: { type: String, required: true },
+        // Default to empty so Google-only accounts (no local password) still satisfy `required`.
+        passwordHash: { type: String, required: true, default: '' },
+        googleId: { type: String, index: true, sparse: true },
         role: { type: String, required: true, enum: ['superuser', 'user', 'demo'], default: 'user' },
         subscriptionTier: { type: String, required: true, enum: ['free', 'plus', 'pro'], default: 'free' },
         emailVerified: { type: Boolean, required: true, default: false },

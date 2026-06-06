@@ -1,9 +1,10 @@
-import { Component, signal, inject, computed } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, signal, inject, computed, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService, GOOGLE_CLIENT_ID } from '../../core/services/auth.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { renderGsiButton } from './gsi-helper';
 
 @Component({
   selector: 'app-register',
@@ -21,6 +22,20 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
 
       <form (ngSubmit)="submit()" autocomplete="on"
             class="w-full max-w-sm bg-gw-surface rounded-2xl p-8 shadow-sm border border-gw-border/50">
+
+        @if (googleEnabled) {
+          <div class="mb-5 flex flex-col items-center gap-3">
+            <div #gsi class="flex justify-center"></div>
+            @if (googleError()) {
+              <p class="text-[12px] text-red-500">{{ t('auth.googleFailed') }}</p>
+            }
+            <div class="w-full flex items-center gap-3 text-[11px] text-gray-400 uppercase tracking-wider">
+              <span class="flex-1 h-px bg-gw-border"></span>
+              {{ t('auth.or') }}
+              <span class="flex-1 h-px bg-gw-border"></span>
+            </div>
+          </div>
+        }
 
         <div class="mb-5">
           <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('auth.email') }}</label>
@@ -97,7 +112,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
     </div>
   `,
 })
-export class RegisterComponent {
+export class RegisterComponent implements AfterViewInit {
   private auth = inject(AuthService);
   private router = inject(Router);
 
@@ -109,7 +124,41 @@ export class RegisterComponent {
   error = signal('');
   loading = signal(false);
 
+  // Google sign-in
+  readonly googleEnabled = !!GOOGLE_CLIENT_ID;
+  googleError = signal(false);
+  gsi = viewChild<ElementRef<HTMLDivElement>>('gsi');
+
   canSubmit = computed(() => true);
+
+  async ngAfterViewInit() {
+    if (!this.googleEnabled) return;
+    const el = this.gsi()?.nativeElement;
+    if (!el) return;
+    try {
+      await renderGsiButton({
+        clientId: GOOGLE_CLIENT_ID,
+        element: el,
+        text: 'signup_with',
+        onCredential: (credential) => this.handleGoogleCredential(credential),
+      });
+    } catch {
+      this.googleError.set(true);
+    }
+  }
+
+  private async handleGoogleCredential(credential: string) {
+    this.error.set('');
+    this.loading.set(true);
+    try {
+      await this.auth.loginWithGoogle(credential);
+      this.router.navigate(['/']);
+    } catch {
+      this.error.set('Google sign-in failed');
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   async submit() {
     const email = this.email.trim();

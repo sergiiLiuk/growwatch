@@ -14,7 +14,8 @@ import { startReminderScheduler, maybeTickFromRequest } from './services/reminde
 import { ESP32Message } from './types';
 import { connectDB } from './db';
 import { User, Plant, HourlySensorData, UserSettings } from './models';
-import { hashPassword, verifyToken } from './auth';
+import { hashPassword, verifyToken, signToken } from './auth';
+import { OAuth2Client } from 'google-auth-library';
 
 const PORT = Number(process.env.PORT) || 4000;
 
@@ -213,6 +214,74 @@ async function startServer() {
         }
         maybeTickFromRequest();
         res.json({ status: 'ok', triggered: true });
+    });
+
+    // ─── Google Sign-In ──────────────────────────────────────────────────────
+    // Accepts a Google ID token from the GSI button on the frontend, verifies
+    // it against Google's public keys, then either finds the existing user (by
+    // googleId or email) or creates a new one and returns a GrowWatch JWT.
+    // Email is treated as verified because Google has verified it for us.
+    const googleClient = process.env.GOOGLE_CLIENT_ID
+        ? new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+        : null;
+
+    app.post('/auth/google', async (req: Request, res: Response) => {
+        try {
+            if (!googleClient) {
+                res.status(503).json({ error: 'Google sign-in is not configured' });
+                return;
+            }
+            const credential = (req.body?.credential ?? '') as string;
+            if (!credential) {
+                res.status(400).json({ error: 'Missing credential' });
+                return;
+            }
+            const ticket = await googleClient.verifyIdToken({
+                idToken: credential,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            if (!payload?.sub || !payload.email) {
+                res.status(401).json({ error: 'Invalid Google token' });
+                return;
+            }
+            const email = payload.email.toLowerCase();
+            const googleId = payload.sub;
+
+            // Find by googleId first, then fall back to email (so existing
+            // password accounts get linked on first Google sign-in).
+            let user = await User.findOne({ googleId });
+            if (!user) {
+                user = await User.findOne({ email });
+                if (user) {
+                    user.googleId = googleId;
+                    if (!user.emailVerified) user.emailVerified = true;
+                    await user.save();
+                } else {
+                    user = await User.create({
+                        email,
+                        passwordHash: '',
+                        googleId,
+                        role: 'user',
+                        subscriptionTier: 'free',
+                        emailVerified: true,
+                    });
+                }
+            }
+
+            const token = signToken({ userId: user._id.toString(), email: user.email, role: user.role });
+            res.json({
+                token,
+                email: user.email,
+                role: user.role,
+                userId: user._id.toString(),
+                subscriptionTier: user.subscriptionTier ?? 'free',
+                emailVerified: user.emailVerified ?? true,
+            });
+        } catch (err: any) {
+            console.error('Google sign-in failed:', err?.message ?? err);
+            res.status(401).json({ error: 'Google sign-in failed' });
+        }
     });
 
     // ─── Manual hourly save (testing only) ───────────────────────────────────

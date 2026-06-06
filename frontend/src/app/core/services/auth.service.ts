@@ -10,6 +10,9 @@ const ROLE_KEY = STORAGE_KEYS.ROLE;
 export type SubscriptionTier = 'free' | 'plus' | 'pro';
 export type UserRole = 'user' | 'superuser' | 'demo';
 
+/** Re-exported so the auth pages can decide whether to render the Google button. */
+export const GOOGLE_CLIENT_ID = environment.googleClientId;
+
 export interface User {
   email: string;
   userId: string;
@@ -84,6 +87,29 @@ export class AuthService {
       { email, password },
       'register',
     );
+  }
+
+  /**
+   * Exchange a Google ID token (from the GSI button) for a GrowWatch session.
+   * Backend either finds the existing user (by googleId or email) or creates
+   * a fresh free-tier account. Email is always treated as verified.
+   */
+  async loginWithGoogle(credential: string): Promise<void> {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential }),
+    });
+    const json = await res.json();
+    if (!res.ok || json.error) throw new Error(json.error ?? 'Google sign-in failed');
+
+    const { token, email: userEmail, role, userId, subscriptionTier, emailVerified } = json;
+    const tier: SubscriptionTier = subscriptionTier ?? 'free';
+    const userRole: UserRole = (role as UserRole) ?? 'user';
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(TIER_KEY, tier);
+    localStorage.setItem(ROLE_KEY, userRole);
+    this._user.set({ email: userEmail, role: userRole, userId, subscriptionTier: tier, emailVerified: !!emailVerified });
   }
 
   async requestPasswordReset(email: string): Promise<void> {
