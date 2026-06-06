@@ -18,8 +18,11 @@ import dayjs from 'dayjs';
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
+      <!-- Sticky top: title + actions + search + type filter -->
+      <div class="sticky top-0 z-30 -mx-4 px-4 pt-2 pb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+
       <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center justify-between mb-4">
         <div>
           <h1 class="text-[18px] font-medium text-gray-800">{{ t('plants.myPlants') }}</h1>
           <p class="text-[11px] text-gray-400 mt-0.5">
@@ -111,6 +114,9 @@ import dayjs from 'dayjs';
           }
         </div>
       }
+
+      <!-- /sticky wrapper -->
+      </div>
 
       <!-- Empty state -->
       @if (!plantsLoading() && plants().length === 0) {
