@@ -21,21 +21,37 @@ export interface GsiOptions {
  */
 export async function renderGsiButton(opts: GsiOptions): Promise<void> {
   await waitForGsi();
-  google.accounts.id.initialize({
-    client_id: opts.clientId,
-    callback: (resp: { credential: string }) => opts.onCredential(resp.credential),
-    auto_select: false,
-    cancel_on_tap_outside: true,
-  });
-  google.accounts.id.renderButton(opts.element, {
-    type: 'standard',
-    theme: 'outline',
-    size: 'large',
-    text: opts.text ?? 'continue_with',
-    shape: 'pill',
-    logo_alignment: 'left',
-    width: String(opts.width ?? 320),
-  });
+  // GSI's internal module init is async even after `google.accounts.id` is
+  // defined. On a cold page-load `renderButton` may throw or no-op on the
+  // first try, so retry a couple of times with a short backoff.
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      google.accounts.id.initialize({
+        client_id: opts.clientId,
+        callback: (resp: { credential: string }) => opts.onCredential(resp.credential),
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+      google.accounts.id.renderButton(opts.element, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: opts.text ?? 'continue_with',
+        shape: 'pill',
+        logo_alignment: 'left',
+        width: String(opts.width ?? 320),
+      });
+      // Give GSI a tick to actually inject the iframe; if it didn't, retry.
+      await new Promise(r => setTimeout(r, 150));
+      if (opts.element.querySelector('iframe, [role="button"]')) return;
+      lastErr = new Error('GSI renderButton produced no iframe');
+    } catch (err) {
+      lastErr = err;
+    }
+    await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+  }
+  throw lastErr;
 }
 
 function waitForGsi(timeoutMs = 6000): Promise<void> {
