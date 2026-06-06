@@ -519,6 +519,17 @@
     "renameDevice": "Omdøb enhed",
     "removeDeviceTitle": "Fjern enhed?",
     "removeDeviceBody": "Fjern {{ name }} fra din konto? Du kan tilknytte den igen senere ved at klikke på \"Tilføj enhed\" og nulstille ESP32'en.",
+    "status": {
+      "online": "Online",
+      "warning": "Inaktiv",
+      "offline": "Offline",
+      "unknown": "Aldrig set"
+    },
+    "neverSeen": "Aldrig set",
+    "justNow": "lige nu",
+    "minutesAgo": "{{ n }} min siden",
+    "hoursAgo": "{{ n }} t siden",
+    "daysAgo": "{{ n }} d siden",
     "howToPair": "Sådan tilknytter du",
     "step1": "Tryk på <strong>+ Tilføj enhed</strong> ovenfor for at åbne et 10-minutters tilknytningsvindue.",
     "step2": "Tænd din ESP32, eller tryk på dens <strong>reset</strong>-knap hvis den allerede kører. Sensoren skal være forbundet til WiFi.",

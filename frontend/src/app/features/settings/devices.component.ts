@@ -5,11 +5,12 @@ import { Subscription } from 'rxjs';
 import { DeviceService, Device } from '../../core/services/device.service';
 import { AuthService } from '../../core/services/auth.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { StatusBadgeComponent, BadgeVariant } from '../../shared/components/atoms/status-badge.component';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-devices',
-  imports: [FormsModule, RouterLink, IconComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, IconComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -36,8 +37,13 @@ import { TranslocoDirective } from '@jsverse/transloco';
             <div class="flex-1 min-w-0">
               <div class="text-[14px] font-medium text-gray-800 truncate">{{ d.name }}</div>
               <div class="text-[11px] text-gray-400 mt-0.5 font-mono">{{ d.mac }}</div>
-              <div class="text-[11px] mt-0.5" [class]="onlineClass(d)">
-                {{ lastSeenLabel(d) }}
+              <div class="mt-1.5 flex items-center gap-2">
+                <app-status-badge
+                  [label]="statusLabel(d)"
+                  [variant]="statusVariant(d)"
+                  [dot]="true"
+                  [pulse]="statusVariant(d) === 'green'" />
+                <span class="text-[11px] text-gray-400">{{ lastSeenLabel(d) }}</span>
               </div>
             </div>
             <div class="flex gap-1 shrink-0">
@@ -189,6 +195,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
   private deviceService = inject(DeviceService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private transloco = inject(TranslocoService);
 
   back() { this.router.navigate(['/settings']); }
 
@@ -358,20 +365,35 @@ export class DevicesComponent implements OnInit, OnDestroy {
 
   // ── Misc ────────────────────────────────────────────────────────────────
 
-  lastSeenLabel(d: Device): string {
-    if (!d.lastSeenAt) return 'Never seen';
+  /** Online / warning / offline classification used by both label and dot variant. */
+  private deviceStatus(d: Device): 'online' | 'warning' | 'offline' | 'unknown' {
+    if (!d.lastSeenAt) return 'unknown';
     const ago = Date.now() - new Date(d.lastSeenAt).getTime();
-    if (ago < 60_000) return 'Online · just now';
-    if (ago < 5 * 60_000) return `Online · ${Math.floor(ago / 60_000)}m ago`;
-    if (ago < 60 * 60_000) return `Last seen ${Math.floor(ago / 60_000)}m ago`;
-    if (ago < 24 * 3600_000) return `Last seen ${Math.floor(ago / 3600_000)}h ago`;
-    return `Last seen ${Math.floor(ago / (24 * 3600_000))}d ago`;
+    if (ago < 5 * 60_000) return 'online';
+    if (ago < 60 * 60_000) return 'warning';
+    return 'offline';
   }
 
-  onlineClass(d: Device): string {
-    if (!d.lastSeenAt) return 'text-gray-400';
+  statusLabel(d: Device): string {
+    return this.transloco.translate(`devices.status.${this.deviceStatus(d)}`);
+  }
+
+  statusVariant(d: Device): BadgeVariant {
+    switch (this.deviceStatus(d)) {
+      case 'online':  return 'green';
+      case 'warning': return 'amber';
+      case 'offline': return 'red';
+      default:        return 'gray';
+    }
+  }
+
+  lastSeenLabel(d: Device): string {
+    if (!d.lastSeenAt) return this.transloco.translate('devices.neverSeen');
     const ago = Date.now() - new Date(d.lastSeenAt).getTime();
-    return ago < 5 * 60_000 ? 'text-gw-green-dark' : 'text-gray-400';
+    if (ago < 60_000) return this.transloco.translate('devices.justNow');
+    if (ago < 60 * 60_000) return this.transloco.translate('devices.minutesAgo', { n: Math.floor(ago / 60_000) });
+    if (ago < 24 * 3600_000) return this.transloco.translate('devices.hoursAgo', { n: Math.floor(ago / 3600_000) });
+    return this.transloco.translate('devices.daysAgo', { n: Math.floor(ago / (24 * 3600_000)) });
   }
 
   private startCountdown() {

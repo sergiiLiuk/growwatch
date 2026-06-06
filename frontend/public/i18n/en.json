@@ -519,6 +519,17 @@
     "renameDevice": "Rename device",
     "removeDeviceTitle": "Remove device?",
     "removeDeviceBody": "Remove {{ name }} from your account? You can re-pair it later by clicking \"Add device\" and resetting the ESP32.",
+    "status": {
+      "online": "Online",
+      "warning": "Idle",
+      "offline": "Offline",
+      "unknown": "Never seen"
+    },
+    "neverSeen": "Never seen",
+    "justNow": "just now",
+    "minutesAgo": "{{ n }} min ago",
+    "hoursAgo": "{{ n }} h ago",
+    "daysAgo": "{{ n }} d ago",
     "howToPair": "How to pair",
     "step1": "Tap <strong>+ Add device</strong> above to open a 10-minute pairing window.",
     "step2": "Power on your ESP32, or press its <strong>reset</strong> button if already running. The sensor must be connected to WiFi.",
