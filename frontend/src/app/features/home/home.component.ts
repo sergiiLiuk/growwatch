@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.component';
 import { TodayCardComponent } from '../../shared/components/atoms/today-card.component';
+import { OnboardingComponent, hasOnboarded } from '../onboarding/onboarding.component';
 import { ForecastStripComponent } from '../../shared/components/atoms/forecast-strip.component';
 import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
@@ -33,8 +34,12 @@ interface ActivityEvent {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, SensorCardComponent, ForecastStripComponent, TodayCardComponent, IconComponent, TranslocoDirective],
+  imports: [RouterLink, SensorCardComponent, ForecastStripComponent, TodayCardComponent, OnboardingComponent, IconComponent, TranslocoDirective],
   template: `
+    @if (showOnboarding()) {
+      <app-onboarding (done)="showOnboarding.set(false)" />
+    }
+
     <div class="max-w-4xl mx-auto px-4 py-6" *transloco="let t">
 
       <!-- Hero row: weather + phase -->
@@ -275,6 +280,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   private transloco = inject(TranslocoService);
   tier = inject(TierService);
   private auth = inject(AuthService);
+
+  // First-launch onboarding overlay. Skipped on subsequent visits.
+  showOnboarding = signal(!hasOnboarded());
 
   // Cross-plant care streak — refreshed on init; recomputed when actions change.
   streakDays = signal(0);

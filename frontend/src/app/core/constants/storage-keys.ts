@@ -6,4 +6,5 @@ export const STORAGE_KEYS = {
   ALERTS: 'growwatch-alerts',
   SETTINGS: 'growwatch-settings',
   DEBUG: 'growwatch-show-debug',
+  ONBOARDED: 'growwatch-onboarded',
 } as const;

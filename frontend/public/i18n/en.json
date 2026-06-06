@@ -862,5 +862,16 @@
       "harvest": "Harvest soon",
       "mature": "Mature"
     }
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "getStarted": "Get started",
+    "s1Title": "Track every plant",
+    "s1Body": "Add what you're growing in the greenhouse and log watering, fertilizing, harvests, and notes as you go.",
+    "s2Title": "Never miss a watering",
+    "s2Body": "Set reminders per plant. We'll send push notifications when something is due so you can stay on top of care.",
+    "s3Title": "See it all in one place",
+    "s3Body": "The calendar shows completed care and upcoming reminders side by side. Your full history is yours to export anytime."
   }
 }

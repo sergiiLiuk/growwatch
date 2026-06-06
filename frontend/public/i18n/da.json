@@ -862,5 +862,16 @@
       "harvest": "Klar til høst",
       "mature": "Moden"
     }
+  },
+  "onboarding": {
+    "skip": "Spring over",
+    "next": "Næste",
+    "getStarted": "Kom i gang",
+    "s1Title": "Følg alle dine planter",
+    "s1Body": "Tilføj det du dyrker i drivhuset og log vanding, gødning, høst og noter undervejs.",
+    "s2Title": "Glem aldrig en vanding",
+    "s2Body": "Sæt påmindelser pr. plante. Vi sender push-notifikationer når noget skal gøres.",
+    "s3Title": "Se det hele samlet",
+    "s3Body": "Kalenderen viser fuldført pleje og kommende påmindelser side om side. Din historik kan altid eksporteres."
   }
 }
