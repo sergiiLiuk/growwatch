@@ -6,34 +6,19 @@
 declare const google: any;
 
 /**
- * Quick environment check used to decide whether to render the GSI button.
- * GSI / FedCM is only reliable in top-level browser tabs on Chromium-based
- * browsers. We hide the button in any of these cases instead of showing the
- * user a broken UI:
- *   - Inside an iframe (FedCM blocks cross-origin frames)
- *   - Brave (Shields block accounts.google.com by default)
- *   - Firefox / Safari (FedCM not generally available)
+ * Whether the current environment can host a GSI button at all. Currently
+ * we let every browser try — if GSI fails to render or fails to authenticate
+ * on a given platform, the calling component shows a small "sign-in failed"
+ * notice and the email/password form still works.
  *
- * Installed PWAs (standalone mode) are allowed — modern Chromium handles GSI
- * inside standalone windows on most platforms.
- *
- * Email/password remains the universal fallback for everyone else.
+ * We only short-circuit for non-browser contexts (SSR) and cross-origin
+ * iframes (where FedCM is fundamentally blocked by the browser).
  */
 export function isGsiEnvironmentSupported(): boolean {
   if (typeof window === 'undefined') return false;
   if (typeof navigator === 'undefined') return false;
-
-  // Inside iframe — FedCM blocks third-party frames.
+  // Inside an iframe — FedCM blocks third-party frames at the browser level.
   if (window.self !== window.top) return false;
-
-  const ua = navigator.userAgent;
-  // Brave exposes a sync `brave` property on navigator
-  if ((navigator as any).brave?.isBrave) return false;
-  // Firefox — FedCM is behind a flag and frequently off
-  if (/Firefox/.test(ua)) return false;
-  // Safari (any iOS browser is Safari under the hood too) — no FedCM support
-  if (/^((?!chrome|android|edg).)*safari/i.test(ua)) return false;
-
   return true;
 }
 
