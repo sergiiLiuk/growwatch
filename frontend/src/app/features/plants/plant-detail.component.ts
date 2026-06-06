@@ -60,8 +60,8 @@ import dayjs from 'dayjs';
 
       @if (plant(); as p) {
 
-        <!-- Plant card — desaturated when monitoring is paused -->
-        <div class="rounded-2xl p-5 mb-4 transition-colors"
+        <!-- Plant card — sticky at top while detail content scrolls under it -->
+        <div class="sticky top-0 z-30 rounded-2xl p-5 mb-4 shadow-sm transition-colors"
              [class.bg-gw-green-light]="p.monitored"
              [class.bg-gray-100]="!p.monitored">
           <div class="flex items-center gap-4 mb-5">
