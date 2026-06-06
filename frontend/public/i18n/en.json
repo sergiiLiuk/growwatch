@@ -26,6 +26,10 @@
   "settings": {
     "title": "Settings",
     "subtitle": "Notifications and sensor",
+    "tab": {
+      "prefs": "Preferences",
+      "account": "Account"
+    },
     "disablePushTitle": "Turn off push notifications?",
     "disablePushBody": "This will also disable every active reminder on your plants. You'll need to turn them back on individually if you re-enable push later.",
     "disablePushConfirm": "Turn off & reset reminders",

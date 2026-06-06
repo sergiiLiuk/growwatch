@@ -19,8 +19,22 @@ import { ReminderService } from '../../core/services/reminder.service';
       <div class="sticky top-0 z-30 -mx-4 px-4 pt-5 pb-3 mb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
         <h1 class="text-[18px] font-medium text-gray-800">{{ t('settings.title') }}</h1>
         <p class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.subtitle') }}</p>
+        <!-- Tabs -->
+        <div class="mt-3 flex gap-1 bg-gray-100 rounded-xl p-1">
+          @for (tab of tabs; track tab) {
+            <button (click)="activeTab.set(tab)"
+                    class="flex-1 text-[12px] font-medium py-2 rounded-lg transition-colors"
+                    [class.bg-white]="activeTab() === tab"
+                    [class.text-gw-green-dark]="activeTab() === tab"
+                    [class.shadow-sm]="activeTab() === tab"
+                    [class.text-gray-500]="activeTab() !== tab">
+              {{ t('settings.tab.' + tab) }}
+            </button>
+          }
+        </div>
       </div>
 
+      @if (activeTab() === 'prefs') {
       <!-- Language -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.language') }}</div>
@@ -100,6 +114,9 @@ import { ReminderService } from '../../core/services/reminder.service';
         </div>
       </div>
 
+      }
+
+      @if (activeTab() === 'account') {
       <!-- Subscription — hidden for demo accounts -->
       @if (tier.canSeeSubscription()) {
         <div class="mb-5">
@@ -115,6 +132,9 @@ import { ReminderService } from '../../core/services/reminder.service';
         </div>
       }
 
+      }
+
+      @if (activeTab() === 'prefs') {
       <!-- Temperature range -->
       @if (tier.canSeeSensors()) {
       <div class="mb-5">
@@ -315,6 +335,9 @@ import { ReminderService } from '../../core/services/reminder.service';
       </div>
       }
 
+      }
+
+      @if (activeTab() === 'account') {
       <!-- About -->
       <div>
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.about') }}</div>
@@ -350,6 +373,9 @@ import { ReminderService } from '../../core/services/reminder.service';
       </div>
 
 
+      }
+
+      @if (activeTab() === 'prefs') {
       <!-- Sensor setup + devices — Pro only (sensors are a Pro-tier feature) -->
       @if (tier.canSeeSensors()) {
         <div class="mt-5">
@@ -414,6 +440,9 @@ import { ReminderService } from '../../core/services/reminder.service';
         </div>
       </div>
 
+      }
+
+      @if (activeTab() === 'account') {
       <!-- Privacy — data export (GDPR Art. 20). Hidden for demo accounts. -->
       @if (!tier.isDemo()) {
         <div class="mt-6">
@@ -450,6 +479,7 @@ import { ReminderService } from '../../core/services/reminder.service';
             </button>
           </div>
         </div>
+      }
       }
 
       @if (deleteAccountOpen()) {
@@ -515,6 +545,10 @@ export class SettingsComponent implements OnInit {
 
   disableConfirmOpen = signal(false);
   disabling = signal(false);
+
+  // Top-level tab — splits app preferences from account settings
+  readonly tabs = ['prefs', 'account'] as const;
+  activeTab = signal<'prefs' | 'account'>('prefs');
 
   // Account deletion flow
   deleteAccountOpen = signal(false);
