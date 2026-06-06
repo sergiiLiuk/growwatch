@@ -69,6 +69,11 @@ export async function renderGsiButton(opts: GsiOptions): Promise<void> {
         auto_select: false,
         cancel_on_tap_outside: true,
       });
+      // Match the rendered button width to the host container so it never
+      // exceeds the surrounding form. GSI clamps width to [200, 400] and only
+      // accepts a string of pixels.
+      const measured = opts.element.clientWidth;
+      const targetWidth = Math.max(200, Math.min(400, opts.width ?? (measured || 280)));
       google.accounts.id.renderButton(opts.element, {
         type: 'standard',
         theme: 'outline',
@@ -76,7 +81,7 @@ export async function renderGsiButton(opts: GsiOptions): Promise<void> {
         text: opts.text ?? 'continue_with',
         shape: 'pill',
         logo_alignment: 'left',
-        width: String(opts.width ?? 320),
+        width: String(targetWidth),
       });
       // Give GSI a tick to actually inject the iframe; if it didn't, retry.
       await new Promise(r => setTimeout(r, 150));
