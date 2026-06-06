@@ -5,6 +5,7 @@ import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.c
 import { ForecastStripComponent } from '../../shared/components/atoms/forecast-strip.component';
 import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
+import { getSeasonInfo } from '../../core/utils/season';
 import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PlantActionService, DailyBriefing } from '../../core/services/plant-action.service';
@@ -223,7 +224,10 @@ interface ActivityEvent {
           <div class="flex gap-3 overflow-x-auto lg:overflow-x-visible lg:flex-wrap pb-1 -mx-1 px-1" style="scrollbar-width:none">
             @for (plant of plants(); track plant.id) {
               <a [routerLink]="['/plants', plant.id]"
-                 class="flex-shrink-0 w-20 bg-gw-surface border border-gw-border rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
+                 class="relative flex-shrink-0 w-20 bg-gw-surface border border-gw-border rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
+                <span class="absolute top-1.5 right-1.5 text-[9px] font-semibold text-gw-green-dark bg-gw-green-light/70 px-1.5 py-0.5 rounded-full leading-none">
+                  {{ t('season.weekShort', { n: plantSeason(plant).week }) }}
+                </span>
                 <span class="text-2xl leading-none">{{ plantEmoji(plant) }}</span>
                 <span class="text-[11px] font-medium text-gray-700 truncate w-full text-center">{{ plant.name }}</span>
                 <span class="text-[10px]" [class]="plantStatusClass(plant)">{{ plantStatus(plant) }}</span>
@@ -466,6 +470,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // ── Plants ────────────────────────────────────────────────────────────────────
+
+  plantSeason(plant: Plant) { return getSeasonInfo(plant.plantedDate, plant.type); }
 
   plantEmoji(plant: Plant): string {
     return PLANT_EMOJI[plant.type] ?? '🌱';

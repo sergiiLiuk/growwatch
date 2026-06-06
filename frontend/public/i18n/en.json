@@ -788,5 +788,16 @@
       "completed": "Completed",
       "upcoming": "Upcoming"
     }
+  },
+  "season": {
+    "weekN": "Week {{ n }}",
+    "weekShort": "Wk {{ n }}",
+    "phase": {
+      "seedling": "Seedling",
+      "growing": "Growing",
+      "flowering": "Flowering",
+      "harvest": "Harvest soon",
+      "mature": "Mature"
+    }
   }
 }

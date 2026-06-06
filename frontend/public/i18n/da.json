@@ -788,5 +788,16 @@
       "completed": "Fuldført",
       "upcoming": "Kommende"
     }
+  },
+  "season": {
+    "weekN": "Uge {{ n }}",
+    "weekShort": "Uge {{ n }}",
+    "phase": {
+      "seedling": "Spire",
+      "growing": "Vækst",
+      "flowering": "Blomstring",
+      "harvest": "Klar til høst",
+      "mature": "Moden"
+    }
   }
 }

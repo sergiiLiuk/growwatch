@@ -11,6 +11,7 @@ import { PlantNoteModalComponent } from './plant-note-modal.component';
 import { HarvestSummaryModalComponent } from './harvest-summary-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { PLANT_ACTION_META, PLANT_ACTIONS } from '../../core/constants/plant-actions';
+import { getSeasonInfo } from '../../core/utils/season';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -107,9 +108,15 @@ import dayjs from 'dayjs';
               <div class="text-[16px] font-semibold text-gw-green-dark">{{ plantService.getAgeShort(p) }}</div>
               <div class="text-[11px] text-gray-400 mt-0.5">{{ t('plants.age') }}</div>
             </div>
-            <div class="bg-white rounded-xl p-3 text-center">
-              <div class="text-[15px] font-semibold text-gw-green-dark">{{ getPlantedLabel(p) }}</div>
-              <div class="text-[11px] text-gray-400 mt-0.5">{{ t('plants.planted') }}</div>
+            <div class="bg-white rounded-xl p-3 text-center flex flex-col justify-between">
+              <div>
+                <div class="text-[15px] font-semibold text-gw-green-dark">{{ t('season.weekN', { n: season(p).week }) }}</div>
+                <div class="text-[11px] text-gray-400 mt-0.5">{{ t('season.phase.' + season(p).phase) }}</div>
+              </div>
+              <div class="mt-1.5 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-gw-green rounded-full transition-all"
+                     [style.width.%]="season(p).progress * 100"></div>
+              </div>
             </div>
             <div class="bg-white rounded-xl p-3 text-center">
               <div class="text-[16px] font-semibold text-gw-green-dark">{{ p.count }}</div>
@@ -785,6 +792,8 @@ export class PlantDetailComponent implements OnInit {
     const base = this.transloco.translate(PLANT_ACTION_META[a.type].pastTenseKey!);
     return a.note ? `${base} — ${a.note.split('\n')[0]}` : base;
   }
+
+  season(p: Plant) { return getSeasonInfo(p.plantedDate, p.type); }
 
   historyDateLabel(d: Date): string {
     const day = dayjs(d);
