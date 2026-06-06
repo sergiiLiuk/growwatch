@@ -426,6 +426,12 @@
     "seasonalTipTitle": "Tip of the season",
     "streakOne": "1 day care streak — keep it going!",
     "streakN": "{{ n }} day care streak — keep it going!",
+    "todayTitle": "What to do today",
+    "todayLoading": "Checking your reminders…",
+    "todayClear": "You're all caught up",
+    "todayClearBody": "No watering or fertilizing due today.",
+    "todayCount": "{{ n }} due",
+    "todayViewAll": "+ {{ n }} more · view calendar",
     "seasonalTips": {
       "0": "Protect tender perennials from frost — fleece on the coldest nights.",
       "1": "Plan your spring sowing. Order seeds before stock runs low.",

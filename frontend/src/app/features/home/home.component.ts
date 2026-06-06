@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.component';
+import { TodayCardComponent } from '../../shared/components/atoms/today-card.component';
 import { ForecastStripComponent } from '../../shared/components/atoms/forecast-strip.component';
 import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
@@ -32,7 +33,7 @@ interface ActivityEvent {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, SensorCardComponent, ForecastStripComponent, IconComponent, TranslocoDirective],
+  imports: [RouterLink, SensorCardComponent, ForecastStripComponent, TodayCardComponent, IconComponent, TranslocoDirective],
   template: `
     <div class="max-w-4xl mx-auto px-4 py-6" *transloco="let t">
 
@@ -154,7 +155,14 @@ interface ActivityEvent {
 
       <!-- Seasonal tip — static daily content for free users. Plus/Pro users
            see the AI briefing instead. Demo also gets the seasonal tip. -->
-      @if (!tier.canSeeAi()) {
+      <!-- "What to do today" — pulled from due reminders. Replaces the static
+           seasonal tip card on free/demo accounts; sits below the AI brief on
+           paid accounts as a quick next-action panel. -->
+      @if (plants().length > 0) {
+        <div class="mb-5">
+          <app-today-card />
+        </div>
+      } @else if (!tier.canSeeAi()) {
         <div class="mb-5 bg-white border-[0.5px] border-gray-200 rounded-2xl p-4">
           <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">{{ t('home.seasonalTipTitle') }}</div>
           <p class="text-[13px] text-gray-700 leading-relaxed">{{ seasonalTip() }}</p>

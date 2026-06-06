@@ -426,6 +426,12 @@
     "seasonalTipTitle": "Sæsonens tip",
     "streakOne": "1 dags plejestribe — bliv ved!",
     "streakN": "{{ n }} dages plejestribe — bliv ved!",
+    "todayTitle": "Hvad skal du i dag",
+    "todayLoading": "Henter dine påmindelser…",
+    "todayClear": "Du er fri i dag",
+    "todayClearBody": "Ingen vanding eller gødning til i dag.",
+    "todayCount": "{{ n }} forfaldne",
+    "todayViewAll": "+ {{ n }} mere · se kalender",
     "seasonalTips": {
       "0": "Beskyt sarte stauder mod frost — dæk med fiberdug på de koldeste nætter.",
       "1": "Planlæg forårssåning. Bestil frø før de er udsolgt.",
