@@ -23,8 +23,14 @@ export interface IUser extends Document {
 const userSchema = new Schema<IUser>(
     {
         email: { type: String, required: true, unique: true },
-        // Default to empty so Google-only accounts (no local password) still satisfy `required`.
-        passwordHash: { type: String, required: true, default: '' },
+        // Required only for accounts that don't use Google sign-in. Mongoose treats
+        // an empty string as "missing" for plain `required: true`, so we use a
+        // function-based check that lets Google-only accounts through.
+        passwordHash: {
+            type: String,
+            default: '',
+            required: function(this: IUser) { return !this.googleId; },
+        },
         googleId: { type: String, index: true, sparse: true },
         role: { type: String, required: true, enum: ['superuser', 'user', 'demo'], default: 'user' },
         subscriptionTier: { type: String, required: true, enum: ['free', 'plus', 'pro'], default: 'free' },
