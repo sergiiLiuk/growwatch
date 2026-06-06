@@ -283,6 +283,7 @@
     "today": "i dag",
     "yesterday": "i går",
     "never": "Aldrig",
+    "diaryTitle": "Dagbog",
     "daysAgoShort": "{{ n }} dage",
     "rec": {
       "waterNeededTitle": "{{ name }} trænger sandsynligvis til vand",

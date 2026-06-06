@@ -283,6 +283,7 @@
     "today": "today",
     "yesterday": "yesterday",
     "never": "Never",
+    "diaryTitle": "Diary",
     "daysAgoShort": "{{ n }}d",
     "rec": {
       "waterNeededTitle": "{{ name }} likely needs water",

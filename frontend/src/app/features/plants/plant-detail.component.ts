@@ -321,14 +321,14 @@ import dayjs from 'dayjs';
             </div>
           </div>
 
-          <!-- History -->
+          <!-- History — excludes notes; they get their own diary below -->
           <div class="mb-4">
             <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.historyTitle') }}</div>
             <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
-              @if (recentActions().length === 0) {
+              @if (recentNonNoteActions().length === 0) {
                 <p class="text-[12px] text-gray-400 p-4 text-center">{{ t('plantDetail.never') }}</p>
               }
-              @for (a of recentActions(); track a.id) {
+              @for (a of recentNonNoteActions(); track a.id) {
                 <div class="flex items-center gap-3 p-3">
                   <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0"
                        [class]="historyIconBg(a.type)">{{ historyIconEmoji(a.type) }}</div>
@@ -345,6 +345,29 @@ import dayjs from 'dayjs';
               }
             </div>
           </div>
+
+          <!-- Diary — multi-line notes, newest first, full body visible -->
+          @if (recentNotes().length > 0) {
+            <div class="mb-4">
+              <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.diaryTitle') }}</div>
+              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
+                @for (n of recentNotes(); track n.id) {
+                  <div class="flex gap-3 p-3">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0 bg-amber-50">📝</div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-[11px] text-gray-400">{{ historyDateLabel(n.createdAt) }}</div>
+                      <p class="mt-1 text-[13px] text-gray-700 leading-relaxed whitespace-pre-line">{{ n.note }}</p>
+                    </div>
+                    <button (click)="removeAction(n.id)"
+                            class="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-gw-red rounded transition-colors self-start"
+                            [title]="t('plantDetail.deleteAction')">
+                      <app-icon name="trash" class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
 
           <!-- Archive footer -->
           <div class="mt-5 border-[0.5px] border-dashed border-gray-300 rounded-xl p-4 flex items-center gap-3">
@@ -504,6 +527,8 @@ export class PlantDetailComponent implements OnInit {
   private localeKey = signal(this.transloco.getActiveLang());
 
   recentActions = computed(() => this.plantActions().slice(0, 5));
+  recentNonNoteActions = computed(() => this.plantActions().filter(a => a.type !== 'note').slice(0, 5));
+  recentNotes = computed(() => this.plantActions().filter(a => a.type === 'note' && !!a.note).slice(0, 10));
 
   actionButtons = computed(() => {
     this.localeKey();
