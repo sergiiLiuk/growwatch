@@ -29,6 +29,9 @@ interface DayCell {
   template: `
     <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
+      <!-- Sticky top: title + filters + week strip -->
+      <div class="sticky top-0 z-30 -mx-4 px-4 pt-2 pb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+
       <!-- Header -->
       <div class="flex items-start justify-between mb-4">
         <div>
@@ -105,6 +108,9 @@ interface DayCell {
             </span>
           </button>
         }
+      </div>
+
+      <!-- /sticky wrapper -->
       </div>
 
       <!-- Loading -->
