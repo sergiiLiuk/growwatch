@@ -224,6 +224,8 @@ async function startServer() {
     const googleClient = process.env.GOOGLE_CLIENT_ID
         ? new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
         : null;
+    console.log(`[boot] Google sign-in: ${googleClient ? 'configured' : 'NOT configured (set GOOGLE_CLIENT_ID)'}`);
+
 
     app.post('/auth/google', async (req: Request, res: Response) => {
         try {
