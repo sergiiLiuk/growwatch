@@ -5,6 +5,42 @@
  */
 declare const google: any;
 
+/**
+ * Quick environment check used to decide whether to render the GSI button.
+ * GSI / FedCM is only reliable in top-level browser tabs on Chromium-based
+ * browsers. We hide the button in any of these cases instead of showing the
+ * user a broken UI:
+ *   - Installed PWA running in standalone mode (no Web Identity access)
+ *   - Inside an iframe (FedCM blocks cross-origin frames)
+ *   - Brave (Shields block accounts.google.com by default)
+ *   - Firefox / Safari (FedCM not generally available)
+ *
+ * Email/password remains the universal fallback for everyone else.
+ */
+export function isGsiEnvironmentSupported(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (typeof navigator === 'undefined') return false;
+
+  // Installed PWA standalone mode — multiple ways browsers report it.
+  try {
+    if (window.matchMedia('(display-mode: standalone)').matches) return false;
+    if ((window.navigator as any).standalone === true) return false;
+  } catch { /* ignore matchMedia issues */ }
+
+  // Inside iframe — FedCM blocks third-party frames.
+  if (window.self !== window.top) return false;
+
+  const ua = navigator.userAgent;
+  // Brave exposes a sync `brave` property on navigator
+  if ((navigator as any).brave?.isBrave) return false;
+  // Firefox — FedCM is behind a flag and frequently off
+  if (/Firefox/.test(ua)) return false;
+  // Safari (any iOS browser is Safari under the hood too) — no FedCM support
+  if (/^((?!chrome|android|edg).)*safari/i.test(ua)) return false;
+
+  return true;
+}
+
 export interface GsiOptions {
   clientId: string;
   element: HTMLElement;

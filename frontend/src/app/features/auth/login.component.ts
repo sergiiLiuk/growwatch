@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AuthService, GOOGLE_CLIENT_ID } from '../../core/services/auth.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
-import { renderGsiButton } from './gsi-helper';
+import { renderGsiButton, isGsiEnvironmentSupported } from './gsi-helper';
 
 @Component({
   selector: 'app-login',
@@ -126,8 +126,10 @@ export class LoginComponent implements AfterViewInit {
   resending = signal(false);
   resentSentSig = signal(false);
 
-  // Google sign-in
-  readonly googleEnabled = !!GOOGLE_CLIENT_ID;
+  // Google sign-in — gated on both client id presence and the browser/PWA
+  // actually supporting GSI/FedCM. Skipping the unsupported cases keeps the
+  // login form clean (no flash of a broken Google button + red error).
+  readonly googleEnabled = !!GOOGLE_CLIENT_ID && isGsiEnvironmentSupported();
   googleError = signal(false);
 
   resendSent() { return this.resentSentSig(); }
