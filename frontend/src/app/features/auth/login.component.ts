@@ -133,14 +133,27 @@ export class LoginComponent implements AfterViewInit {
   resendSent() { return this.resentSentSig(); }
 
   async ngAfterViewInit() {
-    if (!this.googleEnabled) return;
-    // Use a plain DOM query — `viewChild` doesn't reach into embedded views
-    // such as the one *transloco creates, so the template ref returns null.
-    const el = (this.host.nativeElement as HTMLElement).querySelector<HTMLElement>('.gsi-host');
+    if (!this.googleEnabled) {
+      console.warn('[GSI] disabled — no client id');
+      return;
+    }
+    console.log('[GSI] ngAfterViewInit — searching for .gsi-host');
+    // The @if block may not have rendered yet on the first AfterViewInit pass
+    // (esp. when nested inside *transloco's embedded view), so poll for the
+    // element instead of giving up after one query.
+    const host = this.host.nativeElement as HTMLElement;
+    let el: HTMLElement | null = null;
+    for (let i = 0; i < 30; i++) {
+      el = host.querySelector<HTMLElement>('.gsi-host');
+      if (el) break;
+      await new Promise(r => setTimeout(r, 100));
+    }
     if (!el) {
+      console.error('[GSI] .gsi-host not found after 3s of polling');
       this.googleError.set(true);
       return;
     }
+    console.log('[GSI] element found, calling renderGsiButton');
     try {
       await renderGsiButton({
         clientId: GOOGLE_CLIENT_ID,
@@ -148,6 +161,7 @@ export class LoginComponent implements AfterViewInit {
         text: 'signin_with',
         onCredential: (credential) => this.handleGoogleCredential(credential),
       });
+      console.log('[GSI] renderGsiButton finished, children =', el.children.length);
     } catch (err) {
       console.error('[GSI] renderGsiButton failed:', err);
       this.googleError.set(true);
