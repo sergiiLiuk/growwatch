@@ -16,7 +16,7 @@ import { ReminderService } from '../../core/services/reminder.service';
   template: `
     <div class="max-w-lg mx-auto px-4 pb-6" *transloco="let t">
 
-      <div class="sticky top-0 z-30 -mx-4 px-4 pt-2 pb-3 mb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+      <div class="sticky top-0 z-30 -mx-4 px-4 pt-5 pb-3 mb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
         <h1 class="text-[18px] font-medium text-gray-800">{{ t('settings.title') }}</h1>
         <p class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.subtitle') }}</p>
       </div>

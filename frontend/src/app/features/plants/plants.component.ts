@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
     <div class="max-w-lg mx-auto px-4 pb-6" *transloco="let t">
 
       <!-- Sticky top: title + actions + search + type filter -->
-      <div class="sticky top-0 z-30 -mx-4 px-4 pt-2 pb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+      <div class="sticky top-0 z-30 -mx-4 px-4 pt-5 pb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
 
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
