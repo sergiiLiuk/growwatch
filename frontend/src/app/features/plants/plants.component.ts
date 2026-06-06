@@ -16,7 +16,7 @@ import dayjs from 'dayjs';
   selector: 'app-plants',
   imports: [FormsModule, RouterLink, PlantEditModalComponent, QuickLogSheetComponent, PlantCareFieldsComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
+    <div class="max-w-lg mx-auto px-4 pb-6" *transloco="let t">
 
       <!-- Sticky top: title + actions + search + type filter -->
       <div class="sticky top-0 z-30 -mx-4 px-4 pt-2 pb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">

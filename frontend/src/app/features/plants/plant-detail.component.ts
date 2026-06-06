@@ -20,7 +20,7 @@ import dayjs from 'dayjs';
   selector: 'app-plant-detail',
   imports: [FormsModule, RouterLink, PlantEditModalComponent, PlantNoteModalComponent, HarvestSummaryModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
+    <div class="max-w-lg mx-auto px-4 pb-6" *transloco="let t">
 
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
