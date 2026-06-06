@@ -203,6 +203,7 @@
   },
   "upgrade": {
     "title": "Vælg dit abonnement",
+    "subtitle": "Opgradér når som helst, opsig når som helst.",
     "free": "Gratis",
     "plus": "Plus",
     "pro": "Pro",
@@ -210,6 +211,29 @@
     "plusPrice": "39 kr / måned",
     "plusPriceAnnual": "eller 299 kr / år",
     "proPrice": "Følger med hardware",
+    "mostPopular": "Mest populær",
+    "alwaysFree": "Altid gratis",
+    "features": {
+      "free": {
+        "plants": "Ubegrænsede planter med log + historik",
+        "history": "Sidste 24 timers sensordata",
+        "reminders": "Vanding, gødning og notepåmindelser",
+        "calendar": "Plantekalender med fuldførte + kommende begivenheder",
+        "export": "Eksportér alle dine data når som helst (GDPR)"
+      },
+      "plus": {
+        "everything": "Alt i Gratis",
+        "ai": "To AI smarttips om dagen tilpasset dine planter",
+        "weather": "3-dages vejradvarsler (frost, varme, vind)",
+        "history30": "30 dages sensorhistorik"
+      },
+      "pro": {
+        "everything": "Alt i Plus",
+        "sensors": "Tilslut ESP32-drivhussensorer",
+        "history90": "90 dages sensorhistorik",
+        "multidevice": "Flere enheder pr. konto"
+      }
+    },
     "freeFeatures": "Plantelog, handlingshistorik, arkiv",
     "plusFeatures": "Alt i Gratis + AI smarte tips + 3-dages vejradvarsler",
     "proFeatures": "Alt i Plus + live ESP32-sensor",

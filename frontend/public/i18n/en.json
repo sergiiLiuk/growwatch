@@ -203,6 +203,7 @@
   },
   "upgrade": {
     "title": "Choose your plan",
+    "subtitle": "Upgrade anytime, cancel anytime.",
     "free": "Free",
     "plus": "Plus",
     "pro": "Pro",
@@ -210,6 +211,29 @@
     "plusPrice": "39 kr / month",
     "plusPriceAnnual": "or 299 kr / year",
     "proPrice": "Coming with hardware",
+    "mostPopular": "Most popular",
+    "alwaysFree": "Always free",
+    "features": {
+      "free": {
+        "plants": "Unlimited plants with log + history",
+        "history": "Last 24 hours of sensor data",
+        "reminders": "Watering, fertilizing, and note reminders",
+        "calendar": "Plants calendar with completed + upcoming events",
+        "export": "Export all your data anytime (GDPR)"
+      },
+      "plus": {
+        "everything": "Everything in Free",
+        "ai": "Twice-daily AI smart tips tailored to your plants",
+        "weather": "3-day weather warnings (frost, heat, wind)",
+        "history30": "30 days of sensor history"
+      },
+      "pro": {
+        "everything": "Everything in Plus",
+        "sensors": "Pair ESP32 greenhouse sensors",
+        "history90": "90 days of sensor history",
+        "multidevice": "Multiple devices per account"
+      }
+    },
     "freeFeatures": "Plant log, action history, archive",
     "plusFeatures": "Everything in Free + AI smart tips + 3-day weather warnings",
     "proFeatures": "Everything in Plus + live ESP32 sensor data",
