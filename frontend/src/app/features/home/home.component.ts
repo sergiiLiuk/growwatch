@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.component';
 import { TodayCardComponent } from '../../shared/components/atoms/today-card.component';
 import { OnboardingComponent, hasOnboarded } from '../onboarding/onboarding.component';
+import { PullToRefreshDirective } from '../../shared/directives/pull-to-refresh.directive';
 import { ForecastStripComponent } from '../../shared/components/atoms/forecast-strip.component';
 import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
@@ -34,13 +35,13 @@ interface ActivityEvent {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, SensorCardComponent, ForecastStripComponent, TodayCardComponent, OnboardingComponent, IconComponent, TranslocoDirective],
+  imports: [RouterLink, SensorCardComponent, ForecastStripComponent, TodayCardComponent, OnboardingComponent, IconComponent, PullToRefreshDirective, TranslocoDirective],
   template: `
     @if (showOnboarding()) {
       <app-onboarding (done)="showOnboarding.set(false)" />
     }
 
-    <div class="max-w-4xl mx-auto px-4 py-6" *transloco="let t">
+    <div class="max-w-4xl mx-auto px-4 py-6" gwPullToRefresh (gwPullRefresh)="reload()" *transloco="let t">
 
       <!-- Hero row: weather + phase -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
@@ -283,6 +284,15 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // First-launch onboarding overlay. Skipped on subsequent visits.
   showOnboarding = signal(!hasOnboarded());
+
+  /** Re-fetch the live sensor, plant list, and streak. Wired to pull-to-refresh. */
+  reload() {
+    this.sensorService.getLatestSensorData().subscribe(d => this.latestData.set(d));
+    this.sensorService.getHourlyData(24).subscribe(d => this.hourlyData.set(d));
+    this.plantService.reload();
+    this.plantActions.listAll(200).subscribe(list => this.streakDays.set(calculateStreak(list.map(a => a.createdAt))));
+    this.weatherService.fetchWeather();
+  }
 
   // Cross-plant care streak — refreshed on init; recomputed when actions change.
   streakDays = signal(0);

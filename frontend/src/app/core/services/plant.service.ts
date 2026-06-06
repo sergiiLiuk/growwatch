@@ -170,6 +170,9 @@ export class PlantService {
     return this.transloco.translate(`plantTypes.${type}`);
   }
 
+  /** Re-fetch the plant list (used by pull-to-refresh on the Plants page). */
+  reload() { this.loadPlants(); }
+
   private loadPlants() {
     this.client
       .query<{ plants: RawPlant[] }>({ query: PLANTS_QUERY_ALL, fetchPolicy: 'network-only' })

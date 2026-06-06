@@ -9,6 +9,7 @@ import { PLANT_ACTION_META } from '../../core/constants/plant-actions';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
+import { PullToRefreshDirective } from '../../shared/directives/pull-to-refresh.directive';
 
 dayjs.extend(isoWeek);
 
@@ -25,9 +26,9 @@ interface DayCell {
 
 @Component({
   selector: 'app-calendar',
-  imports: [RouterLink, IconComponent, EmptyStateComponent, TranslocoDirective],
+  imports: [RouterLink, IconComponent, EmptyStateComponent, PullToRefreshDirective, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 pb-6" *transloco="let t">
+    <div class="max-w-lg mx-auto px-4 pb-6" gwPullToRefresh (gwPullRefresh)="reload()" *transloco="let t">
 
       <!-- Sticky top: title + filters + week strip -->
       <div class="sticky top-0 z-30 -mx-4 px-4 pt-5 pb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
@@ -287,6 +288,9 @@ export class CalendarComponent implements OnInit {
   ngOnInit() {
     this.load();
   }
+
+  /** Pull-to-refresh entry point. */
+  reload() { this.load(); }
 
   private load() {
     this.loading.set(true);

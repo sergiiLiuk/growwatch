@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, inject, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { PullToRefreshDirective } from '../../shared/directives/pull-to-refresh.directive';
 import { Subscription } from 'rxjs';
 import { SensorService, SensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
@@ -22,9 +23,9 @@ export interface Alert {
 
 @Component({
   selector: 'app-alerts',
-  imports: [DatePipe, EmptyStateComponent, TranslocoDirective],
+  imports: [DatePipe, EmptyStateComponent, PullToRefreshDirective, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 pb-6" *transloco="let t">
+    <div class="max-w-lg mx-auto px-4 pb-6" gwPullToRefresh (gwPullRefresh)="reload()" *transloco="let t">
 
       <div class="sticky top-0 z-30 -mx-4 px-4 pt-5 pb-3 mb-3 flex items-center justify-between bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
         <div>
@@ -214,6 +215,12 @@ export class AlertsComponent implements OnInit, OnDestroy {
       }
     }
 
+  }
+
+  /** Pull-to-refresh: re-fetch reminders and weather (sensor sub already live). */
+  reload() {
+    this.reminderService.list().subscribe(list => this.dueReminders.set(list));
+    if (this.tier.canSeeWeatherWarnings()) this.weatherService.fetchForecast();
   }
 
   ngOnInit() {

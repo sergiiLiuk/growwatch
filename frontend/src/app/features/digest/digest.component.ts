@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { PullToRefreshDirective } from '../../shared/directives/pull-to-refresh.directive';
 import { SensorService, HourlySensorData } from '../../core/services/sensor.service';
 import { PlantService } from '../../core/services/plant.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
@@ -19,9 +20,9 @@ interface DigestItem {
 
 @Component({
   selector: 'app-digest',
-  imports: [DatePipe, EmptyStateComponent, TranslocoDirective],
+  imports: [DatePipe, EmptyStateComponent, PullToRefreshDirective, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 pb-6" *transloco="let t">
+    <div class="max-w-lg mx-auto px-4 pb-6" gwPullToRefresh (gwPullRefresh)="reload()" *transloco="let t">
 
       <div class="sticky top-0 z-30 -mx-4 px-4 pt-5 pb-3 mb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
         <h1 class="text-[18px] font-medium text-gray-800">{{ t('digest.title') }}</h1>
@@ -204,6 +205,17 @@ export class DigestComponent implements OnInit {
     if (warnings === 1) return t('digest.summaryOneWarning');
     return t('digest.summaryManyWarnings', { n: warnings, plants: plantNames });
   });
+
+  /** Pull-to-refresh: re-pull today's hourly data and weather forecast. */
+  reload() {
+    this.loading.set(true);
+    if (this.tier.canSeeWeatherWarnings()) this.weatherService.fetchForecast();
+    this.sensorService.getHourlyData(24).subscribe(data => {
+      const todayStr = new Date().toDateString();
+      this.hourlyData.set(data.filter(d => new Date(d.hour).toDateString() === todayStr));
+      this.loading.set(false);
+    });
+  }
 
   ngOnInit() {
     if (this.tier.canSeeWeatherWarnings() && !this.weatherService.forecast()) this.weatherService.fetchForecast();

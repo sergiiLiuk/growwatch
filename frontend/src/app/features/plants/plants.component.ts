@@ -6,6 +6,7 @@ import { PlantEditModalComponent } from './plant-edit-modal.component';
 import { QuickLogSheetComponent } from './quick-log-sheet.component';
 import { PlantCareFieldsComponent, emptyCare } from './plant-care-fields.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
+import { PullToRefreshDirective } from '../../shared/directives/pull-to-refresh.directive';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
@@ -14,9 +15,9 @@ import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plants',
-  imports: [FormsModule, RouterLink, PlantEditModalComponent, QuickLogSheetComponent, PlantCareFieldsComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, PlantEditModalComponent, QuickLogSheetComponent, PlantCareFieldsComponent, StatusBadgeComponent, EmptyStateComponent, IconComponent, PullToRefreshDirective, TranslocoDirective],
   template: `
-    <div class="max-w-lg mx-auto px-4 pb-6" *transloco="let t">
+    <div class="max-w-lg mx-auto px-4 pb-6" gwPullToRefresh (gwPullRefresh)="plantService.reload()" *transloco="let t">
 
       <!-- Sticky top: title + actions + search + type filter -->
       <div class="sticky top-0 z-30 -mx-4 px-4 pt-5 pb-3 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
