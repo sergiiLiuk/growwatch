@@ -815,6 +815,16 @@
       "upcoming": "Kommende"
     }
   },
+  "share": {
+    "share": "Del",
+    "shared": "Delt",
+    "copied": "Kopieret til udklipsholder",
+    "failed": "Kunne ikke dele",
+    "plantTitle": "{{ name }} i GrowWatch",
+    "plantText": "Se {{ name }} ({{ type }}) — fulgt i GrowWatch.",
+    "harvestTitle": "{{ name }} — høstopsamling",
+    "harvestText": "{{ name }}: smag {{ taste }}/5, udbytte {{ fertility }}/5. Dyrk næste sæson? {{ rec }}."
+  },
   "season": {
     "weekN": "Uge {{ n }}",
     "weekShort": "Uge {{ n }}",

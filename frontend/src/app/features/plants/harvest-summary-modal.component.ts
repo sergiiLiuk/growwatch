@@ -1,7 +1,8 @@
-import { Component, input, output, signal, computed } from '@angular/core';
+import { Component, input, output, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { Plant, HarvestRecommendation } from '../../core/services/plant.service';
+import { ShareService } from '../../core/services/share.service';
 
 type Rec = HarvestRecommendation;
 
@@ -89,6 +90,12 @@ type Rec = HarvestRecommendation;
                         class="flex-1 bg-gw-green text-white text-[13px] py-3 rounded-xl font-medium hover:bg-gw-green-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                   {{ saving() ? t('harvest.saving') : t('harvest.confirm') }}
                 </button>
+                <button type="button" (click)="shareSummary()"
+                        [disabled]="!canSubmit()"
+                        class="px-3 bg-white border-[0.5px] border-gray-200 text-gray-600 text-[13px] py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        [title]="t('share.share')">
+                  📤
+                </button>
                 <button (click)="cancel()"
                         class="px-4 text-[13px] text-gray-400 hover:text-gray-600 transition-colors">
                   {{ t('common.cancel') }}
@@ -115,6 +122,26 @@ export class HarvestSummaryModalComponent {
   recs: Rec[] = ['yes', 'maybe', 'no'];
 
   canSubmit = computed(() => this.taste() > 0 && this.fertility() > 0 && this.recommendation() !== null);
+
+  private shareService = inject(ShareService);
+  private transloco = inject(TranslocoService);
+
+  async shareSummary() {
+    const p = this.plant();
+    if (!p || !this.canSubmit()) return;
+    const rec = this.recommendation();
+    const recLabel = rec ? this.transloco.translate(`harvest.rec.${rec}`) : '';
+    const text = this.transloco.translate('share.harvestText', {
+      name: p.name,
+      taste: this.taste(),
+      fertility: this.fertility(),
+      rec: recLabel,
+    });
+    await this.shareService.share({
+      title: this.transloco.translate('share.harvestTitle', { name: p.name }),
+      text,
+    });
+  }
 
   submit() {
     if (!this.canSubmit()) return;

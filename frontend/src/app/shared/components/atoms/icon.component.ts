@@ -26,7 +26,7 @@ export type IconName =
   // Domain
   | 'wifi' | 'device' | 'refresh' | 'thermometer'
   // Search / filter
-  | 'search' | 'sliders' | 'x';
+  | 'search' | 'sliders' | 'x' | 'share';
 
 @Component({
   selector: 'app-icon',
@@ -171,6 +171,11 @@ export type IconName =
         @case ('x') {
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
+        }
+        @case ('share') {
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+          <polyline points="16 6 12 2 8 6"/>
+          <line x1="12" y1="2" x2="12" y2="15"/>
         }
         @case ('sliders') {
           <line x1="4" y1="21" x2="4" y2="14"/>

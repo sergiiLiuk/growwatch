@@ -12,6 +12,7 @@ import { HarvestSummaryModalComponent } from './harvest-summary-modal.component'
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { PLANT_ACTION_META, PLANT_ACTIONS } from '../../core/constants/plant-actions';
 import { getSeasonInfo } from '../../core/utils/season';
+import { ShareService } from '../../core/services/share.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -47,6 +48,11 @@ import dayjs from 'dayjs';
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
                   <app-icon [name]="plant()!.monitored ? 'pause' : 'play'" class="w-[14px] h-[14px]" />
                   {{ plant()!.monitored ? t('plants.pauseMonitoring') : t('plants.resumeMonitoring') }}
+                </button>
+                <button (click)="sharePlant($event)"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
+                  <app-icon name="share" class="w-[14px] h-[14px]" />
+                  {{ shareToastKey() ? t(shareToastKey()!) : t('share.share') }}
                 </button>
                 <button (click)="startDelete($event)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gw-red hover:bg-gw-red-light transition-colors">
@@ -458,6 +464,7 @@ export class PlantDetailComponent implements OnInit {
   private transloco = inject(TranslocoService);
   plantService = inject(PlantService);
   tier = inject(TierService);
+  private share = inject(ShareService);
 
   reminders = signal<PlantReminder[]>([]);
   readonly intervalOptions: ReadonlyArray<{ days: number; labelKey: string; n: number }> = [
@@ -721,6 +728,28 @@ export class PlantDetailComponent implements OnInit {
   }
 
   // ── Archive ────────────────────────────────────────────────────────────────
+
+  // Share state — surfaces "Shared / Copied / Failed" inline in the menu briefly.
+  shareToastKey = signal<string | null>(null);
+
+  async sharePlant(ev?: MouseEvent) {
+    ev?.stopPropagation();
+    const p = this.plant();
+    if (!p) return;
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/plants/${p.id}` : '';
+    const outcome = await this.share.share({
+      title: this.transloco.translate('share.plantTitle', { name: p.name }),
+      text: this.transloco.translate('share.plantText', { name: p.name, type: this.plantService.getTypeLabel(p.type) }),
+      url,
+    });
+    this.shareToastKey.set(
+      outcome === 'shared' ? 'share.shared'
+      : outcome === 'copied' ? 'share.copied'
+      : outcome === 'cancelled' ? null
+      : 'share.failed'
+    );
+    if (this.shareToastKey()) setTimeout(() => this.shareToastKey.set(null), 2200);
+  }
 
   archivingPlant = signal<Plant | null>(null);
   archiving = signal(false);

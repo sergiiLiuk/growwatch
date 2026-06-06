@@ -815,6 +815,16 @@
       "upcoming": "Upcoming"
     }
   },
+  "share": {
+    "share": "Share",
+    "shared": "Shared",
+    "copied": "Copied to clipboard",
+    "failed": "Could not share",
+    "plantTitle": "{{ name }} on GrowWatch",
+    "plantText": "Check out {{ name }} ({{ type }}) — tracked in GrowWatch.",
+    "harvestTitle": "{{ name }} — harvest summary",
+    "harvestText": "{{ name }}: taste {{ taste }}/5, yield {{ fertility }}/5. Grow next season? {{ rec }}."
+  },
   "season": {
     "weekN": "Week {{ n }}",
     "weekShort": "Wk {{ n }}",
