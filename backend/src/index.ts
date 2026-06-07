@@ -253,6 +253,7 @@ async function startServer() {
             // Find by googleId first, then fall back to email (so existing
             // password accounts get linked on first Google sign-in).
             let user = await User.findOne({ googleId });
+            let isNewUser = false;
             if (!user) {
                 user = await User.findOne({ email });
                 if (user) {
@@ -268,6 +269,7 @@ async function startServer() {
                         subscriptionTier: 'free',
                         emailVerified: true,
                     });
+                    isNewUser = true;
                 }
             }
 
@@ -279,6 +281,7 @@ async function startServer() {
                 userId: user._id.toString(),
                 subscriptionTier: user.subscriptionTier ?? 'free',
                 emailVerified: user.emailVerified ?? true,
+                isNewUser,
             });
         } catch (err: any) {
             console.error('Google sign-in failed:', err?.message ?? err);

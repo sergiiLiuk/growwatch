@@ -87,6 +87,9 @@ export class AuthService {
       { email, password },
       'register',
     );
+    // Fresh account on this device: reset the onboarding flag so the welcome
+    // flow shows on the next home visit.
+    this.resetOnboarding();
   }
 
   /**
@@ -103,13 +106,20 @@ export class AuthService {
     const json = await res.json();
     if (!res.ok || json.error) throw new Error(json.error ?? 'Google sign-in failed');
 
-    const { token, email: userEmail, role, userId, subscriptionTier, emailVerified } = json;
+    const { token, email: userEmail, role, userId, subscriptionTier, emailVerified, isNewUser } = json;
     const tier: SubscriptionTier = subscriptionTier ?? 'free';
     const userRole: UserRole = (role as UserRole) ?? 'user';
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(TIER_KEY, tier);
     localStorage.setItem(ROLE_KEY, userRole);
     this._user.set({ email: userEmail, role: userRole, userId, subscriptionTier: tier, emailVerified: !!emailVerified });
+    // Brand-new Google account: reset onboarding so the welcome flow appears.
+    if (isNewUser) this.resetOnboarding();
+  }
+
+  /** Clear the onboarding flag so the welcome overlay shows again on next home visit. */
+  private resetOnboarding() {
+    try { localStorage.removeItem(STORAGE_KEYS.ONBOARDED); } catch { /* private mode */ }
   }
 
   async requestPasswordReset(email: string): Promise<void> {
@@ -174,7 +184,10 @@ export class AuthService {
     });
     const json = await res.json();
     if (json.errors?.length) throw new Error(json.errors[0].message);
-    // Wipe local state — same as logout — and bounce to login.
+    // Wipe local state — same as logout — and bounce to login. Also reset the
+    // onboarding flag so a fresh registration on this device shows the welcome
+    // overlay again.
+    this.resetOnboarding();
     this.logout();
   }
 
