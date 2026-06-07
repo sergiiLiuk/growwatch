@@ -414,6 +414,26 @@
     "requestNewLink": "Anmod om nyt link"
   },
   "home": {
+    "subtitle": "Sådan ser dit drivhus ud i dag.",
+    "greeting": {
+      "morning": "God morgen",
+      "afternoon": "God eftermiddag",
+      "evening": "God aften",
+      "night": "Godnat"
+    },
+    "wind": "Vind",
+    "pressure": "Tryk",
+    "updatedJustNow": "Opdateret lige nu",
+    "updatedMinutesAgo": "Opdateret for {{ n }} min siden",
+    "updatedHoursAgo": "Opdateret for {{ n }} t siden",
+    "allCaughtUp": "Du er fri i dag",
+    "allCaughtUpBody": "Ingen vanding eller gødning til i dag.",
+    "needsAttention": "Kræver opmærksomhed",
+    "needsAttentionBody": "{{ n }} påmindelse(r) skal udføres i dag.",
+    "youreAllSet": "Du er klar!",
+    "upgradeStrip": "Få daglige plejetips og 3-dages vejradvarsler med Plus.",
+    "seePlans": "Se planer",
+    "dayN": "Dag {{ n }}",
     "upgradeTitle": "Lås smarte tips og vejradvarsler op",
     "upgradeBody": "Få daglige plejetips og 3-dages vejradvarsler med Plus.",
     "upgradeCta": "Se planer",

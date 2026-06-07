@@ -2,10 +2,8 @@ import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SensorCardComponent } from '../../shared/components/atoms/sensor-card.component';
-import { TodayCardComponent } from '../../shared/components/atoms/today-card.component';
 import { OnboardingComponent, hasOnboarded } from '../onboarding/onboarding.component';
 import { PullToRefreshDirective } from '../../shared/directives/pull-to-refresh.directive';
-import { ForecastStripComponent } from '../../shared/components/atoms/forecast-strip.component';
 import { SensorService, SensorData, HourlySensorData, MoodInfo } from '../../core/services/sensor.service';
 import { PlantService, Plant } from '../../core/services/plant.service';
 import { getSeasonInfo } from '../../core/utils/season';
@@ -13,6 +11,8 @@ import { calculateStreak } from '../../core/utils/streak';
 import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PlantActionService, DailyBriefing } from '../../core/services/plant-action.service';
+import { ReminderService, PlantReminder } from '../../core/services/reminder.service';
+import dayjs from 'dayjs';
 import { TierService } from '../../core/services/tier.service';
 import { AuthService } from '../../core/services/auth.service';
 import { isNight, isDawnOrDusk, daysAgo } from '../../core/utils/time';
@@ -35,123 +35,38 @@ interface ActivityEvent {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, SensorCardComponent, ForecastStripComponent, TodayCardComponent, OnboardingComponent, IconComponent, PullToRefreshDirective, TranslocoDirective],
+  imports: [RouterLink, SensorCardComponent, OnboardingComponent, IconComponent, PullToRefreshDirective, TranslocoDirective],
   template: `
     @if (showOnboarding()) {
       <app-onboarding (done)="showOnboarding.set(false)" />
     }
 
-    <div class="max-w-4xl mx-auto px-4 py-6" gwPullToRefresh (gwPullRefresh)="reload()" *transloco="let t">
+    <div class="max-w-2xl mx-auto px-4 py-6" gwPullToRefresh (gwPullRefresh)="reload()" *transloco="let t">
 
-      <!-- Hero row: weather + phase -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
-
-        <!-- Weather card -->
-        <div class="bg-gw-surface shadow-gw-sm rounded-2xl p-4 flex items-center gap-3">
-          @if (weather()) {
-            <span class="text-3xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
-            <div class="flex-1 min-w-0">
-              <div class="font-data text-[22px] font-medium text-gw-blue-dark leading-none">{{ weather()!.temperature }}°C</div>
-              <div class="text-[11px] text-gray-400 truncate mt-0.5">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
-            </div>
-            <div class="flex flex-col items-end gap-0.5 shrink-0 text-[11px] text-gw-blue-dark">
-              <span>💧 {{ weather()!.humidity }}%</span>
-              <span>🌬️ {{ weather()!.windSpeed }} m/s</span>
-              <span>🔵 {{ weather()!.pressure }} hPa</span>
-            </div>
-          } @else {
-            <span class="flex-1 text-[13px] text-gray-400">
-              {{ weatherService.loading() ? t('home.loadingWeather') : t('home.weatherUnavailable') }}
-            </span>
-          }
+      <!-- Header -->
+      <div class="flex items-start justify-between mb-5">
+        <div class="flex-1 min-w-0">
+          <h1 class="font-h1 text-gw-text flex items-center gap-2">
+            {{ t(greetingKey()) }}, {{ firstName() }}! <span>🌿</span>
+          </h1>
+          <p class="font-body text-gw-muted mt-1">{{ t('home.subtitle') }}</p>
         </div>
-
-        <!-- Forecast strip — mobile only, sits between weather and phase -->
-        @if (tier.canSeeWeatherWarnings()) {
-          <div class="md:hidden">
-            <app-forecast-strip />
-          </div>
-        }
-
-        <!-- Phase / mood card — hidden for Free since it needs sensor data to mean anything -->
-        @if (!tier.isFree()) {
-        <div class="rounded-2xl p-4 border border-transparent flex flex-col" [class]="moodBg()">
-          <div class="flex items-start justify-between gap-2 mb-1">
-            <span class="text-[10px] font-semibold tracking-widest uppercase opacity-50" [class]="moodIconColor()">{{ t('home.currentPhase') }}</span>
-          </div>
-          <div class="font-display text-[22px] font-bold leading-tight" [class]="moodIconColor()">{{ mood().label }}</div>
-          @if (mood().mood === 'offline') {
-            <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
-          } @else if (phaseCountdown()) {
-            <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ phaseCountdown() }}</div>
-          } @else {
-            <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
-          }
-          <!-- Subtle divider at bottom matching mockup -->
-          <div class="mt-3 h-px opacity-20 rounded-full" [class]="moodIconColor() === 'text-gw-green-dark' ? 'bg-gw-green-dark' : 'bg-gw-amber-dark'"></div>
-        </div>
-        }
-
+        <a routerLink="/alerts"
+           class="relative w-10 h-10 rounded-full bg-white shadow-gw-sm flex items-center justify-center text-gw-text hover:bg-gw-green-light/40 transition-colors"
+           [attr.aria-label]="t('nav.alerts')">
+          <app-icon name="alerts" class="w-5 h-5" />
+        </a>
       </div>
 
-      <!-- Today's brief -->
-      @if (tier.canSeeAi() && briefing(); as b) {
-        <div class="mb-5 rounded-2xl bg-gw-green-light border border-gw-green/30 p-4">
-          <div class="flex items-center justify-between mb-1.5">
-            <div class="flex items-center gap-2">
-              <span class="text-base leading-none">✨</span>
-              <span class="text-[10px] font-semibold tracking-widest uppercase text-gw-green-dark/70">
-                {{ b.cycle === 'morning' ? t('home.morningBrief') : t('home.eveningBrief') }}
-              </span>
-            </div>
-            <span class="text-[10px] text-gw-green-dark/50 tabular-nums">{{ formatBriefingTime(b.generatedAt) }}</span>
-          </div>
-          <p class="text-[13px] text-gw-green-dark leading-relaxed">{{ b.overview }}</p>
-        </div>
-      }
-
-      <!-- 3-day forecast strip — desktop only (mobile version sits in the hero row) -->
-      @if (tier.canSeeWeatherWarnings()) {
-        <div class="hidden md:block mb-5">
-          <app-forecast-strip />
-        </div>
-      }
-
-      <!-- Onboarding -->
-      @if (!plantsLoading() && plants().length === 0) {
-        <div class="bg-gw-surface shadow-gw-sm rounded-2xl p-5 mb-5">
-          <div class="flex items-start gap-4">
-            <div class="w-10 h-10 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-              <app-icon name="plants" class="w-5 h-5 text-gw-green-dark" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-display text-[15px] font-semibold text-gw-green-dark mb-1">{{ t('home.addYourFirstPlant') }}</p>
-              <p class="text-[13px] text-gray-500 leading-relaxed">
-                {{ t('home.addYourFirstPlantBody') }}
-              </p>
-              <a routerLink="/plants"
-                 class="inline-block mt-3 text-[13px] font-medium bg-gw-green text-white px-4 py-2 rounded-xl hover:bg-gw-green-dark transition-colors">
-                {{ t('home.addAPlant') }}
-              </a>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Verify-email banner — shown until the user clicks the link from
-           their inbox. Unobtrusive yellow strip with a Resend button. -->
+      <!-- Verify-email banner -->
       @if (!emailVerified()) {
-        <div class="mb-5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 flex items-center gap-3">
-          <span class="text-[12px] text-amber-800 flex-1">
-            @if (resentVerification()) {
-              {{ t('home.verifyEmailResent') }}
-            } @else {
-              {{ t('home.verifyEmailHint') }}
-            }
+        <div class="mb-5 rounded-xl bg-amber-50 px-3 py-2 flex items-center gap-3 shadow-gw-sm">
+          <span class="font-caption text-amber-800 flex-1">
+            @if (resentVerification()) { {{ t('home.verifyEmailResent') }} }
+            @else { {{ t('home.verifyEmailHint') }} }
           </span>
           @if (!resentVerification()) {
-            <button (click)="resendVerification()"
-                    [disabled]="resendingVerification()"
+            <button (click)="resendVerification()" [disabled]="resendingVerification()"
                     class="text-[11px] font-medium text-amber-900 hover:underline disabled:opacity-40">
               {{ resendingVerification() ? t('home.verifyEmailSending') : t('home.verifyEmailResend') }}
             </button>
@@ -159,114 +74,193 @@ interface ActivityEvent {
         </div>
       }
 
-      <!-- Seasonal tip — static daily content for free users. Plus/Pro users
-           see the AI briefing instead. Demo also gets the seasonal tip. -->
-      <!-- "What to do today" — pulled from due reminders. Replaces the static
-           seasonal tip card on free/demo accounts; sits below the AI brief on
-           paid accounts as a quick next-action panel. -->
-      @if (plants().length > 0) {
-        <div class="mb-5">
-          <app-today-card />
-        </div>
-      } @else if (!tier.canSeeAi()) {
-        <div class="mb-5 bg-white shadow-gw-sm rounded-2xl p-4">
-          <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">{{ t('home.seasonalTipTitle') }}</div>
-          <p class="text-[13px] text-gray-700 leading-relaxed">{{ seasonalTip() }}</p>
-        </div>
-      }
-
-      <!-- Care streak — only visible once the user has some history. -->
-      @if (streakDays() > 0 && plants().length > 0) {
-        <div class="mb-5 rounded-2xl bg-gradient-to-br from-gw-green-light/70 to-amber-50 border border-gw-green/30 p-4 flex items-center gap-3">
-          <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl shrink-0">🔥</div>
-          <div class="flex-1 min-w-0">
-            <div class="text-[20px] font-semibold text-gw-green-dark leading-none tabular-nums">{{ streakDays() }}</div>
-            <div class="text-[12px] text-gw-green-dark/80 mt-1">{{ streakDays() === 1 ? t('home.streakOne') : t('home.streakN', { n: streakDays() }) }}</div>
-          </div>
-        </div>
-      }
-
-      <!-- Free-tier nudge — only when the user has plants and so could
-           actually benefit from smart tips. Hidden for empty accounts (focus
-           on the "Add your first plant" CTA) and for demo. -->
-      @if (tier.isFree() && tier.canSeeSubscription() && plants().length > 0) {
-        <a routerLink="/upgrade"
-           class="flex items-center gap-2 mb-5 rounded-xl bg-gw-green-light/30 px-3 py-2 hover:bg-gw-green-light/50 transition-colors">
-          <span class="text-[12px] text-gw-green-dark/80 flex-1">{{ t('home.upgradeBody') }}</span>
-          <span class="text-[11px] font-medium text-gw-green-dark">{{ t('home.upgradeCta') }}</span>
-        </a>
-      }
-
-      <!-- Sensors section -->
-      @if (tier.canSeeSensors()) {
-      <div class="mb-5">
-        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('home.sensors') }}</p>
-        <div class="grid grid-cols-2 gap-3">
-          <app-sensor-card
-            [label]="t('home.temp')"
-            [value]="tempValue()"
-            unit="°C"
-            [status]="tempStatus()"
-            [sparkValues]="tempSpark()"
-            [statusLabel]="t('home.statusLabel.' + tempStatus())"
-            tone="green"
-            link="/temperature" />
-          <app-sensor-card
-            [label]="t('home.humidity')"
-            [value]="humidValue()"
-            unit="%"
-            [status]="humidStatus()"
-            [sparkValues]="humidSpark()"
-            [statusLabel]="t('home.statusLabel.' + humidStatus())"
-            tone="blue"
-            link="/humidity" />
-        </div>
-      </div>
-      }
-
-      <!-- Bottom: Activity + Plants — stacked on mobile/tablet, two columns on lg+ -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-        <!-- Recent activity -->
-        <div>
-          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('home.recentActivity') }}</p>
-          <div class="bg-gw-surface shadow-gw-sm rounded-2xl divide-y divide-gw-border">
-            @if (activityFeed().length === 0) {
-              <p class="text-[12px] text-gray-400 p-4">{{ t('home.noEventsLast24h') }}</p>
-            }
-            @for (event of activityFeed(); track event.time + event.label) {
-              <div class="flex items-center gap-3 px-4 py-3">
-                <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="event.ok ? 'bg-gw-green' : 'bg-gw-amber'"></span>
-                <span class="text-[11px] text-gray-400 tabular-nums shrink-0">{{ event.time }}</span>
-                <span class="text-[12px] text-gray-700 flex-1">{{ event.label }}</span>
+      <!-- Weather card -->
+      <div class="bg-white shadow-gw-sm rounded-2xl p-5 mb-2">
+        @if (weather(); as w) {
+          <div class="flex items-center gap-4">
+            <!-- Left half: temp + location -->
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-5xl leading-none">{{ w.conditionIcon }}</span>
+              <div>
+                <div class="font-display-md text-gw-text leading-none">{{ w.temperature }}°C</div>
+                <div class="font-caption text-gw-muted mt-1">{{ w.conditionLabel }}</div>
+                <div class="text-[12px] text-gw-blue mt-1 flex items-center gap-1">
+                  <span>📍</span><span>{{ w.city }}</span>
+                </div>
               </div>
-            }
+            </div>
+            <!-- Divider -->
+            <div class="hidden sm:block w-px h-16 bg-gw-border"></div>
+            <!-- Right half: 3 stats -->
+            <div class="flex-1 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div class="flex items-center justify-center gap-1 text-gw-blue mb-1">
+                  <span>💧</span><span class="font-h2 text-gw-text">{{ w.humidity }}%</span>
+                </div>
+                <div class="font-caption text-gw-muted">{{ t('home.humidity') }}</div>
+              </div>
+              <div>
+                <div class="flex items-center justify-center gap-1 text-gw-blue mb-1">
+                  <span>🌬️</span><span class="font-h2 text-gw-text">{{ w.windSpeed }} m/s</span>
+                </div>
+                <div class="font-caption text-gw-muted">{{ t('home.wind') }}</div>
+              </div>
+              <div>
+                <div class="flex items-center justify-center gap-1 text-gw-blue mb-1">
+                  <span>📊</span><span class="font-h2 text-gw-text">{{ w.pressure }}</span>
+                </div>
+                <div class="font-caption text-gw-muted">{{ t('home.pressure') }}</div>
+              </div>
+            </div>
           </div>
-        </div>
+        } @else {
+          <p class="font-body text-gw-muted text-center">
+            {{ weatherService.loading() ? t('home.loadingWeather') : t('home.weatherUnavailable') }}
+          </p>
+        }
+      </div>
 
-        <!-- Plants strip -->
-        <div>
-          <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('nav.plants') }}</p>
-          <div class="flex gap-3 overflow-x-auto lg:overflow-x-visible lg:flex-wrap pb-1 -mx-1 px-1" style="scrollbar-width:none">
-            @for (plant of plants(); track plant.id) {
-              <a [routerLink]="['/plants', plant.id]"
-                 class="relative flex-shrink-0 w-20 bg-gw-surface shadow-gw-sm rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
-                <span class="absolute top-1.5 right-1.5 text-[9px] font-semibold text-gw-green-dark bg-gw-green-light/70 px-1.5 py-0.5 rounded-full leading-none">
-                  {{ t('season.weekShort', { n: plantSeason(plant).week }) }}
-                </span>
-                <span class="text-2xl leading-none">{{ plantEmoji(plant) }}</span>
-                <span class="text-[11px] font-medium text-gray-700 truncate w-full text-center">{{ plant.name }}</span>
-                <span class="text-[10px]" [class]="plantStatusClass(plant)">{{ plantStatus(plant) }}</span>
-              </a>
-            }
+      @if (weatherAgoLabel()) {
+        <p class="text-center text-[11px] text-gw-subtle mb-4">{{ weatherAgoLabel() }}</p>
+      } @else {
+        <div class="mb-4"></div>
+      }
+
+      <!-- Greenhouse status — large success/attention card with optional illustration -->
+      @if (plants().length > 0) {
+        <div class="mb-5 rounded-2xl p-5 flex items-center gap-4 shadow-gw-sm"
+             [class.bg-gw-green-light]="statusGood()"
+             [class.bg-gw-amber-light]="!statusGood()">
+          <div class="w-12 h-12 rounded-full bg-white shadow-gw-sm flex items-center justify-center text-2xl shrink-0"
+               [class.text-gw-green-dark]="statusGood()"
+               [class.text-gw-amber-dark]="!statusGood()">
+            {{ statusGood() ? '✓' : '!' }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-h1" [class.text-gw-green-dark]="statusGood()" [class.text-gw-amber-dark]="!statusGood()">
+              {{ statusGood() ? t('home.allCaughtUp') : t('home.needsAttention') }}
+            </div>
+            <p class="font-body mt-1" [class.text-gw-green-dark]="statusGood()" [class.text-gw-amber-dark]="!statusGood()">
+              {{ statusGood() ? t('home.allCaughtUpBody') : t('home.needsAttentionBody', { n: dueCount() }) }}
+            </p>
+          </div>
+          <span class="hidden sm:block text-5xl leading-none opacity-80">🏡</span>
+        </div>
+      } @else if (!plantsLoading()) {
+        <div class="bg-white shadow-gw-sm rounded-2xl p-5 mb-5 flex items-start gap-4">
+          <div class="w-10 h-10 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+            <app-icon name="plants" class="w-5 h-5 text-gw-green-dark" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-h2 text-gw-green-dark">{{ t('home.addYourFirstPlant') }}</p>
+            <p class="font-body text-gw-muted mt-1">{{ t('home.addYourFirstPlantBody') }}</p>
             <a routerLink="/plants"
-               class="flex-shrink-0 w-20 bg-gw-surface border border-dashed border-gw-border rounded-2xl p-3 flex flex-col items-center justify-center gap-1 text-center hover:border-gray-400 transition-colors">
-              <span class="text-xl text-gray-300">+</span>
-              <span class="text-[11px] text-gray-400">{{ t('home.addPlant') }}</span>
+               class="inline-block mt-3 font-caption font-medium bg-gw-green text-white px-4 py-2 rounded-xl hover:bg-gw-green-dark transition-colors">
+              {{ t('home.addAPlant') }}
             </a>
           </div>
         </div>
+      }
 
+      <!-- Plus upsell strip — only for free users with plants -->
+      @if (tier.isFree() && tier.canSeeSubscription() && plants().length > 0) {
+        <a routerLink="/upgrade"
+           class="flex items-center gap-3 mb-5 rounded-xl bg-white shadow-gw-sm px-4 py-3 hover:bg-gw-green-light/30 transition-colors">
+          <span class="w-8 h-8 rounded-full bg-gw-green-light/60 flex items-center justify-center text-gw-green-dark text-base shrink-0">⭐</span>
+          <span class="font-body text-gw-muted flex-1">{{ t('home.upgradeStrip') }}</span>
+          <span class="font-body font-medium text-gw-green-dark flex items-center gap-1">{{ t('home.seePlans') }} <span>›</span></span>
+        </a>
+      }
+
+      <!-- AI brief — for Plus/Pro -->
+      @if (tier.canSeeAi() && briefing(); as b) {
+        <div class="mb-5 rounded-2xl bg-gw-green-light p-4 shadow-gw-sm">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span>✨</span>
+              <span class="font-caption font-semibold tracking-widest uppercase text-gw-green-dark/70">
+                {{ b.cycle === 'morning' ? t('home.morningBrief') : t('home.eveningBrief') }}
+              </span>
+            </div>
+            <span class="font-caption text-gw-green-dark/50 tabular-nums">{{ formatBriefingTime(b.generatedAt) }}</span>
+          </div>
+          <p class="font-body text-gw-green-dark leading-relaxed">{{ b.overview }}</p>
+        </div>
+      }
+
+      <!-- Sensors — Pro only -->
+      @if (tier.canSeeSensors()) {
+        <div class="mb-5">
+          <p class="font-caption font-semibold text-gw-subtle uppercase tracking-widest mb-3">{{ t('home.sensors') }}</p>
+          <div class="grid grid-cols-2 gap-3">
+            <app-sensor-card
+              [label]="t('home.temp')" [value]="tempValue()" unit="°C"
+              [status]="tempStatus()" [sparkValues]="tempSpark()"
+              [statusLabel]="t('home.statusLabel.' + tempStatus())"
+              tone="green" link="/temperature" />
+            <app-sensor-card
+              [label]="t('home.humidity')" [value]="humidValue()" unit="%"
+              [status]="humidStatus()" [sparkValues]="humidSpark()"
+              [statusLabel]="t('home.statusLabel.' + humidStatus())"
+              tone="blue" link="/humidity" />
+          </div>
+        </div>
+      }
+
+      <!-- Recent activity -->
+      <div class="mb-5">
+        <p class="font-caption font-semibold text-gw-subtle uppercase tracking-widest mb-3">{{ t('home.recentActivity') }}</p>
+        @if (activityFeed().length === 0) {
+          <a routerLink="/digest" class="block bg-white shadow-gw-sm rounded-2xl px-4 py-3 flex items-center gap-3 hover:bg-gw-green-light/20 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-gw-green-light/60 flex items-center justify-center text-gw-green-dark shrink-0">
+              <app-icon name="calendar" class="w-4 h-4" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-h2 text-gw-text">{{ t('home.noEventsLast24h') }}</div>
+              <div class="font-caption text-gw-muted">{{ t('home.youreAllSet') }}</div>
+            </div>
+            <span class="text-gw-subtle">›</span>
+          </a>
+        } @else {
+          <div class="bg-white shadow-gw-sm rounded-2xl divide-y divide-gw-border">
+            @for (event of activityFeed(); track event.time + event.label) {
+              <div class="flex items-center gap-3 px-4 py-3">
+                <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="event.ok ? 'bg-gw-green' : 'bg-gw-amber'"></span>
+                <span class="font-caption text-gw-muted tabular-nums shrink-0">{{ event.time }}</span>
+                <span class="font-body text-gw-text flex-1">{{ event.label }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Plants strip -->
+      <div class="mb-5">
+        <p class="font-caption font-semibold text-gw-subtle uppercase tracking-widest mb-3">{{ t('nav.plants') }}</p>
+        <div class="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1" style="scrollbar-width:none">
+          @for (plant of plants(); track plant.id) {
+            <a [routerLink]="['/plants', plant.id]"
+               class="relative flex-shrink-0 w-32 bg-white shadow-gw-sm rounded-2xl p-3 flex flex-col items-center gap-2 text-center hover:shadow-gw-md transition-shadow">
+              <span class="absolute top-2 right-2 text-[10px] font-semibold text-gw-green-dark bg-gw-green-light/70 px-2 py-0.5 rounded-full leading-none">
+                {{ t('season.weekShort', { n: plantSeason(plant).week }) }}
+              </span>
+              <span class="text-4xl leading-none mt-2">{{ plantEmoji(plant) }}</span>
+              <span class="font-h2 text-gw-text truncate w-full">{{ plant.name }}</span>
+              <span class="inline-flex items-center gap-1 text-[11px] text-gw-muted bg-gw-parchment rounded-full px-2 py-0.5">
+                <span>📅</span>{{ t('home.dayN', { n: plantDays(plant) }) }}
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-[11px]" [class]="plantStatusClass(plant)">
+                <span class="w-1.5 h-1.5 rounded-full" [class]="plantStatusDotClass(plant)"></span>{{ plantStatus(plant) }}
+              </span>
+            </a>
+          }
+          <a routerLink="/plants"
+             class="flex-shrink-0 w-32 bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 text-center hover:bg-gw-green-light/20 transition-colors"
+             style="border: 1.5px dashed var(--color-gw-border)">
+            <span class="text-2xl text-gw-green">+</span>
+            <span class="font-caption text-gw-muted">{{ t('home.addPlant') }}</span>
+          </a>
+        </div>
       </div>
 
     </div>
@@ -292,6 +286,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.plantService.reload();
     this.plantActions.listAll(200).subscribe(list => this.streakDays.set(calculateStreak(list.map(a => a.createdAt))));
     this.weatherService.fetchWeather();
+    this.weatherFetchedAt.set(Date.now());
+    this.reminderService?.list().subscribe(list => this.dueReminders.set(list));
   }
 
   // Cross-plant care streak — refreshed on init; recomputed when actions change.
@@ -536,28 +532,107 @@ export class HomeComponent implements OnInit, OnDestroy {
       if (m === 'thriving' || m === 'good') return 'text-gw-green-dark';
       if (m === 'stressed' || m === 'critical') return 'text-gw-amber-dark';
     }
-    return 'text-gray-400';
+    return 'text-gw-muted';
   }
 
+  plantStatusDotClass(plant: Plant): string {
+    if (plant.monitored) {
+      const m = this.mood().mood;
+      if (m === 'thriving' || m === 'good') return 'bg-gw-green';
+      if (m === 'stressed' || m === 'critical') return 'bg-gw-amber';
+    }
+    return 'bg-gw-subtle';
+  }
+
+  plantDays(plant: Plant): number {
+    return daysAgo(plant.plantedDate);
+  }
+
+  // ── Header helpers ────────────────────────────────────────────────────────────
+
+  /** Translation key for the time-of-day greeting. Re-evaluates when `now` ticks. */
+  greetingKey = computed(() => {
+    const h = new Date(this.now()).getHours();
+    if (h < 5) return 'home.greeting.night';
+    if (h < 12) return 'home.greeting.morning';
+    if (h < 18) return 'home.greeting.afternoon';
+    return 'home.greeting.evening';
+  });
+
+  /** First name (or the email local-part as a fallback). */
+  firstName = computed(() => {
+    const email = this.auth.user()?.email ?? '';
+    const local = email.split('@')[0];
+    if (!local) return '';
+    // Take chars before any dot/underscore and title-case
+    const raw = local.split(/[._-]/)[0];
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : '';
+  });
+
+  /** Wall-clock tick (every 30 s) used by greeting + weather-ago labels. */
+  private now = signal(Date.now());
+  private weatherFetchedAt = signal<number | null>(null);
+  private nowTimer?: ReturnType<typeof setInterval>;
+
+  /** "Updated N min ago" label for the weather card. */
+  weatherAgoLabel = computed(() => {
+    const fetched = this.weatherFetchedAt();
+    if (!fetched) return '';
+    const ms = this.now() - fetched;
+    const minutes = Math.floor(ms / 60_000);
+    if (minutes < 1) return this.transloco.translate('home.updatedJustNow');
+    if (minutes < 60) return this.transloco.translate('home.updatedMinutesAgo', { n: minutes });
+    const hours = Math.floor(minutes / 60);
+    return this.transloco.translate('home.updatedHoursAgo', { n: hours });
+  });
+
+  // ── Greenhouse status (caught up vs. needs attention) ────────────────────────
+
+  private dueReminders = signal<PlantReminder[]>([]);
+
+  dueCount = computed(() => {
+    const endOfToday = dayjs().endOf('day');
+    return this.dueReminders().filter(r => {
+      if (!r.enabled) return false;
+      const snoozedUntil = r.snoozedUntil ? dayjs(r.snoozedUntil) : null;
+      if (snoozedUntil && snoozedUntil.isAfter(endOfToday)) return false;
+      return dayjs(r.nextDueAt).isBefore(endOfToday);
+    }).length;
+  });
+
+  statusGood = computed(() => this.dueCount() === 0);
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
+
+  private reminderService = inject(ReminderService);
 
   ngOnInit() {
     this.transloco.langChanges$.subscribe(l => this.localeKey.set(l));
     this.sensorService.getLatestSensorData().subscribe(d => this.latestData.set(d));
     this.sub = this.sensorService.subscribeToSensorData().subscribe(d => { if (d) this.latestData.set(d); });
     this.sensorService.getHourlyData(24).subscribe(d => this.hourlyData.set(d));
-    this.weatherService.fetchWeather();
+    this.fetchWeatherAndMarkTime();
     if (this.tier.canSeeWeatherWarnings()) this.weatherService.fetchForecast();
     if (this.tier.canSeeAi()) this.plantActions.getDailyBriefing().subscribe(b => this.briefing.set(b));
     this.plantActions.listAll(200).subscribe(list => this.streakDays.set(calculateStreak(list.map(a => a.createdAt))));
+    this.reminderService.list().subscribe(list => this.dueReminders.set(list));
     this.weatherTimer = setInterval(() => {
-      this.weatherService.fetchWeather();
+      this.fetchWeatherAndMarkTime();
       this.weatherService.fetchForecast();
     }, 30 * 60 * 1000);
+    // Tick once a minute so the "updated N min ago" + greeting recompute over time
+    this.nowTimer = setInterval(() => this.now.set(Date.now()), 60_000);
+  }
+
+  /** Trigger a weather fetch and stamp the time so the "Updated N min ago" label works. */
+  private fetchWeatherAndMarkTime() {
+    this.weatherService.fetchWeather();
+    this.weatherFetchedAt.set(Date.now());
   }
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
     if (this.weatherTimer) clearInterval(this.weatherTimer);
+    if (this.nowTimer) clearInterval(this.nowTimer);
   }
 }

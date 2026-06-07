@@ -414,6 +414,26 @@
     "requestNewLink": "Request a new link"
   },
   "home": {
+    "subtitle": "Here's how your greenhouse looks today.",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "night": "Good night"
+    },
+    "wind": "Wind",
+    "pressure": "Pressure",
+    "updatedJustNow": "Updated just now",
+    "updatedMinutesAgo": "Updated {{ n }} min ago",
+    "updatedHoursAgo": "Updated {{ n }} h ago",
+    "allCaughtUp": "You're all caught up",
+    "allCaughtUpBody": "No watering or fertilizing due today.",
+    "needsAttention": "Needs attention",
+    "needsAttentionBody": "{{ n }} reminder(s) due today.",
+    "youreAllSet": "You're all set!",
+    "upgradeStrip": "Get daily care tips and 3-day weather alerts with Plus.",
+    "seePlans": "See plans",
+    "dayN": "Day {{ n }}",
     "upgradeTitle": "Unlock smart tips and weather warnings",
     "upgradeBody": "Get daily care tips and 3-day weather alerts with Plus.",
     "upgradeCta": "See plans",
