@@ -1,34 +1,45 @@
 @import 'tailwindcss';
 
 @theme {
-  /* ── Greens — health / ok / primary action (fresh leaf) ─────────────────── */
-  --color-gw-green: #16a34a;
-  --color-gw-green-light: #dcfce7;
-  --color-gw-green-dark: #14532d;
+  /* ─────────────────────────────────────────────────────────────────────────
+     GrowWatch Style Guide tokens
+     Principles: Calm · Natural · Clear · Focused
+     ───────────────────────────────────────────────────────────────────────── */
 
-  /* ── Amber → orange — warning / attention (warm peach) ──────────────────── */
-  --color-gw-amber: #ea580c;
-  --color-gw-amber-light: #ffedd5;
-  --color-gw-amber-dark: #7c2d12;
+  /* ── Primary green — health / ok / brand ──────────────────────────────── */
+  --color-gw-green: #2e7d32;             /* Primary */
+  --color-gw-green-mid: #66bb6a;         /* Primary Light from guide (mid-saturation green) */
+  --color-gw-green-light: #e8f5e9;       /* Primary Soft — used as soft mint backdrop everywhere */
+  --color-gw-green-dark: #1b5e20;        /* Primary Dark (heavy text on light) */
 
-  /* ── Red — critical (cool clean) ────────────────────────────────────────── */
-  --color-gw-red: #dc2626;
-  --color-gw-red-light: #fee2e2;
-  --color-gw-red-dark: #7f1d1d;
+  /* ── Attention orange — needs care / warning ──────────────────────────── */
+  --color-gw-amber: #fb8c00;             /* Attention */
+  --color-gw-amber-light: #fff3e0;       /* Soft peach background */
+  --color-gw-amber-dark: #c25e00;        /* Heavy text contrast */
 
-  /* ── Blue — weather / informational accents ─────────────────────────────── */
-  --color-gw-blue: #2563eb;
-  --color-gw-blue-light: #dbeafe;
-  --color-gw-blue-dark: #1e3a8a;
+  /* ── Warning yellow — softer alert ────────────────────────────────────── */
+  --color-gw-warning: #fbc02d;
+  --color-gw-warning-light: #fff9c4;
+  --color-gw-warning-dark: #b28704;
 
-  /* ── Surfaces — pure white app background, near-white cards ─────────────── */
-  --color-gw-parchment: #ffffff;
-  --color-gw-surface: #ffffff;
-  --color-gw-border: #f1f5f9;
+  /* ── Error red — critical ─────────────────────────────────────────────── */
+  --color-gw-red: #e53935;
+  --color-gw-red-light: #ffebee;
+  --color-gw-red-dark: #b71c1c;
 
-  /* ── Text scale — slate family ──────────────────────────────────────────── */
-  --color-gw-text: #0f172a;
-  --color-gw-muted: #64748b;
+  /* ── Info blue — weather / informational accents ──────────────────────── */
+  --color-gw-blue: #1e88e5;
+  --color-gw-blue-light: #e3f2fd;
+  --color-gw-blue-dark: #0d47a1;
+
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --color-gw-parchment: #f7faf8;          /* Background (slight green tint) */
+  --color-gw-surface: #ffffff;            /* Card / surface white */
+  --color-gw-border: #e5e7eb;             /* Hairline borders */
+
+  /* ── Text scale ───────────────────────────────────────────────────────── */
+  --color-gw-text: #111827;               /* Text Primary */
+  --color-gw-muted: #6b7280;              /* Text Secondary */
 }
 
 *,
@@ -42,22 +53,41 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* SF Pro Display on Apple, Inter on Windows/Android, system fallback elsewhere */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', system-ui, sans-serif;
   font-feature-settings: 'cv11', 'ss01', 'ss03'; /* slashed-zero + alt 1, cleaner numerals */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #ffffff;
-  color: #0f172a;
+  background: #f7faf8;
+  color: #111827;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Typography utilities (style-guide named sizes, 8pt grid friendly)
+   ────────────────────────────────────────────────────────────────────────── */
+.font-display-lg { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.01em; }
+.font-headline   { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.005em; }
+.font-title      { font-size: 17px; line-height: 22px; font-weight: 600; }
+.font-body       { font-size: 16px; line-height: 22px; font-weight: 400; }
+.font-callout    { font-size: 15px; line-height: 20px; font-weight: 400; }
+.font-caption    { font-size: 13px; line-height: 18px; font-weight: 400; }
+.font-caption-2  { font-size: 11px; line-height: 16px; font-weight: 400; }
 
 /* Tabular numerics for sensor values + times */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Soft elevation for floating cards (mockup uses subtle, not heavy shadows) */
+/* ──────────────────────────────────────────────────────────────────────────
+   Shadow scale — Sm / Md / Lg from the style guide
+   ────────────────────────────────────────────────────────────────────────── */
+.shadow-gw-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+.shadow-gw-md { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); }
+.shadow-gw-lg { box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08); }
+
+/* Backwards-compat alias used by existing components — same as Sm */
 .gw-card-shadow {
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* Warm golden tint kept for compatibility (no longer used after light removal) */
