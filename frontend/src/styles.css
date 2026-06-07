@@ -3,43 +3,39 @@
 @theme {
   /* ─────────────────────────────────────────────────────────────────────────
      GrowWatch Style Guide tokens
-     Principles: Calm · Natural · Clear · Focused
+     Design feel: Natural · Calm · Trustworthy · Modern · Focused
      ───────────────────────────────────────────────────────────────────────── */
 
   /* ── Primary green — health / ok / brand ──────────────────────────────── */
-  --color-gw-green: #2e7d32;             /* Primary */
-  --color-gw-green-mid: #66bb6a;         /* Primary Light from guide (mid-saturation green) */
-  --color-gw-green-light: #e8f5e9;       /* Primary Soft — used as soft mint backdrop everywhere */
-  --color-gw-green-dark: #1b5e20;        /* Primary Dark (heavy text on light) */
+  --color-gw-green: #2e8b57;             /* Primary (mid sea green) */
+  --color-gw-green-mid: #a7dca2;         /* Primary Light from guide */
+  --color-gw-green-light: #e8f5e9;       /* Mint backdrop — used as soft background everywhere */
+  --color-gw-green-dark: #1f6b3a;        /* Primary Dark */
 
-  /* ── Attention orange — needs care / warning ──────────────────────────── */
-  --color-gw-amber: #fb8c00;             /* Attention */
-  --color-gw-amber-light: #fff3e0;       /* Soft peach background */
-  --color-gw-amber-dark: #c25e00;        /* Heavy text contrast */
+  /* ── Warning amber — caution / attention ──────────────────────────────── */
+  --color-gw-amber: #f59e0b;             /* Warning */
+  --color-gw-amber-light: #fef3c7;       /* Soft amber backdrop */
+  --color-gw-amber-dark: #b45309;        /* Heavy text contrast */
 
-  /* ── Warning yellow — softer alert ────────────────────────────────────── */
-  --color-gw-warning: #fbc02d;
-  --color-gw-warning-light: #fff9c4;
-  --color-gw-warning-dark: #b28704;
+  /* ── Red — critical / destructive ─────────────────────────────────────── */
+  --color-gw-red: #ef4444;               /* Attention / Error */
+  --color-gw-red-light: #fee2e2;         /* Soft red backdrop */
+  --color-gw-red-dark: #b91c1c;          /* Heavy text contrast */
 
-  /* ── Error red — critical ─────────────────────────────────────────────── */
-  --color-gw-red: #e53935;
-  --color-gw-red-light: #ffebee;
-  --color-gw-red-dark: #b71c1c;
+  /* ── Blue — informational accents ─────────────────────────────────────── */
+  --color-gw-blue: #3b82f6;              /* Info */
+  --color-gw-blue-light: #dbeafe;        /* Soft blue backdrop */
+  --color-gw-blue-dark: #1d4ed8;         /* Heavy text contrast */
 
-  /* ── Info blue — weather / informational accents ──────────────────────── */
-  --color-gw-blue: #1e88e5;
-  --color-gw-blue-light: #e3f2fd;
-  --color-gw-blue-dark: #0d47a1;
-
-  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  /* ── Surfaces (Neutral palette) ───────────────────────────────────────── */
   --color-gw-parchment: #f7faf8;          /* Background (slight green tint) */
   --color-gw-surface: #ffffff;            /* Card / surface white */
-  --color-gw-border: #e5e7eb;             /* Hairline borders */
+  --color-gw-border: #e2e8f0;             /* Hairline borders */
 
-  /* ── Text scale ───────────────────────────────────────────────────────── */
-  --color-gw-text: #111827;               /* Text Primary */
-  --color-gw-muted: #6b7280;              /* Text Secondary */
+  /* ── Text scale (Neutral) ─────────────────────────────────────────────── */
+  --color-gw-text: #0f172a;               /* Text Primary */
+  --color-gw-muted: #475569;              /* Text Secondary */
+  --color-gw-subtle: #94a3b8;             /* Tertiary / disabled */
 }
 
 *,
@@ -53,25 +49,32 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  /* SF Pro Display on Apple, Inter on Windows/Android, system fallback elsewhere */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  /* Inter is the primary type per the guide; SF Pro and system fonts as fallbacks */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
   font-feature-settings: 'cv11', 'ss01', 'ss03'; /* slashed-zero + alt 1, cleaner numerals */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #f7faf8;
-  color: #111827;
+  color: #0f172a;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Typography utilities (style-guide named sizes, 8pt grid friendly)
+   Typography utilities (style-guide named sizes)
+   Display Large — hero, big numbers · 32/40 semibold
+   Display Medium — section highlights · 24/32 semibold
+   Heading 1 — screen titles · 20/28 semibold
+   Heading 2 — card titles · 16/24 semibold
+   Body Large — primary text · 16/24 regular
+   Body — secondary text · 14/20 regular
+   Caption — labels, hints · 12/16 regular
    ────────────────────────────────────────────────────────────────────────── */
-.font-display-lg { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -0.01em; }
-.font-headline   { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.005em; }
-.font-title      { font-size: 17px; line-height: 22px; font-weight: 600; }
-.font-body       { font-size: 16px; line-height: 22px; font-weight: 400; }
-.font-callout    { font-size: 15px; line-height: 20px; font-weight: 400; }
-.font-caption    { font-size: 13px; line-height: 18px; font-weight: 400; }
-.font-caption-2  { font-size: 11px; line-height: 16px; font-weight: 400; }
+.font-display-lg { font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: -0.01em; }
+.font-display-md { font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.005em; }
+.font-h1         { font-size: 20px; line-height: 28px; font-weight: 600; }
+.font-h2         { font-size: 16px; line-height: 24px; font-weight: 600; }
+.font-body-lg    { font-size: 16px; line-height: 24px; font-weight: 400; }
+.font-body       { font-size: 14px; line-height: 20px; font-weight: 400; }
+.font-caption    { font-size: 12px; line-height: 16px; font-weight: 400; }
 
 /* Tabular numerics for sensor values + times */
 .tabular-nums {
@@ -79,15 +82,18 @@ body {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Shadow scale — Sm / Md / Lg from the style guide
+   Shadow scale — three tiers per the guide
+   Shadow 1 · subtle surface lift (default cards, inputs)
+   Shadow 2 · floating element (popovers, tooltips, sheets at rest)
+   Shadow 3 · prominent modal (active drag, modal overlay)
    ────────────────────────────────────────────────────────────────────────── */
-.shadow-gw-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
-.shadow-gw-md { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); }
-.shadow-gw-lg { box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08); }
+.shadow-gw-sm { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06); }
+.shadow-gw-md { box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+.shadow-gw-lg { box-shadow: 0 12px 24px rgba(15, 23, 42, 0.10); }
 
-/* Backwards-compat alias used by existing components — same as Sm */
+/* Backwards-compat alias — same as Shadow 1 */
 .gw-card-shadow {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 /* Warm golden tint kept for compatibility (no longer used after light removal) */
