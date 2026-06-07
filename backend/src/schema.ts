@@ -165,6 +165,7 @@ export const typeDefs = gql`
   }
 
   type UserSettings {
+    name: String
     tempMin: Float
     tempMax: Float
     humidityMin: Float
@@ -300,6 +301,7 @@ export const typeDefs = gql`
     renameDevice(id: String!, name: String!): Device!
     removeDevice(id: String!): Boolean!
     updateUserSettings(
+      name: String
       tempMin: Float
       tempMax: Float
       humidityMin: Float

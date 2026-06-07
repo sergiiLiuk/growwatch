@@ -681,6 +681,7 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             const settings = await UserSettings.findOne({ userId: ctx.user.userId }).lean();
             return {
+                name: settings?.name ?? null,
                 tempMin: settings?.tempMin ?? null,
                 tempMax: settings?.tempMax ?? null,
                 humidityMin: settings?.humidityMin ?? null,
@@ -1237,6 +1238,7 @@ export const resolvers = {
         updateUserSettings: async (
             _: any,
             args: {
+                name?: string | null;
                 tempMin?: number | null;
                 tempMax?: number | null;
                 humidityMin?: number | null;
@@ -1266,6 +1268,7 @@ export const resolvers = {
                 else if (value !== undefined && validate(value)) $set[key] = value;
             };
 
+            apply('name', args.name?.trim().slice(0, 40) ?? args.name, (v) => typeof v === 'string' && v.length > 0);
             apply('tempMin', args.tempMin, (v) => typeof v === 'number');
             apply('tempMax', args.tempMax, (v) => typeof v === 'number');
             apply('humidityMin', args.humidityMin, (v) => typeof v === 'number');

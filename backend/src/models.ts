@@ -289,6 +289,8 @@ export const Device = mongoose.model<IDevice>('Device', deviceSchema);
 
 export interface IUserSettings extends Document {
     userId: string;
+    /** Display name shown in greetings. Trimmed to 40 chars on save. */
+    name?: string;
     tempMin?: number;
     tempMax?: number;
     humidityMin?: number;
@@ -313,6 +315,7 @@ export interface IUserSettings extends Document {
 const userSettingsSchema = new Schema<IUserSettings>(
     {
         userId: { type: String, required: true, unique: true, index: true },
+        name: { type: String, maxlength: 40 },
         tempMin: { type: Number },
         tempMax: { type: Number },
         humidityMin: { type: Number },

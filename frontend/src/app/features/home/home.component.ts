@@ -47,7 +47,12 @@ interface ActivityEvent {
       <div class="flex items-start justify-between mb-5">
         <div class="flex-1 min-w-0">
           <h1 class="font-h1 text-gw-text flex items-center gap-2">
-            {{ t(greetingKey()) }}, {{ firstName() }}! <span>🌿</span>
+            @if (greetingName()) {
+              {{ t(greetingKey()) }}, {{ greetingName() }}!
+            } @else {
+              {{ t(greetingKey()) }}!
+            }
+            <span>🌿</span>
           </h1>
           <p class="font-body text-gw-muted mt-1">{{ t('home.subtitle') }}</p>
         </div>
@@ -74,51 +79,47 @@ interface ActivityEvent {
         </div>
       }
 
-      <!-- Weather card -->
-      <div class="bg-white shadow-gw-sm rounded-2xl p-5 mb-2">
+      <!-- Weather card — tap to open 3-day forecast (Plus only) -->
+      <a [routerLink]="weatherTarget()" class="block bg-white shadow-gw-sm rounded-2xl p-4 mb-2 hover:shadow-gw-md transition-shadow"
+         [class.cursor-pointer]="weatherTarget() !== null">
         @if (weather(); as w) {
-          <div class="flex items-center gap-4">
-            <!-- Left half: temp + location -->
-            <div class="flex items-center gap-3 shrink-0">
-              <span class="text-5xl leading-none">{{ w.conditionIcon }}</span>
-              <div>
-                <div class="font-display-md text-gw-text leading-none">{{ w.temperature }}°C</div>
-                <div class="font-caption text-gw-muted mt-1">{{ w.conditionLabel }}</div>
-                <div class="text-[12px] text-gw-blue mt-1 flex items-center gap-1">
-                  <span>📍</span><span>{{ w.city }}</span>
-                </div>
+          <!-- Top row: condition + temp + location -->
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-4xl leading-none shrink-0">{{ w.conditionIcon }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-baseline gap-2">
+                <span class="font-display-md text-gw-text leading-none">{{ w.temperature }}°C</span>
+                <span class="font-caption text-gw-muted truncate">{{ w.conditionLabel }}</span>
+              </div>
+              <div class="text-[12px] text-gw-blue mt-1 flex items-center gap-1">
+                <span>📍</span><span class="truncate">{{ w.city }}</span>
               </div>
             </div>
-            <!-- Divider -->
-            <div class="hidden sm:block w-px h-16 bg-gw-border"></div>
-            <!-- Right half: 3 stats -->
-            <div class="flex-1 grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div class="flex items-center justify-center gap-1 text-gw-blue mb-1">
-                  <span>💧</span><span class="font-h2 text-gw-text">{{ w.humidity }}%</span>
-                </div>
-                <div class="font-caption text-gw-muted">{{ t('home.humidity') }}</div>
-              </div>
-              <div>
-                <div class="flex items-center justify-center gap-1 text-gw-blue mb-1">
-                  <span>🌬️</span><span class="font-h2 text-gw-text">{{ w.windSpeed }} m/s</span>
-                </div>
-                <div class="font-caption text-gw-muted">{{ t('home.wind') }}</div>
-              </div>
-              <div>
-                <div class="flex items-center justify-center gap-1 text-gw-blue mb-1">
-                  <span>📊</span><span class="font-h2 text-gw-text">{{ w.pressure }}</span>
-                </div>
-                <div class="font-caption text-gw-muted">{{ t('home.pressure') }}</div>
-              </div>
+            @if (weatherTarget()) {
+              <span class="text-gw-subtle shrink-0">›</span>
+            }
+          </div>
+          <!-- Bottom row: 3 stats with a hairline above -->
+          <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gw-border text-center">
+            <div>
+              <div class="font-h2 text-gw-text tabular-nums">{{ w.humidity }}<span class="text-[11px] text-gw-muted">%</span></div>
+              <div class="text-[10px] text-gw-muted mt-0.5 flex items-center justify-center gap-1"><span>💧</span>{{ t('home.humidity') }}</div>
+            </div>
+            <div class="border-l border-gw-border">
+              <div class="font-h2 text-gw-text tabular-nums">{{ w.windSpeed }} <span class="text-[11px] text-gw-muted">m/s</span></div>
+              <div class="text-[10px] text-gw-muted mt-0.5 flex items-center justify-center gap-1"><span>🌬️</span>{{ t('home.wind') }}</div>
+            </div>
+            <div class="border-l border-gw-border">
+              <div class="font-h2 text-gw-text tabular-nums">{{ w.pressure }} <span class="text-[11px] text-gw-muted">hPa</span></div>
+              <div class="text-[10px] text-gw-muted mt-0.5 flex items-center justify-center gap-1"><span>📊</span>{{ t('home.pressure') }}</div>
             </div>
           </div>
         } @else {
-          <p class="font-body text-gw-muted text-center">
+          <p class="font-body text-gw-muted text-center py-2">
             {{ weatherService.loading() ? t('home.loadingWeather') : t('home.weatherUnavailable') }}
           </p>
         }
-      </div>
+      </a>
 
       @if (weatherAgoLabel()) {
         <p class="text-center text-[11px] text-gw-subtle mb-4">{{ weatherAgoLabel() }}</p>
@@ -559,15 +560,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     return 'home.greeting.evening';
   });
 
-  /** First name (or the email local-part as a fallback). */
-  firstName = computed(() => {
-    const email = this.auth.user()?.email ?? '';
-    const local = email.split('@')[0];
-    if (!local) return '';
-    // Take chars before any dot/underscore and title-case
-    const raw = local.split(/[._-]/)[0];
-    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : '';
-  });
+  /** User's display name from settings (returns empty string when not set). */
+  greetingName = computed(() => (this.userSettings.name() ?? '').trim());
 
   /** Wall-clock tick (every 30 s) used by greeting + weather-ago labels. */
   private now = signal(Date.now());

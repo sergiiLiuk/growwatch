@@ -117,6 +117,19 @@ import { ReminderService } from '../../core/services/reminder.service';
       }
 
       @if (activeTab() === 'account') {
+      <!-- Display name -->
+      <div class="mb-5">
+        <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.profile') }}</div>
+        <div class="bg-white shadow-gw-sm rounded-xl p-4">
+          <label class="block text-[12px] font-medium text-gray-700 mb-1.5">{{ t('settings.displayName') }}</label>
+          <input type="text" maxlength="40"
+                 [ngModel]="nameDraft()" (ngModelChange)="onNameInput($event)" (blur)="saveName()"
+                 [placeholder]="t('settings.displayNamePlaceholder')"
+                 class="w-full border-[0.5px] border-gw-border rounded-lg px-3 py-2 text-[13px] outline-none focus:border-gw-green transition-colors" />
+          <p class="text-[11px] text-gray-400 mt-1.5">{{ t('settings.displayNameHint') }}</p>
+        </div>
+      </div>
+
       <!-- Subscription — hidden for demo accounts -->
       @if (tier.canSeeSubscription()) {
         <div class="mb-5">
@@ -549,6 +562,20 @@ export class SettingsComponent implements OnInit {
   // Top-level tab — splits app preferences from account settings
   readonly tabs = ['prefs', 'account'] as const;
   activeTab = signal<'prefs' | 'account'>('prefs');
+
+  // Display name editor — drafted locally then persisted on blur so we don't
+  // hit the backend on every keystroke.
+  nameDraft = signal<string>(this.settings.name() ?? '');
+
+  onNameInput(value: string) { this.nameDraft.set(value); }
+
+  async saveName() {
+    const trimmed = this.nameDraft().trim();
+    const next = trimmed.length > 0 ? trimmed.slice(0, 40) : null;
+    if (next === (this.settings.name() ?? null)) return;
+    await this.settings.setName(next);
+    this.nameDraft.set(this.settings.name() ?? '');
+  }
 
   // Account deletion flow
   deleteAccountOpen = signal(false);

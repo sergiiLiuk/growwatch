@@ -38,6 +38,7 @@ export class UserSettingsService {
   readonly DEFAULT_ALERTS_ENABLED = true;
   readonly SUPPORTED_LOCALES = ['en', 'da'] as const;
 
+  name = signal<string | null>(null);
   tempMin = signal<number | null>(null);
   tempMax = signal<number | null>(null);
   humidityMin = signal<number | null>(null);
@@ -81,6 +82,7 @@ export class UserSettingsService {
       if (this.auth.isAuthenticated()) {
         this.loadFromBackend();
       } else {
+        this.name.set(null);
         this.tempMin.set(null);
         this.tempMax.set(null);
         this.humidityMin.set(null);
@@ -112,6 +114,7 @@ export class UserSettingsService {
     try {
       const result = await this.apolloClient.query<{
         myUserSettings: {
+          name: string | null;
           tempMin: number | null;
           tempMax: number | null;
           humidityMin: number | null;
@@ -132,7 +135,7 @@ export class UserSettingsService {
         query: gql`
           query MyUserSettings {
             myUserSettings {
-              tempMin tempMax humidityMin humidityMax
+              name tempMin tempMax humidityMin humidityMax
               frostThreshold heatThreshold windThreshold
               digestTime digestEnabled alertsEnabled locale
               smartTipsEnabled morningTipTime eveningTipTime
@@ -144,6 +147,7 @@ export class UserSettingsService {
       });
       const s = result.data?.myUserSettings;
       if (s) {
+        this.name.set(s.name);
         this.tempMin.set(s.tempMin);
         this.tempMax.set(s.tempMax);
         this.humidityMin.set(s.humidityMin);
@@ -165,6 +169,7 @@ export class UserSettingsService {
     }
   }
 
+  setName(value: string | null) { this.name.set(value); return this.persist({ name: value }); }
   setSmartTipsEnabled(value: boolean | null) { this.smartTipsEnabled.set(value); return this.persist({ smartTipsEnabled: value }); }
   setMorningTipTime(value: string | null) { this.morningTipTime.set(value); return this.persist({ morningTipTime: value }); }
   setEveningTipTime(value: string | null) { this.eveningTipTime.set(value); return this.persist({ eveningTipTime: value }); }
@@ -206,6 +211,7 @@ export class UserSettingsService {
   }
 
   private async persist(args: {
+    name?: string | null;
     tempMin?: number | null;
     tempMax?: number | null;
     humidityMin?: number | null;
@@ -225,6 +231,7 @@ export class UserSettingsService {
     try {
       const result = await this.apolloClient.mutate<{
         updateUserSettings: {
+          name: string | null;
           tempMin: number | null;
           tempMax: number | null;
           humidityMin: number | null;
@@ -244,6 +251,7 @@ export class UserSettingsService {
       }>({
         mutation: gql`
           mutation UpdateUserSettings(
+            $name: String,
             $tempMin: Float, $tempMax: Float,
             $humidityMin: Float, $humidityMax: Float,
             $frostThreshold: Float, $heatThreshold: Float, $windThreshold: Float,
@@ -253,6 +261,7 @@ export class UserSettingsService {
             $location: UserLocationInput
           ) {
             updateUserSettings(
+              name: $name,
               tempMin: $tempMin, tempMax: $tempMax,
               humidityMin: $humidityMin, humidityMax: $humidityMax,
               frostThreshold: $frostThreshold, heatThreshold: $heatThreshold, windThreshold: $windThreshold,
@@ -261,7 +270,7 @@ export class UserSettingsService {
               smartTipsEnabled: $smartTipsEnabled, morningTipTime: $morningTipTime, eveningTipTime: $eveningTipTime,
               location: $location
             ) {
-              tempMin tempMax humidityMin humidityMax
+              name tempMin tempMax humidityMin humidityMax
               frostThreshold heatThreshold windThreshold
               digestTime digestEnabled alertsEnabled locale
               smartTipsEnabled morningTipTime eveningTipTime
@@ -274,6 +283,7 @@ export class UserSettingsService {
       // Sync local state to canonical backend response
       const s = result.data?.updateUserSettings;
       if (s) {
+        this.name.set(s.name);
         this.tempMin.set(s.tempMin);
         this.tempMax.set(s.tempMax);
         this.humidityMin.set(s.humidityMin);
