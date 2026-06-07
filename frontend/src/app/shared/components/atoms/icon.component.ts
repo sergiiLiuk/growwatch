@@ -26,7 +26,14 @@ export type IconName =
   // Domain
   | 'wifi' | 'device' | 'refresh' | 'thermometer'
   // Search / filter
-  | 'search' | 'sliders' | 'x' | 'share';
+  | 'search' | 'sliders' | 'x' | 'share'
+  // Weather
+  | 'sun' | 'cloud' | 'cloud-sun' | 'cloud-rain' | 'cloud-drizzle' | 'cloud-snow'
+  | 'cloud-fog' | 'cloud-lightning' | 'snowflake' | 'droplet' | 'wind' | 'gauge'
+  // Plant categories (used to replace plant emoji)
+  | 'sprout' | 'herb' | 'fruit' | 'pepper' | 'cucumber' | 'leafy' | 'berry' | 'grapes' | 'melon'
+  // Plant-care actions (replace action emoji)
+  | 'scissors' | 'flower' | 'basket' | 'note' | 'sparkles' | 'flame' | 'sun-cycle' | 'moon';
 
 @Component({
   selector: 'app-icon',
@@ -187,6 +194,139 @@ export type IconName =
           <line x1="1" y1="14" x2="7" y2="14"/>
           <line x1="9" y1="8" x2="15" y2="8"/>
           <line x1="17" y1="16" x2="23" y2="16"/>
+        }
+
+        @case ('sun') {
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        }
+        @case ('cloud') {
+          <path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.46 1.5A4 4 0 0 0 6.5 19z"/>
+        }
+        @case ('cloud-sun') {
+          <path d="M12 2v1M5.6 5.6l.7.7M3 12h1M19.4 5.6l-.7.7"/>
+          <circle cx="11" cy="9" r="2.5"/>
+          <path d="M17 18a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.46 1.2A3.2 3.2 0 0 0 7 18z"/>
+        }
+        @case ('cloud-rain') {
+          <path d="M17.5 16a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.46 1.5A4 4 0 0 0 6.5 16z"/>
+          <path d="M8 18v2M12 18v3M16 18v2"/>
+        }
+        @case ('cloud-drizzle') {
+          <path d="M17.5 15a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.46 1.5A4 4 0 0 0 6.5 15z"/>
+          <path d="M8 17v1M8 20v1M12 17v1M12 20v1M16 17v1M16 20v1"/>
+        }
+        @case ('cloud-snow') {
+          <path d="M17.5 15a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.46 1.5A4 4 0 0 0 6.5 15z"/>
+          <path d="M8 19h.01M12 21h.01M16 19h.01M8 22h.01M16 22h.01"/>
+        }
+        @case ('cloud-fog') {
+          <path d="M17.5 14a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.46 1.5A4 4 0 0 0 6.5 14z"/>
+          <path d="M4 18h16M7 22h13"/>
+        }
+        @case ('cloud-lightning') {
+          <path d="M17.5 15a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.46 1.5A4 4 0 0 0 6.5 15"/>
+          <path d="M12 13l-2 4h3l-2 4"/>
+        }
+        @case ('snowflake') {
+          <path d="M12 2v20M4.5 7l15 10M19.5 7l-15 10"/>
+          <path d="M9 4l3 2 3-2M9 20l3-2 3 2M4 9.5l1.5 2.5L4 14.5M20 9.5L18.5 12l1.5 2.5"/>
+        }
+        @case ('droplet') {
+          <path d="M12 3s5.5 5.5 5.5 10a5.5 5.5 0 0 1-11 0C6.5 8.5 12 3 12 3z"/>
+        }
+        @case ('wind') {
+          <path d="M3 8h10a2.5 2.5 0 1 0-2.5-2.5"/>
+          <path d="M3 12h15a2.5 2.5 0 1 1-2.5 2.5"/>
+          <path d="M3 16h7a2 2 0 1 1-2 2"/>
+        }
+        @case ('gauge') {
+          <path d="M12 14l3-3"/>
+          <path d="M3.34 17a9 9 0 1 1 17.32 0"/>
+          <circle cx="12" cy="14" r="1.2" fill="currentColor" stroke="none"/>
+        }
+
+        @case ('sprout') {
+          <path d="M12 21v-8"/>
+          <path d="M12 13c0-3-2-5-5-5-1 0-2 .2-3 .5.5 3 2.5 5 5.5 5 1 0 2-.2 2.5-.5z"/>
+          <path d="M12 11c0-3 2-5 5-5 1 0 2 .2 3 .5-.5 3-2.5 5-5.5 5-1 0-2-.2-2.5-.5z"/>
+        }
+        @case ('herb') {
+          <path d="M12 22V8"/>
+          <path d="M12 8c0-3 2-6 6-6 0 4-3 6-6 6z"/>
+          <path d="M12 13c0-3-2-5-5-5 0 3 2 5 5 5z"/>
+          <path d="M12 18c0-3 2-5 5-5 0 3-2 5-5 5z"/>
+        }
+        @case ('fruit') {
+          <path d="M12 6c1-2 3-3 5-2 0 2-1 3-2.5 3.2"/>
+          <path d="M9 7.5C6 7.5 4 10 4 13.5A6.5 6.5 0 0 0 17 13.5c0-3.5-2-6-5-6a4.5 4.5 0 0 0-3 0z"/>
+        }
+        @case ('pepper') {
+          <path d="M12 4c0-1 1-2 2-2"/>
+          <path d="M12 4c2 0 3 1 3 3 0 5-3 13-6 13S5 16 8 13s4-9 4-9z"/>
+        }
+        @case ('cucumber') {
+          <rect x="5" y="5" width="14" height="14" rx="7" transform="rotate(45 12 12)"/>
+          <path d="M9 9l.5.5M12 9l.5.5M9 12l.5.5"/>
+        }
+        @case ('leafy') {
+          <path d="M12 21c-4-1-7-4-7-9 3 0 5 1 7 4 2-3 4-4 7-4 0 5-3 8-7 9z"/>
+          <path d="M12 21V12"/>
+        }
+        @case ('berry') {
+          <path d="M12 3c.5 1.5 0 3-1 3.5"/>
+          <circle cx="8.5" cy="14" r="3.5"/>
+          <circle cx="15.5" cy="14" r="3.5"/>
+          <circle cx="12" cy="9.5" r="3"/>
+        }
+        @case ('grapes') {
+          <path d="M12 3v3"/>
+          <circle cx="12" cy="8.5" r="2.2"/>
+          <circle cx="8.5" cy="12" r="2.2"/>
+          <circle cx="15.5" cy="12" r="2.2"/>
+          <circle cx="10.2" cy="16" r="2.2"/>
+          <circle cx="13.8" cy="16" r="2.2"/>
+        }
+        @case ('melon') {
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 3v18M5 7c2 2 2 8 0 10M19 7c-2 2-2 8 0 10"/>
+        }
+
+        @case ('scissors') {
+          <circle cx="6" cy="6" r="3"/>
+          <circle cx="6" cy="18" r="3"/>
+          <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+          <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+          <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+        }
+        @case ('flower') {
+          <circle cx="12" cy="12" r="2.5"/>
+          <path d="M12 9.5c0-2.5-1-4-1-4s2 0 3 1.5M14.5 12c2.5 0 4-1 4-1s0 2-1.5 3M12 14.5c0 2.5 1 4 1 4s-2 0-3-1.5M9.5 12c-2.5 0-4 1-4 1s0-2 1.5-3"/>
+          <path d="M12 17v4"/>
+        }
+        @case ('basket') {
+          <path d="M5 11l2-6M19 11l-2-6"/>
+          <path d="M2 11h20l-1.5 8a2 2 0 0 1-2 1.7H5.5a2 2 0 0 1-2-1.7z"/>
+          <path d="M9 14v3M15 14v3"/>
+        }
+        @case ('note') {
+          <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+          <path d="M14 3v6h6"/>
+          <path d="M8 13h8M8 17h5"/>
+        }
+        @case ('sparkles') {
+          <path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/>
+          <path d="M18 14l.7 1.8L20.5 16.5l-1.8.7L18 19l-.7-1.8L15.5 16.5l1.8-.7z"/>
+        }
+        @case ('flame') {
+          <path d="M12 22c4 0 6-2.8 6-6 0-3-2-5-3-7-1.5 1.5-2 2.5-3 2.5C12 8 13 5 9 2c0 4-4 5-4 9.5C5 18.5 8 22 12 22z"/>
+        }
+        @case ('sun-cycle') {
+          <circle cx="12" cy="12" r="3.5"/>
+          <path d="M12 4V2M12 22v-2M4 12H2M22 12h-2"/>
+        }
+        @case ('moon') {
+          <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.6 6.6 0 0 0 21 12.8z"/>
         }
       }
     </svg>

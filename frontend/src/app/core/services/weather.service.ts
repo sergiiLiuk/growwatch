@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { DailyForecast } from '../utils/weather-risk';
 import { UserSettingsService } from './user-settings.service';
 import { STORAGE_KEYS } from '../constants/storage-keys';
+import type { IconName } from '../../shared/components/atoms/icon.component';
 
 export interface WeatherData {
   temperature: number;
@@ -12,6 +13,7 @@ export interface WeatherData {
   weatherCode: number;
   conditionLabel: string;
   conditionIcon: string;
+  conditionIconName: IconName;
   city: string;
   sunrise: string; // ISO datetime
   sunset: string;  // ISO datetime
@@ -23,18 +25,18 @@ interface StoredLocation {
   city?: string;
 }
 
-function weatherInfo(code: number): { label: string; icon: string } {
-  if (code === 0) return { label: 'Clear sky',     icon: '☀️' };
-  if (code === 1) return { label: 'Mainly clear',  icon: '🌤️' };
-  if (code === 2) return { label: 'Partly cloudy', icon: '⛅' };
-  if (code === 3) return { label: 'Overcast',      icon: '☁️' };
-  if (code <= 48) return { label: 'Foggy',         icon: '🌫️' };
-  if (code <= 55) return { label: 'Drizzle',       icon: '🌦️' };
-  if (code <= 65) return { label: 'Rain',          icon: '🌧️' };
-  if (code <= 77) return { label: 'Snow',          icon: '❄️' };
-  if (code <= 82) return { label: 'Rain showers',  icon: '🌦️' };
-  if (code <= 86) return { label: 'Snow showers',  icon: '🌨️' };
-  return { label: 'Thunderstorm', icon: '⛈️' };
+function weatherInfo(code: number): { label: string; icon: string; iconName: IconName } {
+  if (code === 0) return { label: 'Clear sky',     icon: '☀️',  iconName: 'sun' };
+  if (code === 1) return { label: 'Mainly clear',  icon: '🌤️', iconName: 'cloud-sun' };
+  if (code === 2) return { label: 'Partly cloudy', icon: '⛅',  iconName: 'cloud-sun' };
+  if (code === 3) return { label: 'Overcast',      icon: '☁️',  iconName: 'cloud' };
+  if (code <= 48) return { label: 'Foggy',         icon: '🌫️', iconName: 'cloud-fog' };
+  if (code <= 55) return { label: 'Drizzle',       icon: '🌦️', iconName: 'cloud-drizzle' };
+  if (code <= 65) return { label: 'Rain',          icon: '🌧️', iconName: 'cloud-rain' };
+  if (code <= 77) return { label: 'Snow',          icon: '❄️',  iconName: 'cloud-snow' };
+  if (code <= 82) return { label: 'Rain showers',  icon: '🌦️', iconName: 'cloud-rain' };
+  if (code <= 86) return { label: 'Snow showers',  icon: '🌨️', iconName: 'cloud-snow' };
+  return { label: 'Thunderstorm', icon: '⛈️', iconName: 'cloud-lightning' };
 }
 
 const LOCATION_KEY = STORAGE_KEYS.LOCATION;
@@ -110,7 +112,7 @@ export class WeatherService {
       );
       const data = await res.json();
       const c = data.current;
-      const { label, icon } = weatherInfo(c.weather_code);
+      const { label, icon, iconName } = weatherInfo(c.weather_code);
 
       this.weather.set({
         temperature: Math.round(c.temperature_2m),
@@ -121,6 +123,7 @@ export class WeatherService {
         weatherCode: c.weather_code,
         conditionLabel: label,
         conditionIcon: icon,
+        conditionIconName: iconName,
         city,
         sunrise: data.daily.sunrise[0],
         sunset: data.daily.sunset[0],
@@ -144,12 +147,13 @@ export class WeatherService {
       const data = await res.json();
       const days: DailyForecast[] = (data.daily?.time ?? []).map((date: string, i: number) => {
         const code = data.daily.weather_code[i];
-        const { label, icon } = weatherInfo(code);
+        const { label, icon, iconName } = weatherInfo(code);
         return {
           date,
           weatherCode: code,
           conditionLabel: label,
           conditionIcon: icon,
+          conditionIconName: iconName,
           tempMin: data.daily.temperature_2m_min[i],
           tempMax: data.daily.temperature_2m_max[i],
           windMax: data.daily.wind_speed_10m_max[i],

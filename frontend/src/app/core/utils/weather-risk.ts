@@ -1,11 +1,14 @@
 export type RiskType = 'frost' | 'heat' | 'wind';
 export type Severity = 'warn' | 'severe';
 
+import type { IconName } from '../../shared/components/atoms/icon.component';
+
 export interface DailyForecast {
   date: string;
   weatherCode: number;
   conditionLabel: string;
   conditionIcon: string;
+  conditionIconName: IconName;
   tempMin: number;
   tempMax: number;
   windMax: number;
@@ -15,6 +18,7 @@ export interface RiskMessage {
   type: RiskType;
   severity: Severity;
   icon: string;
+  iconName: IconName;
   bodyKey: string;
   bodyParams: Record<string, number | string>;
   actionKey: string;
@@ -45,6 +49,12 @@ const RISK_ICON: Record<RiskType, string> = {
   wind: '💨',
 };
 
+const RISK_ICON_NAME: Record<RiskType, IconName> = {
+  frost: 'snowflake',
+  heat: 'flame',
+  wind: 'wind',
+};
+
 function worstSeverity(a: Severity | null, b: Severity | null): Severity | null {
   if (a === 'severe' || b === 'severe') return 'severe';
   if (a === 'warn' || b === 'warn') return 'warn';
@@ -64,6 +74,7 @@ export function analyzeForecast(days: DailyForecast[], thresholds: Thresholds): 
         type: 'frost',
         severity: sev,
         icon: RISK_ICON.frost,
+        iconName: RISK_ICON_NAME.frost,
         bodyKey: sev === 'severe' ? 'forecast.risk.frostSevere' : 'forecast.risk.frostWarn',
         bodyParams: { min: Math.round(d.tempMin) },
         actionKey: 'forecast.action.frost',
@@ -78,6 +89,7 @@ export function analyzeForecast(days: DailyForecast[], thresholds: Thresholds): 
         type: 'heat',
         severity: sev,
         icon: RISK_ICON.heat,
+        iconName: RISK_ICON_NAME.heat,
         bodyKey: sev === 'severe' ? 'forecast.risk.heatSevere' : 'forecast.risk.heatWarn',
         bodyParams: { max: Math.round(d.tempMax) },
         actionKey: 'forecast.action.heat',
@@ -92,6 +104,7 @@ export function analyzeForecast(days: DailyForecast[], thresholds: Thresholds): 
         type: 'wind',
         severity: sev,
         icon: RISK_ICON.wind,
+        iconName: RISK_ICON_NAME.wind,
         bodyKey: sev === 'severe' ? 'forecast.risk.windSevere' : 'forecast.risk.windWarn',
         bodyParams: { wind: Math.round(d.windMax) },
         actionKey: 'forecast.action.wind',

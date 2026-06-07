@@ -16,16 +16,9 @@ import { PlantActionService, DailyBriefing } from '../../core/services/plant-act
 import { TierService } from '../../core/services/tier.service';
 import { AuthService } from '../../core/services/auth.service';
 import { isNight, isDawnOrDusk, daysAgo } from '../../core/utils/time';
-import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { IconComponent, IconName } from '../../shared/components/atoms/icon.component';
+import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-
-const PLANT_EMOJI: Record<string, string> = {
-  TOMATO: '🍅', PEPPER: '🌶️', CUCUMBER: '🥒', ZUCCHINI: '🥒', EGGPLANT: '🍆',
-  LETTUCE: '🥬', SPINACH: '🥬', KALE: '🥬', ARUGULA: '🥬', RADISH: '🌱',
-  BASIL: '🌿', MINT: '🌿', PARSLEY: '🌿', CILANTRO: '🌿', CHIVE: '🌿',
-  OREGANO: '🌿', THYME: '🌿', ROSEMARY: '🌿', STRAWBERRY: '🍓',
-  GRAPES: '🍇', MELON: '🍈', WATERMELON: '🍉',
-};
 
 interface ActivityEvent {
   time: string;
@@ -47,20 +40,22 @@ interface ActivityEvent {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
 
         <!-- Weather card -->
-        <div class="bg-gw-surface border border-gw-border rounded-2xl p-4 flex items-center gap-3">
+        <div class="bg-gw-surface border border-gw-border rounded-2xl p-4 flex items-center gap-3 gw-card-shadow">
           @if (weather()) {
-            <span class="text-3xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
-            <div class="flex-1 min-w-0">
-              <div class="font-data text-[22px] font-medium text-gw-blue-dark leading-none">{{ weather()!.temperature }}°C</div>
-              <div class="text-[11px] text-gray-400 truncate mt-0.5">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
+            <div class="w-12 h-12 rounded-2xl bg-gw-blue-light/60 flex items-center justify-center shrink-0">
+              <app-icon [name]="weather()!.conditionIconName" class="w-6 h-6 text-gw-blue" strokeWidth="1.8" />
             </div>
-            <div class="flex flex-col items-end gap-0.5 shrink-0 text-[11px] text-gw-blue-dark">
-              <span>💧 {{ weather()!.humidity }}%</span>
-              <span>🌬️ {{ weather()!.windSpeed }} m/s</span>
-              <span>🔵 {{ weather()!.pressure }} hPa</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-data text-[22px] font-semibold text-gw-text leading-none tabular-nums">{{ weather()!.temperature }}°C</div>
+              <div class="text-[11px] text-gw-muted truncate mt-1">{{ weather()!.conditionLabel }} · {{ weather()!.city }}</div>
+            </div>
+            <div class="flex flex-col items-end gap-1 shrink-0 text-[11px] text-gw-muted tabular-nums">
+              <span class="flex items-center gap-1"><app-icon name="droplet" class="w-3.5 h-3.5 text-gw-blue" />{{ weather()!.humidity }}%</span>
+              <span class="flex items-center gap-1"><app-icon name="wind" class="w-3.5 h-3.5 text-gw-muted" />{{ weather()!.windSpeed }} m/s</span>
+              <span class="flex items-center gap-1"><app-icon name="gauge" class="w-3.5 h-3.5 text-gw-muted" />{{ weather()!.pressure }} hPa</span>
             </div>
           } @else {
-            <span class="flex-1 text-[13px] text-gray-400">
+            <span class="flex-1 text-[13px] text-gw-muted">
               {{ weatherService.loading() ? t('home.loadingWeather') : t('home.weatherUnavailable') }}
             </span>
           }
@@ -75,9 +70,12 @@ interface ActivityEvent {
 
         <!-- Phase / mood card — hidden for Free since it needs sensor data to mean anything -->
         @if (!tier.isFree()) {
-        <div class="rounded-2xl p-4 border border-transparent flex flex-col" [class]="moodBg()">
-          <div class="flex items-start justify-between gap-2 mb-1">
-            <span class="text-[10px] font-semibold tracking-widest uppercase opacity-50" [class]="moodIconColor()">{{ t('home.currentPhase') }}</span>
+        <div class="rounded-2xl p-4 border border-transparent flex flex-col gw-card-shadow" [class]="moodBg()">
+          <div class="flex items-center gap-2 mb-1.5">
+            <div class="w-8 h-8 rounded-xl bg-white/60 flex items-center justify-center shrink-0">
+              <app-icon [name]="moodIcon()" class="w-4 h-4" [class]="moodIconColor()" strokeWidth="1.8" />
+            </div>
+            <span class="text-[10px] font-semibold tracking-widest uppercase opacity-60" [class]="moodIconColor()">{{ t('home.currentPhase') }}</span>
           </div>
           <div class="font-display text-[22px] font-bold leading-tight" [class]="moodIconColor()">{{ mood().label }}</div>
           @if (mood().mood === 'offline') {
@@ -87,8 +85,6 @@ interface ActivityEvent {
           } @else {
             <div class="text-[12px] mt-0.5 opacity-70" [class]="moodIconColor()">{{ mood().description }}</div>
           }
-          <!-- Subtle divider at bottom matching mockup -->
-          <div class="mt-3 h-px opacity-20 rounded-full" [class]="moodIconColor() === 'text-gw-green-dark' ? 'bg-gw-green-dark' : 'bg-gw-amber-dark'"></div>
         </div>
         }
 
@@ -99,7 +95,7 @@ interface ActivityEvent {
         <div class="mb-5 rounded-2xl bg-gw-green-light border border-gw-green/30 p-4">
           <div class="flex items-center justify-between mb-1.5">
             <div class="flex items-center gap-2">
-              <span class="text-base leading-none">✨</span>
+              <app-icon name="sparkles" class="w-4 h-4 text-gw-green-dark" strokeWidth="1.8" />
               <span class="text-[10px] font-semibold tracking-widest uppercase text-gw-green-dark/70">
                 {{ b.cycle === 'morning' ? t('home.morningBrief') : t('home.eveningBrief') }}
               </span>
@@ -177,11 +173,13 @@ interface ActivityEvent {
 
       <!-- Care streak — only visible once the user has some history. -->
       @if (streakDays() > 0 && plants().length > 0) {
-        <div class="mb-5 rounded-2xl bg-gradient-to-br from-gw-green-light/70 to-amber-50 border border-gw-green/30 p-4 flex items-center gap-3">
-          <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl shrink-0">🔥</div>
+        <div class="mb-5 rounded-2xl bg-gw-surface border border-gw-border p-4 flex items-center gap-3 gw-card-shadow">
+          <div class="w-12 h-12 rounded-2xl bg-gw-amber-light flex items-center justify-center shrink-0">
+            <app-icon name="flame" class="w-6 h-6 text-gw-amber" strokeWidth="1.8" />
+          </div>
           <div class="flex-1 min-w-0">
-            <div class="text-[20px] font-semibold text-gw-green-dark leading-none tabular-nums">{{ streakDays() }}</div>
-            <div class="text-[12px] text-gw-green-dark/80 mt-1">{{ streakDays() === 1 ? t('home.streakOne') : t('home.streakN', { n: streakDays() }) }}</div>
+            <div class="text-[20px] font-semibold text-gw-text leading-none tabular-nums">{{ streakDays() }}</div>
+            <div class="text-[12px] text-gw-muted mt-1">{{ streakDays() === 1 ? t('home.streakOne') : t('home.streakN', { n: streakDays() }) }}</div>
           </div>
         </div>
       }
@@ -250,18 +248,20 @@ interface ActivityEvent {
           <div class="flex gap-3 overflow-x-auto lg:overflow-x-visible lg:flex-wrap pb-1 -mx-1 px-1" style="scrollbar-width:none">
             @for (plant of plants(); track plant.id) {
               <a [routerLink]="['/plants', plant.id]"
-                 class="relative flex-shrink-0 w-20 bg-gw-surface border border-gw-border rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
+                 class="relative flex-shrink-0 w-20 bg-gw-surface border border-gw-border rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors gw-card-shadow">
                 <span class="absolute top-1.5 right-1.5 text-[9px] font-semibold text-gw-green-dark bg-gw-green-light/70 px-1.5 py-0.5 rounded-full leading-none">
                   {{ t('season.weekShort', { n: plantSeason(plant).week }) }}
                 </span>
-                <span class="text-2xl leading-none">{{ plantEmoji(plant) }}</span>
+                <span class="w-10 h-10 rounded-2xl flex items-center justify-center" [class]="plantIconBg(plant)">
+                  <app-icon [name]="plantIcon(plant)" class="w-5 h-5" [class]="plantIconFg(plant)" strokeWidth="1.8" />
+                </span>
                 <span class="text-[11px] font-medium text-gray-700 truncate w-full text-center">{{ plant.name }}</span>
                 <span class="text-[10px]" [class]="plantStatusClass(plant)">{{ plantStatus(plant) }}</span>
               </a>
             }
             <a routerLink="/plants"
                class="flex-shrink-0 w-20 bg-gw-surface border border-dashed border-gw-border rounded-2xl p-3 flex flex-col items-center justify-center gap-1 text-center hover:border-gray-400 transition-colors">
-              <span class="text-xl text-gray-300">+</span>
+              <app-icon name="plus" class="w-5 h-5 text-gray-300" />
               <span class="text-[11px] text-gray-400">{{ t('home.addPlant') }}</span>
             </a>
           </div>
@@ -428,6 +428,15 @@ export class HomeComponent implements OnInit, OnDestroy {
     return 'text-gray-400'; // waiting
   });
 
+  moodIcon = computed<IconName>(() => {
+    const m = this.mood().mood;
+    if (m === 'thriving' || m === 'good') return 'leaf';
+    if (m === 'stressed') return 'alert-triangle';
+    if (m === 'critical') return 'alert-triangle';
+    if (m === 'offline') return 'wifi';
+    return 'clock'; // waiting
+  });
+
   // ── Sensor values ─────────────────────────────────────────────────────────────
 
   // Each value/status falls back to the most recent hourly average when no live reading is available.
@@ -514,8 +523,16 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   plantSeason(plant: Plant) { return getSeasonInfo(plant.plantedDate, plant.type); }
 
-  plantEmoji(plant: Plant): string {
-    return PLANT_EMOJI[plant.type] ?? '🌱';
+  plantIcon(plant: Plant): IconName {
+    return PLANT_TYPE_STYLE[plant.type]?.icon ?? 'sprout';
+  }
+
+  plantIconBg(plant: Plant): string {
+    return PLANT_TYPE_STYLE[plant.type]?.bg ?? 'bg-gw-green-light';
+  }
+
+  plantIconFg(plant: Plant): string {
+    return PLANT_TYPE_STYLE[plant.type]?.fg ?? 'text-gw-green-dark';
   }
 
   plantStatus(plant: Plant): string {

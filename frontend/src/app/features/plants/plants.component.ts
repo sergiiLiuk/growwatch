@@ -9,7 +9,7 @@ import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
 import { PullToRefreshDirective } from '../../shared/directives/pull-to-refresh.directive';
 import { StatusBadgeComponent } from '../../shared/components/atoms/status-badge.component';
 import { EmptyStateComponent } from '../../shared/components/atoms/empty-state.component';
-import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { IconComponent, IconName } from '../../shared/components/atoms/icon.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 import dayjs from 'dayjs';
 
@@ -108,7 +108,7 @@ import dayjs from 'dayjs';
                     [class.bg-white]="typeFilter() !== entry.type"
                     [class.text-gray-600]="typeFilter() !== entry.type"
                     [class.border-gray-200]="typeFilter() !== entry.type">
-              <span>{{ getStyle(entry.type).emoji }}</span>
+              <app-icon [name]="getIcon(entry.type)" class="w-4 h-4" />
               <span>{{ getTypeLabel(entry.type) }}</span>
               <span class="opacity-60">{{ entry.count }}</span>
             </button>
@@ -121,7 +121,7 @@ import dayjs from 'dayjs';
 
       <!-- Empty state -->
       @if (!plantsLoading() && plants().length === 0) {
-        <app-empty-state emoji="🌱" [title]="t('plants.noPlantsYet')"
+        <app-empty-state icon="sprout" [title]="t('plants.noPlantsYet')"
                          [subtitle]="t('plants.noPlantsSubtitle')" />
       }
 
@@ -136,9 +136,9 @@ import dayjs from 'dayjs';
             <!-- Card -->
             <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:border-gray-300 transition-colors"
                  (click)="navigateTo(plant.id)">
-              <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-xl"
+              <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
                    [class]="getStyle(plant.type).bg">
-                {{ getStyle(plant.type).emoji }}
+                <app-icon [name]="getIcon(plant.type)" class="w-5 h-5" [class]="getFg(plant.type)" strokeWidth="1.8" />
               </div>
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-[14px] text-gray-900 truncate">{{ plant.name }}</div>
@@ -202,7 +202,9 @@ import dayjs from 'dayjs';
               @for (plant of archivedPlants(); track plant.id) {
                 <a [routerLink]="['/plants', plant.id]"
                    class="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-3 flex items-center gap-3 hover:border-gray-300 transition-colors">
-                  <span class="text-xl opacity-60">{{ getEmoji(plant.type) }}</span>
+                  <span class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0 opacity-70">
+                    <app-icon [name]="getIcon(plant.type)" class="w-4 h-4 text-gray-400" />
+                  </span>
                   <div class="flex-1 min-w-0">
                     <div class="text-[13px] font-medium text-gray-600 truncate">{{ plant.name }}</div>
                     <div class="text-[11px] text-gray-400">{{ t('common.archived') }}</div>
@@ -371,6 +373,14 @@ export class PlantsComponent {
 
   getEmoji(type: PlantType): string {
     return PLANT_TYPE_STYLE[type]?.emoji ?? '🌿';
+  }
+
+  getIcon(type: PlantType): IconName {
+    return PLANT_TYPE_STYLE[type]?.icon ?? 'sprout';
+  }
+
+  getFg(type: PlantType): string {
+    return PLANT_TYPE_STYLE[type]?.fg ?? 'text-gw-green-dark';
   }
 
   // Add form
