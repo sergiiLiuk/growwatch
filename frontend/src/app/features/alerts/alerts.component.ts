@@ -49,7 +49,7 @@ export interface Alert {
           <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">{{ t('common.today') }}</div>
           <div class="flex flex-col gap-2 mb-5">
             @for (alert of todayAlerts(); track alert.id) {
-              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex gap-3">
+              <div class="bg-white shadow-gw-sm rounded-xl p-4 flex gap-3">
                 <div class="mt-1 w-2 h-2 rounded-full shrink-0"
                      [class]="dotColor(alert.type)"></div>
                 <div class="flex-1">
@@ -67,7 +67,7 @@ export interface Alert {
           <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">{{ t('common.earlier') }}</div>
           <div class="flex flex-col gap-2">
             @for (alert of earlierAlerts(); track alert.id) {
-              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex gap-3 opacity-60">
+              <div class="bg-white shadow-gw-sm rounded-xl p-4 flex gap-3 opacity-60">
                 <div class="mt-1 w-2 h-2 rounded-full shrink-0"
                      [class]="dotColor(alert.type)"></div>
                 <div class="flex-1">

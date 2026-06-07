@@ -29,7 +29,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
         }
         @empty {
           @for (i of [0,1,2]; track i) {
-            <div class="rounded-2xl p-3 border-[0.5px] border-gray-200 bg-white h-[88px] animate-pulse"></div>
+            <div class="rounded-2xl p-3 shadow-gw-sm bg-white h-[88px] animate-pulse"></div>
           }
         }
       </div>

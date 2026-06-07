@@ -25,14 +25,14 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
       </div>
 
       @if (devices().length === 0 && !loading()) {
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-6 text-center">
+        <div class="bg-white shadow-gw-sm rounded-xl p-6 text-center">
           <div class="text-[14px] text-gray-600">{{ t('devices.noDevices') }}</div>
           <div class="text-[11px] text-gray-400 mt-1">{{ t('devices.noDevicesHint') }}</div>
         </div>
       }
 
       @for (d of devices(); track d.id) {
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 mb-3">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4 mb-3">
           <div class="flex items-center gap-3">
             <div class="flex-1 min-w-0">
               <div class="text-[14px] font-medium text-gray-800 truncate">{{ d.name }}</div>
@@ -67,7 +67,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
       </button>
 
       <!-- Pairing guide -->
-      <div class="mt-6 bg-gw-surface border-[0.5px] border-gw-border rounded-xl p-4">
+      <div class="mt-6 bg-gw-surface shadow-gw-sm rounded-xl p-4">
         <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">{{ t('devices.howToPair') }}</div>
         <ol class="space-y-2.5 text-[13px] text-gray-700">
           <li class="flex gap-3">

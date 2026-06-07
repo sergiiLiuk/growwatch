@@ -13,7 +13,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
           <h2 class="text-[16px] font-medium text-gray-800 mb-3">{{ t('plantDetail.note.title') }}</h2>
           <textarea [(ngModel)]="text" rows="4"
                     [placeholder]="t('plantDetail.note.placeholder')"
-                    class="w-full text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg p-3 outline-none focus:border-gw-green resize-none"></textarea>
+                    class="w-full text-[14px] text-gray-800 shadow-gw-sm rounded-lg p-3 outline-none focus:border-gw-green resize-none"></textarea>
           <div class="flex justify-end gap-2 mt-4">
             <button (click)="cancel()"
                     class="text-[13px] text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">

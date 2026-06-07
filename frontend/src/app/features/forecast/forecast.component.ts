@@ -37,11 +37,11 @@ interface DayCard {
       @if (weather.forecastLoading() && cards().length === 0) {
         <div class="flex flex-col gap-3">
           @for (i of [1,2,3]; track i) {
-            <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200 h-32 animate-pulse"></div>
+            <div class="bg-white rounded-xl p-4 shadow-gw-sm h-32 animate-pulse"></div>
           }
         </div>
       } @else if (cards().length === 0) {
-        <div class="bg-white rounded-xl p-6 border-[0.5px] border-gray-200 text-center">
+        <div class="bg-white rounded-xl p-6 shadow-gw-sm text-center">
           <p class="text-[13px] text-gray-500">{{ t('forecast.noData') }}</p>
         </div>
       } @else {

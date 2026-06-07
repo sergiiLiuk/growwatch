@@ -38,7 +38,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
                 [(ngModel)]="password"
                 name="password"
                 [placeholder]="t('auth.passwordPlaceholder')"
-                class="w-full px-4 py-3 pr-11 rounded-xl border border-gw-border bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gw-green/30 focus:border-gw-green transition-colors"
+                class="w-full px-4 py-3 pr-11 rounded-xl shadow-gw-sm bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gw-green/30 focus:border-gw-green transition-colors"
               />
               <button type="button" (click)="showPassword.set(!showPassword())"
                       class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
@@ -56,7 +56,7 @@ import { IconComponent } from '../../shared/components/atoms/icon.component';
               [(ngModel)]="confirm"
               name="confirm"
               [placeholder]="t('auth.confirmPlaceholder')"
-              class="w-full px-4 py-3 rounded-xl border border-gw-border bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gw-green/30 focus:border-gw-green transition-colors"
+              class="w-full px-4 py-3 rounded-xl shadow-gw-sm bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gw-green/30 focus:border-gw-green transition-colors"
             />
           </div>
 

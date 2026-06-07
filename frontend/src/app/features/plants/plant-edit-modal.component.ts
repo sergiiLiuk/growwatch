@@ -12,7 +12,7 @@ import dayjs from 'dayjs';
     @if (plant()) {
       <div class="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center"
            (click)="cancel()" *transloco="let t">
-        <div class="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl border-[0.5px] border-gray-200"
+        <div class="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl shadow-gw-sm"
              (click)="$event.stopPropagation()">
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
             <div class="w-10 h-1 bg-gray-200 rounded-full"></div>
@@ -25,12 +25,12 @@ import dayjs from 'dayjs';
                 <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantName') }}</label>
                 <input [ngModel]="name()" (ngModelChange)="name.set($event)"
                        type="text" [placeholder]="t('plants.namePlaceholder')"
-                       class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
+                       class="w-full shadow-gw-sm rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
               </div>
               <div>
                 <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantType') }}</label>
                 <select [ngModel]="plant()!.type" disabled
-                        class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none bg-gray-50 text-gray-400 cursor-not-allowed">
+                        class="w-full shadow-gw-sm rounded-xl px-3.5 py-2.5 text-[13px] outline-none bg-gray-50 text-gray-400 cursor-not-allowed">
                   @for (group of typeGroups; track group.name) {
                     <optgroup [label]="t('plantTypeGroups.' + group.name)">
                       @for (opt of group.options; track opt.value) {
@@ -45,16 +45,16 @@ import dayjs from 'dayjs';
                 <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantingDate') }}</label>
                 <input [ngModel]="date()" (ngModelChange)="date.set($event)"
                        type="date"
-                       class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
+                       class="w-full shadow-gw-sm rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
               </div>
               <div>
                 <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.howMany') }}</label>
                 <div class="flex items-center gap-3">
                   <button (click)="count.update(n => n > 1 ? n - 1 : 1)"
-                          class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">−</button>
+                          class="w-10 h-10 rounded-xl shadow-gw-sm text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">−</button>
                   <span class="flex-1 text-center text-[15px] font-medium text-gray-800">{{ count() }}</span>
                   <button (click)="count.update(n => n + 1)"
-                          class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
+                          class="w-10 h-10 rounded-xl shadow-gw-sm text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
                 </div>
               </div>
               <app-plant-care-fields [(care)]="care" />

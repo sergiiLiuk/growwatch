@@ -40,7 +40,7 @@ import dayjs from 'dayjs';
           }
           <button (click)="showForm.set(true)"
                   [disabled]="showForm()"
-                  class="text-[13px] bg-white border-[0.5px] border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                  class="text-[13px] bg-white shadow-gw-sm text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {{ t('plants.addPlantButton') }}
           </button>
         </div>
@@ -55,7 +55,7 @@ import dayjs from 'dayjs';
             </span>
             <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)"
                    [placeholder]="t('plants.searchPlaceholder')"
-                   class="w-full pl-10 pr-9 py-2.5 bg-white border-[0.5px] border-gray-200 rounded-xl text-[13px] outline-none focus:border-gw-green transition-colors" />
+                   class="w-full pl-10 pr-9 py-2.5 bg-white shadow-gw-sm rounded-xl text-[13px] outline-none focus:border-gw-green transition-colors" />
             @if (search()) {
               <button type="button" (click)="search.set('')"
                       [attr.aria-label]="t('plants.clearSearch')"
@@ -65,11 +65,11 @@ import dayjs from 'dayjs';
             }
           </div>
           <button (click)="sortMenuOpen.set(!sortMenuOpen()); $event.stopPropagation()"
-                  class="w-10 h-10 flex items-center justify-center bg-white border-[0.5px] border-gray-200 rounded-xl text-gray-500 hover:border-gray-300 transition-colors shrink-0">
+                  class="w-10 h-10 flex items-center justify-center bg-white shadow-gw-sm rounded-xl text-gray-500 hover:border-gray-300 transition-colors shrink-0">
             <app-icon name="sliders" class="w-4 h-4" />
           </button>
           @if (sortMenuOpen()) {
-            <div class="absolute right-0 top-12 z-50 bg-white rounded-xl border-[0.5px] border-gray-200 w-44 py-1"
+            <div class="absolute right-0 top-12 z-50 bg-white rounded-xl shadow-gw-sm w-44 py-1"
                  style="box-shadow: 0 2px 12px rgba(0,0,0,0.08)"
                  (click)="$event.stopPropagation()">
               @for (opt of sortOptions; track opt.value) {
@@ -134,7 +134,7 @@ import dayjs from 'dayjs';
         @for (plant of visiblePlants(); track plant.id) {
           <div class="relative">
             <!-- Card -->
-            <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:border-gray-300 transition-colors"
+            <div class="bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:border-gray-300 transition-colors"
                  (click)="navigateTo(plant.id)">
               <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-xl"
                    [class]="getStyle(plant.type).bg">
@@ -158,7 +158,7 @@ import dayjs from 'dayjs';
 
             <!-- Floating popover -->
             @if (menuOpenId() === plant.id) {
-              <div class="absolute right-0 top-full mt-1 z-[50] bg-white rounded-xl border-[0.5px] border-gray-200 w-44 py-1"
+              <div class="absolute right-0 top-full mt-1 z-[50] bg-white rounded-xl shadow-gw-sm w-44 py-1"
                    style="box-shadow: 0 2px 12px rgba(0,0,0,0.08)">
                 <button (click)="startEdit(plant)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
@@ -201,7 +201,7 @@ import dayjs from 'dayjs';
             <div class="flex flex-col gap-2">
               @for (plant of archivedPlants(); track plant.id) {
                 <a [routerLink]="['/plants', plant.id]"
-                   class="bg-gray-50 border-[0.5px] border-gray-200 rounded-xl p-3 flex items-center gap-3 hover:border-gray-300 transition-colors">
+                   class="bg-gray-50 shadow-gw-sm rounded-xl p-3 flex items-center gap-3 hover:border-gray-300 transition-colors">
                   <span class="text-xl opacity-60">{{ getEmoji(plant.type) }}</span>
                   <div class="flex-1 min-w-0">
                     <div class="text-[13px] font-medium text-gray-600 truncate">{{ plant.name }}</div>
@@ -219,7 +219,7 @@ import dayjs from 'dayjs';
     @if (showForm()) {
       <div class="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center"
            (click)="cancelForm()" *transloco="let t">
-        <div class="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl border-[0.5px] border-gray-200"
+        <div class="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl shadow-gw-sm"
              (click)="$event.stopPropagation()">
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
             <div class="w-10 h-1 bg-gray-200 rounded-full"></div>
@@ -232,12 +232,12 @@ import dayjs from 'dayjs';
                 <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantName') }}</label>
                 <input [ngModel]="formName()" (ngModelChange)="formName.set($event)"
                        type="text" [placeholder]="t('plants.namePlaceholder')"
-                       class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
+                       class="w-full shadow-gw-sm rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
               </div>
               <div>
                 <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantType') }}</label>
                 <select [ngModel]="formType()" (ngModelChange)="formType.set($event)"
-                        class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors bg-white">
+                        class="w-full shadow-gw-sm rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors bg-white">
                   <option value="">{{ t('plants.selectType') }}</option>
                   @for (group of typeGroups; track group.name) {
                     <optgroup [label]="t('plantTypeGroups.' + group.name)">
@@ -252,16 +252,16 @@ import dayjs from 'dayjs';
                 <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.plantingDate') }}</label>
                 <input [ngModel]="formDate()" (ngModelChange)="formDate.set($event)"
                        type="date"
-                       class="w-full border-[0.5px] border-gray-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
+                       class="w-full shadow-gw-sm rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-gw-green transition-colors" />
               </div>
               <div>
                 <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plants.howMany') }}</label>
                 <div class="flex items-center gap-3">
                   <button (click)="formCount.update(n => n > 1 ? n - 1 : 1)"
-                          class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">−</button>
+                          class="w-10 h-10 rounded-xl shadow-gw-sm text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">−</button>
                   <span class="flex-1 text-center text-[15px] font-medium text-gray-800">{{ formCount() }}</span>
                   <button (click)="formCount.update(n => n + 1)"
-                          class="w-10 h-10 rounded-xl border-[0.5px] border-gray-200 text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
+                          class="w-10 h-10 rounded-xl shadow-gw-sm text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
                 </div>
                 <p class="text-[11px] text-gray-400 mt-1.5">{{ t('plants.countHint') }}</p>
               </div>
@@ -294,7 +294,7 @@ import dayjs from 'dayjs';
     @if (deletePlant()) {
       <div class="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center px-4"
            (click)="cancelDelete()" *transloco="let t">
-        <div class="w-full max-w-sm bg-white rounded-xl border-[0.5px] border-gray-200 p-6 text-center"
+        <div class="w-full max-w-sm bg-white rounded-xl shadow-gw-sm p-6 text-center"
              (click)="$event.stopPropagation()">
           <div class="w-14 h-14 bg-gw-red-light rounded-full flex items-center justify-center mx-auto mb-4">
             <app-icon name="trash-simple" class="w-[22px] h-[22px] text-gw-red" />
@@ -305,7 +305,7 @@ import dayjs from 'dayjs';
           </p>
           <div class="flex gap-3">
             <button (click)="cancelDelete()"
-                    class="flex-1 py-3 text-[13px] text-gray-700 bg-white border-[0.5px] border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    class="flex-1 py-3 text-[13px] text-gray-700 bg-white shadow-gw-sm rounded-xl hover:bg-gray-50 transition-colors">
               {{ t('plants.keepIt') }}
             </button>
             <button (click)="doDelete()"

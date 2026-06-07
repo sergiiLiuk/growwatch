@@ -38,7 +38,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       <!-- Language -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.language') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-white shadow-gw-sm rounded-xl overflow-hidden">
           @for (loc of localeOptions; track loc.code; let last = $last) {
             <button (click)="settings.setLocale(loc.code)"
                     class="w-full flex items-center gap-3 p-4 text-left transition-colors hover:bg-gray-50"
@@ -57,7 +57,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       <!-- Notifications -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.notifications') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-white shadow-gw-sm rounded-xl overflow-hidden">
           <div class="flex items-center gap-3 p-4 border-b border-gray-100">
             <div class="flex-1">
               <div class="text-[14px] font-medium text-gray-800">{{ t('settings.dailyDigest') }}</div>
@@ -107,10 +107,10 @@ import { ReminderService } from '../../core/services/reminder.service';
       <!-- Digest time -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.dailyDigestTime') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3">
           <div class="text-[13px] text-gray-500 flex-1">{{ t('settings.sendDigestAt') }}</div>
           <input type="time" [ngModel]="settings.effectiveDigestTime()" (ngModelChange)="onDigestTimeChange($event)"
-                 class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors" />
+                 class="text-[13px] text-gray-800 shadow-gw-sm rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors" />
         </div>
       </div>
 
@@ -122,7 +122,7 @@ import { ReminderService } from '../../core/services/reminder.service';
         <div class="mb-5">
           <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.subscription') }}</div>
           <a routerLink="/upgrade"
-             class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gw-green-light transition-colors">
+             class="bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 hover:border-gw-green-light transition-colors">
             <div class="flex-1">
               <div class="text-[13px] font-medium text-gray-800">{{ t('settings.currentPlan') }}: {{ t('upgrade.' + tier.current()) }}</div>
               <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.viewPlans') }}</div>
@@ -139,7 +139,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       @if (tier.canSeeSensors()) {
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.temperatureRange') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4">
           <div class="flex items-center justify-center gap-3">
 
             <!-- Min -->
@@ -193,7 +193,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       @if (tier.canSeeSensors()) {
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.humidityRange') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4">
           <div class="flex items-center justify-center gap-3">
 
             <!-- Min -->
@@ -247,7 +247,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       @if (tier.canSeeWeatherWarnings()) {
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.weatherWarnings') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex flex-col gap-3">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4 flex flex-col gap-3">
 
           <div class="flex items-center gap-3">
             <span class="text-[13px] text-gray-600 flex-1">🥶 {{ t('settings.frostThreshold') }}</span>
@@ -309,7 +309,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       @if (tier.canSeeAi()) {
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.smartTips') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-white shadow-gw-sm rounded-xl overflow-hidden">
           <div class="flex items-center gap-3 p-4 border-b border-gray-100">
             <div class="text-[13px] text-gray-500 flex-1">{{ t('settings.smartTipsEnabled') }}</div>
             <input type="checkbox" [checked]="settings.effectiveSmartTipsEnabled()"
@@ -321,14 +321,14 @@ import { ReminderService } from '../../core/services/reminder.service';
             <input type="time" [ngModel]="settings.effectiveMorningTipTime()"
                    (ngModelChange)="onMorningTipTimeChange($event)"
                    [disabled]="!settings.effectiveSmartTipsEnabled()"
-                   class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors disabled:opacity-40" />
+                   class="text-[13px] text-gray-800 shadow-gw-sm rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors disabled:opacity-40" />
           </div>
           <div class="flex items-center gap-3 p-4">
             <div class="text-[13px] text-gray-500 flex-1">🌇 {{ t('settings.eveningTipTime') }}</div>
             <input type="time" [ngModel]="settings.effectiveEveningTipTime()"
                    (ngModelChange)="onEveningTipTimeChange($event)"
                    [disabled]="!settings.effectiveSmartTipsEnabled()"
-                   class="text-[13px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors disabled:opacity-40" />
+                   class="text-[13px] text-gray-800 shadow-gw-sm rounded-lg px-2 py-1 outline-none focus:border-gw-green transition-colors disabled:opacity-40" />
           </div>
         </div>
         <p class="text-[11px] text-gray-400 leading-relaxed mt-2 px-1">{{ t('settings.smartTipsHint') }}</p>
@@ -341,7 +341,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       <!-- About -->
       <div>
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.about') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-white shadow-gw-sm rounded-xl overflow-hidden">
           <div class="flex items-center gap-3 p-4 border-b border-gray-100">
             <div class="text-[13px] text-gray-500 flex-1">{{ t('settings.app') }}</div>
             <div class="text-[13px] text-gray-800">GrowWatch</div>
@@ -361,7 +361,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       <div class="mt-5 lg:hidden">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.account') }}</div>
         <button (click)="logout()"
-                class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-red-200 transition-colors">
+                class="w-full bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 hover:border-red-200 transition-colors">
           <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center shrink-0">
             <app-icon name="logout" class="w-4 h-4 text-red-500" />
           </div>
@@ -382,7 +382,7 @@ import { ReminderService } from '../../core/services/reminder.service';
           <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.setup') }}</div>
           <div class="space-y-2">
             <button (click)="openDevices()"
-                    class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+                    class="w-full bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
               <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
                 <app-icon name="device" class="w-4 h-4 text-gw-green-dark" />
               </div>
@@ -393,7 +393,7 @@ import { ReminderService } from '../../core/services/reminder.service';
               <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
             </button>
             <button (click)="openSensorSetup()"
-                    class="w-full bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+                    class="w-full bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
               <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
                 <app-icon name="wifi" class="w-4 h-4 text-gw-green-dark" />
               </div>
@@ -410,7 +410,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       <!-- Debug info (temporary) -->
       <div class="mt-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.debug') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-white shadow-gw-sm rounded-xl overflow-hidden">
           <div class="flex items-center gap-3 p-4" [class.border-b]="showDebug" [class.border-gray-100]="showDebug">
             <div class="text-[14px] font-medium text-gray-800 flex-1">{{ t('settings.debug') }}</div>
             <button (click)="toggleDebug()"
@@ -447,7 +447,7 @@ import { ReminderService } from '../../core/services/reminder.service';
       @if (!tier.isDemo()) {
         <div class="mt-6">
           <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.privacy') }}</div>
-          <div class="bg-white border-[0.5px] border-gw-border rounded-2xl p-4 flex items-start gap-3">
+          <div class="bg-white shadow-gw-sm rounded-2xl p-4 flex items-start gap-3">
             <div class="flex-1">
               <div class="text-[13px] font-medium text-gray-800">{{ t('settings.exportData') }}</div>
               <p class="text-[12px] text-gray-500 mt-0.5 leading-relaxed">{{ t('settings.exportDataDescription') }}</p>
@@ -491,14 +491,14 @@ import { ReminderService } from '../../core/services/reminder.service';
             <input type="password"
                    [(ngModel)]="deletePassword"
                    autocomplete="current-password"
-                   class="w-full px-3 py-2 rounded-lg border border-gray-200 text-[13px] outline-none focus:border-gw-red focus:ring-1 focus:ring-red-100 transition-colors mb-1" />
+                   class="w-full px-3 py-2 rounded-lg shadow-gw-sm text-[13px] outline-none focus:border-gw-red focus:ring-1 focus:ring-red-100 transition-colors mb-1" />
             @if (deleteError()) {
               <p class="text-[12px] text-gw-red mb-2">{{ deleteError() }}</p>
             }
             <div class="flex gap-2 justify-end mt-4">
               <button type="button" (click)="cancelDeleteAccount()"
                       [disabled]="deleting()"
-                      class="text-[13px] font-medium text-gray-600 border-[0.5px] border-gray-200 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-40">
+                      class="text-[13px] font-medium text-gray-600 shadow-gw-sm px-4 py-2 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-40">
                 {{ t('settings.cancel') }}
               </button>
               <button type="button" (click)="confirmDeleteAccount()"
@@ -519,7 +519,7 @@ import { ReminderService } from '../../core/services/reminder.service';
             <div class="flex gap-2 justify-end">
               <button type="button" (click)="cancelDisablePush()"
                       [disabled]="disabling()"
-                      class="text-[13px] font-medium text-gray-600 border-[0.5px] border-gray-200 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-40">
+                      class="text-[13px] font-medium text-gray-600 shadow-gw-sm px-4 py-2 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-40">
                 {{ t('settings.cancel') }}
               </button>
               <button type="button" (click)="confirmDisablePush()"

@@ -13,7 +13,7 @@ type Rec = HarvestRecommendation;
     @if (plant()) {
       <div class="fixed inset-0 z-[70] bg-black/40 flex items-end sm:items-center justify-center"
            (click)="cancel()" *transloco="let t">
-        <div class="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl border-[0.5px] border-gray-200 max-h-[90vh] overflow-y-auto"
+        <div class="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl shadow-gw-sm max-h-[90vh] overflow-y-auto"
              (click)="$event.stopPropagation()">
           <div class="flex justify-center pt-3 pb-1 sm:hidden">
             <div class="w-10 h-1 bg-gray-200 rounded-full"></div>
@@ -81,7 +81,7 @@ type Rec = HarvestRecommendation;
                 <textarea [ngModel]="notes()" (ngModelChange)="notes.set($event)"
                           rows="3"
                           [placeholder]="t('harvest.notesPlaceholder')"
-                          class="w-full border-[0.5px] border-gray-200 rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors resize-none"></textarea>
+                          class="w-full shadow-gw-sm rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors resize-none"></textarea>
               </div>
 
               <div class="flex gap-2 pt-1 pb-4">
@@ -92,7 +92,7 @@ type Rec = HarvestRecommendation;
                 </button>
                 <button type="button" (click)="shareSummary()"
                         [disabled]="!canSubmit()"
-                        class="px-3 bg-white border-[0.5px] border-gray-200 text-gray-600 text-[13px] py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        class="px-3 bg-white shadow-gw-sm text-gray-600 text-[13px] py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         [title]="t('share.share')">
                   📤
                 </button>

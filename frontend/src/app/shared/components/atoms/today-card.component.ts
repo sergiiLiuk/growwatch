@@ -16,7 +16,7 @@ interface DueRow {
   selector: 'app-today-card',
   imports: [RouterLink, TranslocoDirective],
   template: `
-    <div class="bg-white border-[0.5px] border-gray-200 rounded-2xl p-4" *transloco="let t">
+    <div class="bg-white shadow-gw-sm rounded-2xl p-4" *transloco="let t">
       <div class="flex items-center justify-between mb-3">
         <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{{ t('home.todayTitle') }}</div>
         @if (visibleRows().length > 0) {

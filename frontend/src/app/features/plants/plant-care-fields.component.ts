@@ -10,7 +10,7 @@ const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_
   imports: [FormsModule, TranslocoDirective],
   template: `
     <div class="flex flex-col gap-4" *transloco="let t">
-      <details class="border-[0.5px] border-gray-200 rounded-xl">
+      <details class="shadow-gw-sm rounded-xl">
         <summary class="flex items-center justify-between cursor-pointer px-3.5 py-2.5 text-[12px] font-medium text-gray-700 select-none">
           <span>💧 {{ t('plantCare.waterTitle') }}</span>
           <span class="text-[11px] text-gray-400">{{ t('plantCare.optional') }}</span>
@@ -51,13 +51,13 @@ const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_
               <input type="text" [ngModel]="care().waterFrequencyOther ?? ''"
                      (ngModelChange)="patch({ waterFrequencyOther: $event })"
                      [placeholder]="t('plantCare.freqOtherPlaceholder')"
-                     class="mt-2 w-full border-[0.5px] border-gray-200 rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors" />
+                     class="mt-2 w-full shadow-gw-sm rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors" />
             }
           </div>
         </div>
       </details>
 
-      <details class="border-[0.5px] border-gray-200 rounded-xl">
+      <details class="shadow-gw-sm rounded-xl">
         <summary class="flex items-center justify-between cursor-pointer px-3.5 py-2.5 text-[12px] font-medium text-gray-700 select-none">
           <span>🌿 {{ t('plantCare.fertilizerTitle') }}</span>
           <span class="text-[11px] text-gray-400">{{ t('plantCare.optional') }}</span>
@@ -84,14 +84,14 @@ const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_
             <input type="text" [ngModel]="care().fertilizerType ?? ''"
                    (ngModelChange)="patch({ fertilizerType: $event })"
                    [placeholder]="t('plantCare.fertilizerTypePlaceholder')"
-                   class="w-full border-[0.5px] border-gray-200 rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors" />
+                   class="w-full shadow-gw-sm rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors" />
           </div>
           <div>
             <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plantCare.fertilizerFrequency') }}</label>
             <input type="text" [ngModel]="care().fertilizerFrequency ?? ''"
                    (ngModelChange)="patch({ fertilizerFrequency: $event })"
                    [placeholder]="t('plantCare.fertilizerFreqPlaceholder')"
-                   class="w-full border-[0.5px] border-gray-200 rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors" />
+                   class="w-full shadow-gw-sm rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors" />
           </div>
         </div>
       </details>

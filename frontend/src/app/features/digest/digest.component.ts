@@ -32,7 +32,7 @@ interface DigestItem {
       @if (loading()) {
         <div class="flex flex-col gap-3">
           @for (i of [1,2,3,4]; track i) {
-            <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200 animate-pulse">
+            <div class="bg-white rounded-xl p-4 shadow-gw-sm animate-pulse">
               <div class="flex gap-3">
                 <div class="w-9 h-9 rounded-full bg-gray-100 shrink-0"></div>
                 <div class="flex-1">
@@ -65,7 +65,7 @@ interface DigestItem {
         <!-- Digest items -->
         <div class="flex flex-col gap-3">
           @for (item of digestItems(); track item.label) {
-            <div class="bg-white rounded-xl p-4 border-[0.5px] border-gray-200 flex gap-3">
+            <div class="bg-white rounded-xl p-4 shadow-gw-sm flex gap-3">
               <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-lg"
                    [class]="item.status === 'ok' ? 'bg-gw-green-light' : 'bg-gw-amber-light'">
                 {{ item.icon }}

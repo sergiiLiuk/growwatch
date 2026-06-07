@@ -76,7 +76,7 @@ interface OptimalLine {
       <!-- Live reading -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('insights.liveReading') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4">
           @if (liveHumidity() != null) {
             <div class="flex items-start justify-between mb-3">
               <div>
@@ -104,7 +104,7 @@ interface OptimalLine {
       <!-- Today's range -->
       <div class="mb-5">
         <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('insights.today') }}</div>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4">
           @if (todayStats(); as tt) {
             <div class="flex items-baseline gap-1.5 mb-1">
               <span class="text-[28px] font-semibold text-gray-900 leading-none tabular-nums">
@@ -142,7 +142,7 @@ interface OptimalLine {
           </div>
         </div>
 
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4">
           @if (loading()) {
             <div class="flex items-end gap-2" style="height: 96px">
               @for (h of skeletonHeights; track $index) {

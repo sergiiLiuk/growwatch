@@ -34,7 +34,7 @@ import { AuthService } from '../../core/services/auth.service';
               [(ngModel)]="email"
               name="email"
               [placeholder]="t('auth.emailPlaceholder')"
-              class="w-full px-4 py-3 rounded-xl border border-gw-border bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gw-green/30 focus:border-gw-green transition-colors"
+              class="w-full px-4 py-3 rounded-xl shadow-gw-sm bg-white text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gw-green/30 focus:border-gw-green transition-colors"
             />
             <p class="text-[11px] text-gray-400 mt-1.5">{{ t('auth.forgotHint') }}</p>
           </div>

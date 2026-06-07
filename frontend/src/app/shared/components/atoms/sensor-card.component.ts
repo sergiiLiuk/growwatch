@@ -22,7 +22,7 @@ const TONE_TEXT: Record<Tone, string> = {
   selector: 'app-sensor-card',
   imports: [RouterLink, SparklineComponent],
   template: `
-    <div class="rounded-2xl p-4 border border-gw-border bg-white transition-all h-full flex flex-col gw-card-shadow"
+    <div class="rounded-2xl p-4 shadow-gw-sm bg-white transition-all h-full flex flex-col gw-card-shadow"
          [class.cursor-pointer]="!!link()"
          [class.hover:border-gray-200]="!!link()"
          [routerLink]="link() ?? null">

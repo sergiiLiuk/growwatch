@@ -39,11 +39,11 @@ interface UserFormState {
       }
 
       @if (loading()) {
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-6 text-center text-[13px] text-gray-400">
+        <div class="bg-white shadow-gw-sm rounded-xl p-6 text-center text-[13px] text-gray-400">
           {{ t('admin.loadingUsers') }}
         </div>
       } @else if (users().length === 0) {
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-6 text-center">
+        <div class="bg-white shadow-gw-sm rounded-xl p-6 text-center">
           <div class="text-[14px] text-gray-600">{{ t('admin.noUsersYet') }}</div>
         </div>
       } @else {
@@ -52,7 +52,7 @@ interface UserFormState {
           {{ users().length }} {{ users().length === 1 ? t('admin.user') : t('admin.users') }}
         </div>
 
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-white shadow-gw-sm rounded-xl overflow-hidden">
           <!-- Header -->
           <div class="hidden sm:grid grid-cols-[1.5fr_0.6fr_0.8fr_0.5fr_0.5fr_0.9fr_0.7fr] gap-3 p-3 border-b border-gray-100 text-[11px] font-medium uppercase tracking-wide text-gray-400">
             <div>{{ t('admin.emailHeader') }}</div>
@@ -89,7 +89,7 @@ interface UserFormState {
                 } @else {
                   <select [ngModel]="u.subscriptionTier"
                           (ngModelChange)="onTierChange(u.id, $event)"
-                          class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors">
+                          class="text-[12px] shadow-gw-sm rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors">
                     <option value="free">{{ t('upgrade.free') }}</option>
                     <option value="plus">{{ t('upgrade.plus') }}</option>
                     <option value="pro">{{ t('upgrade.pro') }}</option>
@@ -139,7 +139,7 @@ interface UserFormState {
             <label class="block">
               <span class="text-[11px] text-gray-400">{{ t('admin.emailHeader') }}</span>
               <input type="email" [ngModel]="form().email" (ngModelChange)="updateForm({ email: $event })"
-                     class="w-full mt-1 text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors" />
+                     class="w-full mt-1 text-[14px] text-gray-800 shadow-gw-sm rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors" />
             </label>
 
             @if (!form().id) {
@@ -147,7 +147,7 @@ interface UserFormState {
                 <span class="text-[11px] text-gray-400">{{ t('admin.password') }}</span>
                 <input type="password" [ngModel]="form().password" (ngModelChange)="updateForm({ password: $event })"
                        autocomplete="new-password"
-                       class="w-full mt-1 text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors" />
+                       class="w-full mt-1 text-[14px] text-gray-800 shadow-gw-sm rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors" />
                 <span class="text-[10px] text-gray-400 mt-0.5 block">{{ t('admin.passwordHint') }}</span>
               </label>
             }
@@ -155,7 +155,7 @@ interface UserFormState {
             <label class="block">
               <span class="text-[11px] text-gray-400">{{ t('admin.roleHeader') }}</span>
               <select [ngModel]="form().role" (ngModelChange)="onRoleChange($event)"
-                      class="w-full mt-1 text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors">
+                      class="w-full mt-1 text-[14px] text-gray-800 shadow-gw-sm rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors">
                 <option value="user">user</option>
                 <option value="demo">demo</option>
                 <option value="superuser">superuser</option>
@@ -169,7 +169,7 @@ interface UserFormState {
               <span class="text-[11px] text-gray-400">{{ t('admin.tier') }}</span>
               <select [ngModel]="form().tier" (ngModelChange)="updateForm({ tier: $event })"
                       [disabled]="form().role !== 'user'"
-                      class="w-full mt-1 text-[14px] text-gray-800 border-[0.5px] border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                      class="w-full mt-1 text-[14px] text-gray-800 shadow-gw-sm rounded-lg px-3 py-2 outline-none focus:border-gw-green transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                 <option value="free">{{ t('upgrade.free') }}</option>
                 <option value="plus">{{ t('upgrade.plus') }}</option>
                 <option value="pro">{{ t('upgrade.pro') }}</option>

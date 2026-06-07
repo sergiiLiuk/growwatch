@@ -47,7 +47,7 @@ interface ActivityEvent {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
 
         <!-- Weather card -->
-        <div class="bg-gw-surface border border-gw-border rounded-2xl p-4 flex items-center gap-3">
+        <div class="bg-gw-surface shadow-gw-sm rounded-2xl p-4 flex items-center gap-3">
           @if (weather()) {
             <span class="text-3xl shrink-0 leading-none">{{ weather()!.conditionIcon }}</span>
             <div class="flex-1 min-w-0">
@@ -119,7 +119,7 @@ interface ActivityEvent {
 
       <!-- Onboarding -->
       @if (!plantsLoading() && plants().length === 0) {
-        <div class="bg-gw-surface border border-gw-border rounded-2xl p-5 mb-5">
+        <div class="bg-gw-surface shadow-gw-sm rounded-2xl p-5 mb-5">
           <div class="flex items-start gap-4">
             <div class="w-10 h-10 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
               <app-icon name="plants" class="w-5 h-5 text-gw-green-dark" />
@@ -169,7 +169,7 @@ interface ActivityEvent {
           <app-today-card />
         </div>
       } @else if (!tier.canSeeAi()) {
-        <div class="mb-5 bg-white border-[0.5px] border-gray-200 rounded-2xl p-4">
+        <div class="mb-5 bg-white shadow-gw-sm rounded-2xl p-4">
           <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">{{ t('home.seasonalTipTitle') }}</div>
           <p class="text-[13px] text-gray-700 leading-relaxed">{{ seasonalTip() }}</p>
         </div>
@@ -230,7 +230,7 @@ interface ActivityEvent {
         <!-- Recent activity -->
         <div>
           <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ t('home.recentActivity') }}</p>
-          <div class="bg-gw-surface border border-gw-border rounded-2xl divide-y divide-gw-border">
+          <div class="bg-gw-surface shadow-gw-sm rounded-2xl divide-y divide-gw-border">
             @if (activityFeed().length === 0) {
               <p class="text-[12px] text-gray-400 p-4">{{ t('home.noEventsLast24h') }}</p>
             }
@@ -250,7 +250,7 @@ interface ActivityEvent {
           <div class="flex gap-3 overflow-x-auto lg:overflow-x-visible lg:flex-wrap pb-1 -mx-1 px-1" style="scrollbar-width:none">
             @for (plant of plants(); track plant.id) {
               <a [routerLink]="['/plants', plant.id]"
-                 class="relative flex-shrink-0 w-20 bg-gw-surface border border-gw-border rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
+                 class="relative flex-shrink-0 w-20 bg-gw-surface shadow-gw-sm rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-gray-300 transition-colors">
                 <span class="absolute top-1.5 right-1.5 text-[9px] font-semibold text-gw-green-dark bg-gw-green-light/70 px-1.5 py-0.5 rounded-full leading-none">
                   {{ t('season.weekShort', { n: plantSeason(plant).week }) }}
                 </span>

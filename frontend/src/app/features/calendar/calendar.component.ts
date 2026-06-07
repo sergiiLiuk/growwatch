@@ -47,12 +47,12 @@ interface DayCell {
         </div>
         <div class="flex items-center gap-2">
           <button (click)="prevWeek()"
-                  class="w-10 h-10 flex items-center justify-center bg-white border-[0.5px] border-gray-200 rounded-xl text-gray-500 hover:border-gray-300 transition-colors"
+                  class="w-10 h-10 flex items-center justify-center bg-white shadow-gw-sm rounded-xl text-gray-500 hover:border-gray-300 transition-colors"
                   [attr.aria-label]="t('calendar.prevWeek')">
             <span class="text-[14px]">‹</span>
           </button>
           <button (click)="nextWeek()"
-                  class="w-10 h-10 flex items-center justify-center bg-white border-[0.5px] border-gray-200 rounded-xl text-gray-500 hover:border-gray-300 transition-colors"
+                  class="w-10 h-10 flex items-center justify-center bg-white shadow-gw-sm rounded-xl text-gray-500 hover:border-gray-300 transition-colors"
                   [attr.aria-label]="t('calendar.nextWeek')">
             <span class="text-[14px]">›</span>
           </button>
@@ -121,7 +121,7 @@ interface DayCell {
 
       <!-- Selected day events -->
       @if (!loading()) {
-        <div class="mb-3 bg-white border-[0.5px] border-gray-200 rounded-2xl overflow-hidden">
+        <div class="mb-3 bg-white shadow-gw-sm rounded-2xl overflow-hidden">
           <div class="flex items-center justify-between px-4 py-2.5 bg-gray-50">
             <span class="text-[12px] font-semibold text-gw-green-dark">{{ selectedDayLabel() }}</span>
             <span class="text-[11px] text-gray-500">{{ selectedDayCountLabel() }}</span>
@@ -163,7 +163,7 @@ interface DayCell {
       @if (!loading()) {
         @for (cell of otherDays(); track cell.iso) {
           <button (click)="selectDay(cell.date)"
-                  class="w-full mb-2 flex items-center justify-between px-4 py-2.5 bg-white border-[0.5px] border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
+                  class="w-full mb-2 flex items-center justify-between px-4 py-2.5 bg-white shadow-gw-sm rounded-xl hover:border-gray-300 transition-colors">
             <span class="text-[12px] font-medium"
                   [class.text-gw-red]="cell.isWeekend"
                   [class.text-gray-700]="!cell.isWeekend">
@@ -190,7 +190,7 @@ interface DayCell {
           @if (upcomingEvents().length === 0) {
             <app-empty-state emoji="📅" [title]="t('calendar.noUpcomingTitle')" [subtitle]="t('calendar.noUpcomingBody')" />
           } @else {
-            <div class="bg-white border-[0.5px] border-gray-200 rounded-2xl divide-y divide-gray-100">
+            <div class="bg-white shadow-gw-sm rounded-2xl divide-y divide-gray-100">
               @for (e of upcomingEvents(); track e.id) {
                 <a [routerLink]="['/plants', e.plantId]"
                    class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">

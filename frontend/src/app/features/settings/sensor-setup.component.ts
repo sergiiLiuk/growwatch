@@ -48,7 +48,7 @@ const HINT_ICONS: Record<string, string> = { hand: '☝️', wifi: '📶', globe
       <!-- Steps -->
       <div class="flex flex-col gap-3 mb-6">
         @for (step of steps; track step.n) {
-          <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+          <div class="bg-white shadow-gw-sm rounded-xl p-4">
             <div class="flex items-start gap-3 mb-3">
               <div class="w-7 h-7 rounded-full bg-gw-green-light flex items-center justify-center shrink-0 mt-0.5">
                 <span class="text-[12px] font-semibold text-gw-green-dark">{{ step.n }}</span>
@@ -84,7 +84,7 @@ const HINT_ICONS: Record<string, string> = { hand: '☝️', wifi: '📶', globe
       <!-- Changing WiFi later -->
       <div>
         <p class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('sensorSetup.changingWifiLater') }}</p>
-        <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-4 flex items-start gap-3">
+        <div class="bg-white shadow-gw-sm rounded-xl p-4 flex items-start gap-3">
           <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0 mt-0.5">
             <app-icon name="refresh" class="w-4 h-4 text-gray-500" />
           </div>

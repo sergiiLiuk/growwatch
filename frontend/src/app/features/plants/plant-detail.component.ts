@@ -37,7 +37,7 @@ import dayjs from 'dayjs';
               <app-icon name="dots-vertical" class="w-[14px] h-[14px]" />
             </button>
             @if (menuOpen()) {
-              <div class="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl border-[0.5px] border-gray-200 w-44 py-1"
+              <div class="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-gw-sm w-44 py-1"
                    style="box-shadow: 0 2px 12px rgba(0,0,0,0.08)">
                 <button (click)="startEdit($event)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
@@ -157,7 +157,7 @@ import dayjs from 'dayjs';
             <div class="mb-4">
               <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.recommendations') }}</div>
 
-              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-3 flex flex-col gap-3">
+              <div class="bg-white shadow-gw-sm rounded-xl p-3 flex flex-col gap-3">
                 <div class="border-l-2 border-gw-green pl-3 py-1 bg-gw-green-light/40 rounded-r-md">
                   <div class="flex items-center justify-between">
                     <div class="text-[13px] font-medium text-gw-green-dark flex items-center gap-1.5">
@@ -207,13 +207,13 @@ import dayjs from 'dayjs';
               }
             </div>
             @if (hasCarePlan()) {
-              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
+              <div class="bg-white shadow-gw-sm rounded-xl divide-y divide-gray-100">
                 @if (waterChips().length) {
                   <div class="flex items-center gap-3 p-3">
                     <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-base shrink-0">💧</div>
                     <div class="flex-1 min-w-0 flex flex-wrap gap-1.5">
                       @for (chip of waterChips(); track chip) {
-                        <span class="text-[11px] text-gray-600 bg-gray-50 border-[0.5px] border-gray-200 rounded-md px-2 py-0.5">{{ chip }}</span>
+                        <span class="text-[11px] text-gray-600 bg-gray-50 shadow-gw-sm rounded-md px-2 py-0.5">{{ chip }}</span>
                       }
                     </div>
                   </div>
@@ -223,7 +223,7 @@ import dayjs from 'dayjs';
                     <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-base shrink-0">🌿</div>
                     <div class="flex-1 min-w-0 flex flex-wrap gap-1.5">
                       @for (chip of fertilizerChips(); track chip) {
-                        <span class="text-[11px] text-gray-600 bg-gray-50 border-[0.5px] border-gray-200 rounded-md px-2 py-0.5">{{ chip }}</span>
+                        <span class="text-[11px] text-gray-600 bg-gray-50 shadow-gw-sm rounded-md px-2 py-0.5">{{ chip }}</span>
                       }
                     </div>
                   </div>
@@ -242,7 +242,7 @@ import dayjs from 'dayjs';
           @if (push.enabled()) {
           <div class="mb-4">
             <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('reminders.title') }}</div>
-            <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
+            <div class="bg-white shadow-gw-sm rounded-xl divide-y divide-gray-100">
 
               @for (row of reminderRows(); track row.type) {
                 <div class="p-3 flex flex-col gap-2"
@@ -269,7 +269,7 @@ import dayjs from 'dayjs';
                       <span class="text-[11px] text-gray-400">{{ t('reminders.every') }}</span>
                       <select [ngModel]="row.reminder!.intervalDays"
                               (ngModelChange)="changeReminderInterval(row.type, $event)"
-                              class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors">
+                              class="text-[12px] shadow-gw-sm rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors">
                         @for (opt of intervalOptions; track opt.days) {
                           <option [ngValue]="opt.days">{{ t(opt.labelKey, { n: opt.n }) }}</option>
                         }
@@ -278,14 +278,14 @@ import dayjs from 'dayjs';
                       <input type="time"
                              [ngModel]="row.reminder!.notifyTime ?? ''"
                              (ngModelChange)="changeReminderTime(row.type, $event)"
-                             class="text-[12px] border-[0.5px] border-gray-200 rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors" />
+                             class="text-[12px] shadow-gw-sm rounded-md px-2 py-1 outline-none focus:border-gw-green transition-colors" />
                       @if (isReminderDue(row.reminder)) {
                         <button (click)="onActionClick(row.type)"
                                 class="ml-auto text-[11px] font-medium bg-gw-green text-white px-3 py-1 rounded-md hover:bg-gw-green-dark transition-colors">
                           {{ t('reminders.markDone') }}
                         </button>
                         <button (click)="snoozeReminder(row.reminder!.id)"
-                                class="text-[11px] font-medium text-gray-600 border-[0.5px] border-gray-200 px-3 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                                class="text-[11px] font-medium text-gray-600 shadow-gw-sm px-3 py-1 rounded-md hover:bg-gray-50 transition-colors">
                           {{ t('reminders.snooze') }}
                         </button>
                       }
@@ -306,7 +306,7 @@ import dayjs from 'dayjs';
           <!-- Log action -->
           <div class="mb-4">
             <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.logAction') }}</div>
-            <div class="bg-white border-[0.5px] border-gray-200 rounded-xl p-3">
+            <div class="bg-white shadow-gw-sm rounded-xl p-3">
               <div class="grid grid-cols-3 gap-2">
                 @for (a of actionButtons(); track a.type) {
                   <button (click)="onActionClick(a.type)"
@@ -324,7 +324,7 @@ import dayjs from 'dayjs';
           <!-- History — excludes notes; they get their own diary below -->
           <div class="mb-4">
             <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.historyTitle') }}</div>
-            <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
+            <div class="bg-white shadow-gw-sm rounded-xl divide-y divide-gray-100">
               @if (recentNonNoteActions().length === 0) {
                 <p class="text-[12px] text-gray-400 p-4 text-center">{{ t('plantDetail.never') }}</p>
               }
@@ -350,7 +350,7 @@ import dayjs from 'dayjs';
           @if (recentNotes().length > 0) {
             <div class="mb-4">
               <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.diaryTitle') }}</div>
-              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
+              <div class="bg-white shadow-gw-sm rounded-xl divide-y divide-gray-100">
                 @for (n of recentNotes(); track n.id) {
                   <div class="flex gap-3 p-3">
                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0 bg-amber-50">📝</div>
@@ -381,7 +381,7 @@ import dayjs from 'dayjs';
         } @else {
           <!-- Archived plant: harvest summary + unarchive -->
           @if (p.harvestSummary; as h) {
-            <div class="mt-4 bg-white border-[0.5px] border-gray-200 rounded-xl p-4">
+            <div class="mt-4 bg-white shadow-gw-sm rounded-xl p-4">
               <div class="text-[11px] text-gray-400 mb-3 font-medium uppercase tracking-wide">{{ t('harvest.summaryTitle') }}</div>
               <div class="grid grid-cols-2 gap-3 mb-3">
                 <div>
@@ -414,7 +414,7 @@ import dayjs from 'dayjs';
           @if (recentActions().length > 0) {
             <div class="mt-4">
               <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('plantDetail.historyTitle') }}</div>
-              <div class="bg-white border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100">
+              <div class="bg-white shadow-gw-sm rounded-xl divide-y divide-gray-100">
                 @for (a of recentActions(); track a.id) {
                   <div class="flex items-center gap-3 p-3">
                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0"
@@ -453,7 +453,7 @@ import dayjs from 'dayjs';
     @if (deleteOpen() && plant(); as p) {
       <div class="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center px-4"
            (click)="cancelDelete()" *transloco="let t">
-        <div class="w-full max-w-sm bg-white rounded-xl border-[0.5px] border-gray-200 p-6 text-center"
+        <div class="w-full max-w-sm bg-white rounded-xl shadow-gw-sm p-6 text-center"
              (click)="$event.stopPropagation()">
           <div class="w-14 h-14 bg-gw-red-light rounded-full flex items-center justify-center mx-auto mb-4">
             <app-icon name="trash-simple" class="w-[22px] h-[22px] text-gw-red" />
@@ -464,7 +464,7 @@ import dayjs from 'dayjs';
           </p>
           <div class="flex gap-3">
             <button (click)="cancelDelete()"
-                    class="flex-1 py-3 text-[13px] text-gray-700 bg-white border-[0.5px] border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    class="flex-1 py-3 text-[13px] text-gray-700 bg-white shadow-gw-sm rounded-xl hover:bg-gray-50 transition-colors">
               {{ t('plants.keepIt') }}
             </button>
             <button (click)="doDelete()"

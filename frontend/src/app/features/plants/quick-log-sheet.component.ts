@@ -33,7 +33,7 @@ import { PLANT_ACTIONS, PLANT_ACTION_META } from '../../core/constants/plant-act
             <div class="grid grid-cols-3 gap-2">
               @for (a of actions; track a.type) {
                 <button (click)="pickAction(a.type)"
-                        class="rounded-lg border-[0.5px] border-gray-200 hover:border-gw-green py-3 flex flex-col items-center gap-1 transition-colors">
+                        class="rounded-lg shadow-gw-sm hover:border-gw-green py-3 flex flex-col items-center gap-1 transition-colors">
                   <span class="text-xl leading-none">{{ a.emoji }}</span>
                   <span class="text-[11px] font-medium text-gray-700">{{ t(a.labelKey) }}</span>
                 </button>
@@ -62,7 +62,7 @@ import { PLANT_ACTIONS, PLANT_ACTION_META } from '../../core/constants/plant-act
                       class="text-gray-500 hover:underline">{{ t('quickLog.clear') }}</button>
             </div>
 
-            <div class="border-[0.5px] border-gray-200 rounded-xl divide-y divide-gray-100 max-h-[260px] overflow-y-auto">
+            <div class="shadow-gw-sm rounded-xl divide-y divide-gray-100 max-h-[260px] overflow-y-auto">
               @for (p of availablePlants(); track p.id) {
                 <label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
                   <input type="checkbox"
@@ -82,7 +82,7 @@ import { PLANT_ACTIONS, PLANT_ACTION_META } from '../../core/constants/plant-act
               <textarea [(ngModel)]="noteText"
                         [placeholder]="t('quickLog.notePlaceholder')"
                         rows="3"
-                        class="w-full mt-3 border-[0.5px] border-gray-200 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-gw-green transition-colors resize-none"></textarea>
+                        class="w-full mt-3 shadow-gw-sm rounded-xl px-3 py-2 text-[13px] outline-none focus:border-gw-green transition-colors resize-none"></textarea>
               <p class="text-[10px] text-gray-400 mt-1">{{ t('quickLog.noteHint') }}</p>
             }
 
