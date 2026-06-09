@@ -87,12 +87,14 @@ export const EmailVerificationToken = mongoose.model<IEmailVerificationToken>('E
 
 export type WaterAmount = 1 | 2 | 3;
 export type WateringFrequency = 'once_week' | 'twice_week' | 'once_two_weeks' | 'other';
+export type FertilizerFrequency = 'once_week' | 'once_two_weeks' | 'once_month' | 'other';
 
 export interface IPlantCare {
     waterAmount?: WaterAmount;
     waterFrequency?: WateringFrequency;
     waterFrequencyOther?: string;
-    fertilizerFrequency?: string;
+    fertilizerFrequency?: FertilizerFrequency;
+    fertilizerFrequencyOther?: string;
     fertilizerType?: string;
 }
 
@@ -135,7 +137,8 @@ const plantSchema = new Schema<IPlant>(
             waterAmount: { type: Number, min: 1, max: 3 },
             waterFrequency: { type: String, enum: ['once_week', 'twice_week', 'once_two_weeks', 'other'] },
             waterFrequencyOther: { type: String },
-            fertilizerFrequency: { type: String },
+            fertilizerFrequency: { type: String, enum: ['once_week', 'once_two_weeks', 'once_month', 'other'] },
+            fertilizerFrequencyOther: { type: String },
             fertilizerType: { type: String },
         },
         harvestSummary: {

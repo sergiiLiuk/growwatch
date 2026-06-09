@@ -287,6 +287,7 @@ function mapPlant(doc: any) {
                 waterFrequency: doc.care.waterFrequency ?? null,
                 waterFrequencyOther: doc.care.waterFrequencyOther ?? null,
                 fertilizerFrequency: doc.care.fertilizerFrequency ?? null,
+                fertilizerFrequencyOther: doc.care.fertilizerFrequencyOther ?? null,
                 fertilizerType: doc.care.fertilizerType ?? null,
             }
             : null,
@@ -307,6 +308,7 @@ interface PlantCareInput {
     waterFrequency?: string;
     waterFrequencyOther?: string;
     fertilizerFrequency?: string;
+    fertilizerFrequencyOther?: string;
     fertilizerType?: string;
 }
 

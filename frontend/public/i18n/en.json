@@ -800,7 +800,6 @@
     "fertilizerFrequency": "How often (e.g. every 2 weeks)",
     "fertilizerType": "What kind",
     "fertilizerTypePlaceholder": "e.g. compost tea, NPK 10-10-10",
-    "fertilizerFreqPlaceholder": "e.g. every 2 weeks, monthly",
     "freqOtherPlaceholder": "Describe your schedule",
     "amount": {
       "1": "A little",
@@ -811,6 +810,7 @@
       "once_week": "Once a week",
       "twice_week": "Twice a week",
       "once_two_weeks": "Every 2 weeks",
+      "once_month": "Once a month",
       "other": "Other"
     }
   },

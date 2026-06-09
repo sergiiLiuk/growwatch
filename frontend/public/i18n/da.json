@@ -800,7 +800,6 @@
     "fertilizerFrequency": "Hvor ofte (fx hver 2. uge)",
     "fertilizerType": "Hvilken slags",
     "fertilizerTypePlaceholder": "fx kompostte, NPK 10-10-10",
-    "fertilizerFreqPlaceholder": "fx hver 2. uge, månedligt",
     "freqOtherPlaceholder": "Beskriv din rytme",
     "amount": {
       "1": "Lidt",
@@ -811,6 +810,7 @@
       "once_week": "En gang om ugen",
       "twice_week": "To gange om ugen",
       "once_two_weeks": "Hver 2. uge",
+      "once_month": "En gang om måneden",
       "other": "Andet"
     }
   },

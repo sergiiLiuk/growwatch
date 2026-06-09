@@ -812,7 +812,8 @@ export class PlantDetailComponent implements OnInit {
     this.localeKey();
     const out: string[] = [];
     if (c.fertilizerType?.trim()) out.push(c.fertilizerType.trim());
-    if (c.fertilizerFrequency?.trim()) out.push(c.fertilizerFrequency.trim());
+    if (c.fertilizerFrequency === 'other' && c.fertilizerFrequencyOther?.trim()) out.push(c.fertilizerFrequencyOther.trim());
+    else if (c.fertilizerFrequency) out.push(this.transloco.translate(`plantCare.freq.${c.fertilizerFrequency}`));
     return out;
   });
 

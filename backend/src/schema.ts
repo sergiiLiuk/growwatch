@@ -76,6 +76,7 @@ export const typeDefs = gql`
     waterFrequency: String
     waterFrequencyOther: String
     fertilizerFrequency: String
+    fertilizerFrequencyOther: String
     fertilizerType: String
   }
 
@@ -84,6 +85,7 @@ export const typeDefs = gql`
     waterFrequency: String
     waterFrequencyOther: String
     fertilizerFrequency: String
+    fertilizerFrequencyOther: String
     fertilizerType: String
   }
 

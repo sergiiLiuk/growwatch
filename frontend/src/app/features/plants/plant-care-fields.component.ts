@@ -1,9 +1,10 @@
 import { Component, model } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { PlantCare, WaterAmount, WateringFrequency } from '../../core/services/plant.service';
+import { PlantCare, WaterAmount, WateringFrequency, FertilizerFrequency } from '../../core/services/plant.service';
 
 const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_weeks', 'other'];
+const FERT_FREQ_OPTIONS: FertilizerFrequency[] = ['once_week', 'once_two_weeks', 'once_month', 'other'];
 
 @Component({
   selector: 'app-plant-care-fields',
@@ -72,10 +73,25 @@ const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_
           </div>
           <div>
             <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plantCare.fertilizerFrequency') }}</label>
-            <input type="text" [ngModel]="care().fertilizerFrequency ?? ''"
-                   (ngModelChange)="patch({ fertilizerFrequency: $event })"
-                   [placeholder]="t('plantCare.fertilizerFreqPlaceholder')"
-                   class="w-full shadow-gw-sm rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors" />
+            <div class="grid grid-cols-2 gap-2">
+              @for (f of fertFreqOptions; track f) {
+                <button type="button" (click)="setFertFreq(f)"
+                        class="py-2 rounded-lg border-[0.5px] text-[12px] transition-colors"
+                        [class.border-gw-green]="care().fertilizerFrequency === f"
+                        [class.bg-gw-green-light]="care().fertilizerFrequency === f"
+                        [class.text-gw-green-dark]="care().fertilizerFrequency === f"
+                        [class.border-gray-200]="care().fertilizerFrequency !== f"
+                        [class.text-gray-600]="care().fertilizerFrequency !== f">
+                  {{ t('plantCare.freq.' + f) }}
+                </button>
+              }
+            </div>
+            @if (care().fertilizerFrequency === 'other') {
+              <input type="text" [ngModel]="care().fertilizerFrequencyOther ?? ''"
+                     (ngModelChange)="patch({ fertilizerFrequencyOther: $event })"
+                     [placeholder]="t('plantCare.freqOtherPlaceholder')"
+                     class="mt-2 w-full shadow-gw-sm rounded-lg px-3 py-2 text-[12px] outline-none focus:border-gw-green transition-colors" />
+            }
           </div>
         </div>
       </details>
@@ -85,6 +101,7 @@ const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_
 export class PlantCareFieldsComponent {
   care = model<PlantCare>(emptyCare());
   freqOptions = FREQ_OPTIONS;
+  fertFreqOptions = FERT_FREQ_OPTIONS;
 
   patch(p: Partial<PlantCare>) {
     this.care.set({ ...this.care(), ...p });
@@ -98,6 +115,10 @@ export class PlantCareFieldsComponent {
   setWaterFreq(f: WateringFrequency) {
     this.patch({ waterFrequency: this.care().waterFrequency === f ? null : f });
   }
+
+  setFertFreq(f: FertilizerFrequency) {
+    this.patch({ fertilizerFrequency: this.care().fertilizerFrequency === f ? null : f });
+  }
 }
 
 export function emptyCare(): PlantCare {
@@ -106,6 +127,7 @@ export function emptyCare(): PlantCare {
     waterFrequency: null,
     waterFrequencyOther: null,
     fertilizerFrequency: null,
+    fertilizerFrequencyOther: null,
     fertilizerType: null,
   };
 }
