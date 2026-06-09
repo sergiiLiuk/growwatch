@@ -1,13 +1,12 @@
 import { Component, input, output, effect, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { PlantService, Plant, PLANT_TYPE_OPTIONS, PlantCare } from '../../core/services/plant.service';
-import { PlantCareFieldsComponent, emptyCare } from './plant-care-fields.component';
+import { PlantService, Plant, PLANT_TYPE_OPTIONS } from '../../core/services/plant.service';
 import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plant-edit-modal',
-  imports: [FormsModule, TranslocoDirective, PlantCareFieldsComponent],
+  imports: [FormsModule, TranslocoDirective],
   template: `
     @if (plant()) {
       <div class="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center"
@@ -57,7 +56,6 @@ import dayjs from 'dayjs';
                           class="w-10 h-10 rounded-xl shadow-gw-sm text-gray-600 text-lg hover:bg-gray-50 transition-colors flex items-center justify-center">+</button>
                 </div>
               </div>
-              <app-plant-care-fields [(care)]="care" />
               <div class="flex gap-2 pt-1 pb-4">
                 <button (click)="save()"
                         [disabled]="!canSave() || saving()"
@@ -87,7 +85,6 @@ export class PlantEditModalComponent {
   date = signal('');
   count = signal(1);
   dailyLightHours = signal(12);
-  care = signal<PlantCare>(emptyCare());
   saving = signal(false);
 
   typeGroups = Array.from(
@@ -108,7 +105,6 @@ export class PlantEditModalComponent {
         this.date.set(dayjs(p.plantedDate).format('YYYY-MM-DD'));
         this.count.set(p.count);
         this.dailyLightHours.set(p.dailyLightHours ?? 12);
-        this.care.set(p.care ?? emptyCare());
         this.saving.set(false);
       }
     });
@@ -118,7 +114,7 @@ export class PlantEditModalComponent {
     const p = this.plant();
     if (!p || !this.canSave()) return;
     this.saving.set(true);
-    this.plantService.update(p.id, this.name(), p.type, dayjs(this.date()).toDate(), this.count(), this.dailyLightHours(), this.care())
+    this.plantService.update(p.id, this.name(), p.type, dayjs(this.date()).toDate(), this.count(), this.dailyLightHours(), p.care ?? null)
       .subscribe({
         next: () => { this.saving.set(false); this.saved.emit(); },
         error: err => { console.error('Failed to update plant:', err); this.saving.set(false); },
