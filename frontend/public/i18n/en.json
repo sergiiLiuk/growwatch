@@ -788,6 +788,8 @@
     }
   },
   "plantCare": {
+    "modalTitle": "Care plan",
+    "modalSubtitle": "For {{name}}",
     "sectionTitle": "Care plan",
     "addLink": "+ Add care plan",
     "waterTitle": "Watering",

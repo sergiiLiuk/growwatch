@@ -788,6 +788,8 @@
     }
   },
   "plantCare": {
+    "modalTitle": "Plejeplan",
+    "modalSubtitle": "For {{name}}",
     "sectionTitle": "Plejeplan",
     "addLink": "+ Tilføj plejeplan",
     "waterTitle": "Vanding",
