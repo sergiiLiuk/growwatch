@@ -563,6 +563,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   /** User's display name from settings (returns empty string when not set). */
   greetingName = computed(() => (this.userSettings.name() ?? '').trim());
 
+  /** Route the weather card links to — `/forecast` for Plus+, null otherwise. */
+  weatherTarget = computed(() => this.tier.canSeeWeatherWarnings() ? '/forecast' : null);
+
   /** Wall-clock tick (every 30 s) used by greeting + weather-ago labels. */
   private now = signal(Date.now());
   private weatherFetchedAt = signal<number | null>(null);
