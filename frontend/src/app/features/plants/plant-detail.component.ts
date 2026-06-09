@@ -7,6 +7,7 @@ import { PushService } from '../../core/services/push.service';
 import { TierService } from '../../core/services/tier.service';
 import { FormsModule } from '@angular/forms';
 import { PlantEditModalComponent } from './plant-edit-modal.component';
+import { PlantCareModalComponent } from './plant-care-modal.component';
 import { PlantNoteModalComponent } from './plant-note-modal.component';
 import { HarvestSummaryModalComponent } from './harvest-summary-modal.component';
 import { PLANT_TYPE_STYLE } from '../../core/constants/plant-styles';
@@ -20,7 +21,7 @@ import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-plant-detail',
-  imports: [FormsModule, RouterLink, PlantEditModalComponent, PlantNoteModalComponent, HarvestSummaryModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
+  imports: [FormsModule, RouterLink, PlantEditModalComponent, PlantCareModalComponent, PlantNoteModalComponent, HarvestSummaryModalComponent, IconComponent, StatusBadgeComponent, TranslocoDirective],
   template: `
     <div class="max-w-lg mx-auto px-4 pt-5 pb-6" *transloco="let t">
 
@@ -200,7 +201,7 @@ import dayjs from 'dayjs';
             <div class="flex items-center justify-between mb-2">
               <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{{ t('plantCare.sectionTitle') }}</div>
               @if (hasCarePlan()) {
-                <button (click)="startEdit($event)"
+                <button (click)="openCareEdit($event)"
                         class="text-[11px] text-gray-400 hover:text-gw-green-dark transition-colors">
                   {{ t('common.edit') }}
                 </button>
@@ -230,7 +231,7 @@ import dayjs from 'dayjs';
                 }
               </div>
             } @else {
-              <button (click)="startEdit($event)"
+              <button (click)="openCareEdit($event)"
                       class="w-full bg-white border-[0.5px] border-dashed border-gray-300 rounded-xl px-3 py-2.5 text-[12px] text-gray-400 hover:border-gw-green/60 hover:text-gw-green-dark transition-colors text-left">
                 {{ t('plantCare.addLink') }}
               </button>
@@ -438,6 +439,7 @@ import dayjs from 'dayjs';
 
     <!-- Edit modal -->
     <app-plant-edit-modal [plant]="editingPlant()" (saved)="cancelEdit()" (cancelled)="cancelEdit()" />
+    <app-plant-care-modal [plant]="editingCarePlan()" (saved)="cancelCareEdit()" (cancelled)="cancelCareEdit()" />
 
     <!-- Note modal -->
     <app-plant-note-modal [open]="noteModalOpen()"
@@ -519,6 +521,7 @@ export class PlantDetailComponent implements OnInit {
 
   menuOpen = signal(false);
   editingPlant = signal<Plant | null>(null);
+  editingCarePlan = signal<Plant | null>(null);
   noteModalOpen = signal(false);
 
   plantActions = signal<PlantAction[]>([]);
@@ -627,6 +630,17 @@ export class PlantDetailComponent implements OnInit {
 
   cancelEdit() {
     this.editingPlant.set(null);
+  }
+
+  openCareEdit(e: Event) {
+    e.stopPropagation();
+    const p = this.plant();
+    if (!p) return;
+    this.editingCarePlan.set(p);
+  }
+
+  cancelCareEdit() {
+    this.editingCarePlan.set(null);
   }
 
   // ── Actions ────────────────────────────────────────────────────────────────
