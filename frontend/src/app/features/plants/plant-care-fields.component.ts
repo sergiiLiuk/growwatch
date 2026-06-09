@@ -10,7 +10,7 @@ const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_
   imports: [FormsModule, TranslocoDirective],
   template: `
     <div class="flex flex-col gap-4" *transloco="let t">
-      <details class="shadow-gw-sm rounded-xl">
+      <details open class="shadow-gw-sm rounded-xl">
         <summary class="flex items-center justify-between cursor-pointer px-3.5 py-2.5 text-[12px] font-medium text-gray-700 select-none">
           <span>💧 {{ t('plantCare.waterTitle') }}</span>
           <span class="text-[11px] text-gray-400">{{ t('plantCare.optional') }}</span>
@@ -57,7 +57,7 @@ const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_
         </div>
       </details>
 
-      <details class="shadow-gw-sm rounded-xl">
+      <details open class="shadow-gw-sm rounded-xl">
         <summary class="flex items-center justify-between cursor-pointer px-3.5 py-2.5 text-[12px] font-medium text-gray-700 select-none">
           <span>🌿 {{ t('plantCare.fertilizerTitle') }}</span>
           <span class="text-[11px] text-gray-400">{{ t('plantCare.optional') }}</span>
