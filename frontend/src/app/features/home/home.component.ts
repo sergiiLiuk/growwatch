@@ -343,7 +343,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!w?.sunrise || !w?.sunset) return '';
     const now = new Date();
     const sunrise = new Date(w.sunrise);
-    const sunset  = new Date(w.sunset);
+    const sunset = new Date(w.sunset);
 
     let target: Date;
     let key: 'home.lightCycleStartsIn' | 'home.lightCycleEndsIn';
@@ -351,7 +351,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (now < sunrise) {
       target = sunrise; key = 'home.lightCycleStartsIn';
     } else if (now < sunset) {
-      target = sunset;  key = 'home.lightCycleEndsIn';
+      target = sunset; key = 'home.lightCycleEndsIn';
     } else {
       // After today's sunset — calculate tomorrow's sunrise by adding 24h as approximation
       target = new Date(sunrise.getTime() + 24 * 60 * 60 * 1000);
@@ -454,12 +454,12 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private chronological = computed(() => [...this.hourlyData()].reverse());
 
-  tempSpark   = computed(() => this.chronological().map(h => h.avgTemperature).filter((v): v is number => v != null));
-  humidSpark  = computed(() => this.chronological().map(h => h.avgHumidity).filter((v): v is number => v != null));
+  tempSpark = computed(() => this.chronological().map(h => h.avgTemperature).filter((v): v is number => v != null));
+  humidSpark = computed(() => this.chronological().map(h => h.avgHumidity).filter((v): v is number => v != null));
 
   // ── Range labels (calibration cue under sparkline — shows optimal range, not historical) ──
 
-  tempRange  = computed(() => ({ min: '15°', max: '30°' }));
+  tempRange = computed(() => ({ min: '15°', max: '30°' }));
   humidRange = computed(() => ({
     min: `${this.userSettings.effectiveHumidityMin()}%`,
     max: `${this.userSettings.effectiveHumidityMax()}%`,
