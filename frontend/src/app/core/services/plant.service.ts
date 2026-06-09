@@ -52,7 +52,6 @@ export interface PlantCare {
   waterAmount: WaterAmount | null;
   waterFrequency: WateringFrequency | null;
   waterFrequencyOther: string | null;
-  fertilizerAmount: WaterAmount | null;
   fertilizerFrequency: string | null;
   fertilizerType: string | null;
 }
@@ -80,7 +79,7 @@ export interface Plant {
 }
 
 const PLANT_FIELDS = `id name type plantedDate count monitored archived dailyLightHours code
-  care { waterAmount waterFrequency waterFrequencyOther fertilizerAmount fertilizerFrequency fertilizerType }
+  care { waterAmount waterFrequency waterFrequencyOther fertilizerFrequency fertilizerType }
   harvestSummary { taste fertility recommendation notes archivedAt }`;
 
 const SET_MONITORED = gql`
@@ -132,7 +131,6 @@ function stripCare(care: PlantCare | null): PlantCare | null {
   if (care.waterAmount) out.waterAmount = care.waterAmount;
   if (care.waterFrequency) out.waterFrequency = care.waterFrequency;
   if (care.waterFrequencyOther?.trim()) out.waterFrequencyOther = care.waterFrequencyOther.trim();
-  if (care.fertilizerAmount) out.fertilizerAmount = care.fertilizerAmount;
   if (care.fertilizerFrequency?.trim()) out.fertilizerFrequency = care.fertilizerFrequency.trim();
   if (care.fertilizerType?.trim()) out.fertilizerType = care.fertilizerType.trim();
   return Object.keys(out).length > 0 ? out : null;

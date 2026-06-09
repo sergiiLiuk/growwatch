@@ -797,7 +797,6 @@
     "optional": "valgfrit",
     "waterAmount": "Hvor meget vand",
     "waterFrequency": "Hvor ofte",
-    "fertilizerAmount": "Hvor meget gødning",
     "fertilizerFrequency": "Hvor ofte (fx hver 2. uge)",
     "fertilizerType": "Hvilken slags",
     "fertilizerTypePlaceholder": "fx kompostte, NPK 10-10-10",

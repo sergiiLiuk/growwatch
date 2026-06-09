@@ -281,12 +281,11 @@ function mapPlant(doc: any) {
         archived: doc.archived ?? false,
         dailyLightHours: doc.dailyLightHours ?? 12,
         code: doc.code ?? null,
-        care: doc.care && (doc.care.waterAmount || doc.care.waterFrequency || doc.care.fertilizerAmount || doc.care.fertilizerFrequency || doc.care.fertilizerType)
+        care: doc.care && (doc.care.waterAmount || doc.care.waterFrequency || doc.care.fertilizerFrequency || doc.care.fertilizerType)
             ? {
                 waterAmount: doc.care.waterAmount ?? null,
                 waterFrequency: doc.care.waterFrequency ?? null,
                 waterFrequencyOther: doc.care.waterFrequencyOther ?? null,
-                fertilizerAmount: doc.care.fertilizerAmount ?? null,
                 fertilizerFrequency: doc.care.fertilizerFrequency ?? null,
                 fertilizerType: doc.care.fertilizerType ?? null,
             }
@@ -307,7 +306,6 @@ interface PlantCareInput {
     waterAmount?: number;
     waterFrequency?: string;
     waterFrequencyOther?: string;
-    fertilizerAmount?: number;
     fertilizerFrequency?: string;
     fertilizerType?: string;
 }

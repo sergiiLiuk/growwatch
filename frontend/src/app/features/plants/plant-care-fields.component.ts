@@ -64,22 +64,6 @@ const FREQ_OPTIONS: WateringFrequency[] = ['once_week', 'twice_week', 'once_two_
         </summary>
         <div class="px-3.5 pb-3.5 pt-1 flex flex-col gap-3 border-t border-gray-100">
           <div>
-            <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plantCare.fertilizerAmount') }}</label>
-            <div class="grid grid-cols-3 gap-2">
-              @for (n of [1, 2, 3]; track n) {
-                <button type="button" (click)="setFertAmount(n)"
-                        class="py-2 rounded-lg border-[0.5px] text-[12px] transition-colors"
-                        [class.border-gw-green]="care().fertilizerAmount === n"
-                        [class.bg-gw-green-light]="care().fertilizerAmount === n"
-                        [class.text-gw-green-dark]="care().fertilizerAmount === n"
-                        [class.border-gray-200]="care().fertilizerAmount !== n"
-                        [class.text-gray-600]="care().fertilizerAmount !== n">
-                  {{ t('plantCare.amount.' + n) }}
-                </button>
-              }
-            </div>
-          </div>
-          <div>
             <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('plantCare.fertilizerType') }}</label>
             <input type="text" [ngModel]="care().fertilizerType ?? ''"
                    (ngModelChange)="patch({ fertilizerType: $event })"
@@ -114,11 +98,6 @@ export class PlantCareFieldsComponent {
   setWaterFreq(f: WateringFrequency) {
     this.patch({ waterFrequency: this.care().waterFrequency === f ? null : f });
   }
-
-  setFertAmount(n: number) {
-    const w = n as WaterAmount;
-    this.patch({ fertilizerAmount: this.care().fertilizerAmount === w ? null : w });
-  }
 }
 
 export function emptyCare(): PlantCare {
@@ -126,7 +105,6 @@ export function emptyCare(): PlantCare {
     waterAmount: null,
     waterFrequency: null,
     waterFrequencyOther: null,
-    fertilizerAmount: null,
     fertilizerFrequency: null,
     fertilizerType: null,
   };

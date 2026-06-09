@@ -797,7 +797,6 @@
     "optional": "optional",
     "waterAmount": "How much water",
     "waterFrequency": "How often",
-    "fertilizerAmount": "How much fertilizer",
     "fertilizerFrequency": "How often (e.g. every 2 weeks)",
     "fertilizerType": "What kind",
     "fertilizerTypePlaceholder": "e.g. compost tea, NPK 10-10-10",
