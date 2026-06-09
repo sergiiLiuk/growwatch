@@ -1295,6 +1295,7 @@ export const resolvers = {
                 { upsert: true, new: true }
             ).lean();
             return {
+                name: settings?.name ?? null,
                 tempMin: settings?.tempMin ?? null,
                 tempMax: settings?.tempMax ?? null,
                 humidityMin: settings?.humidityMin ?? null,
