@@ -64,18 +64,6 @@ import dayjs from 'dayjs';
                 </button>
               </div>
             </div>
-
-            <div class="mt-3 pt-3 border-t border-gray-100">
-              <div class="text-[11px] text-gray-400 mb-1">{{ t('shelly.webhookUrlLabel') }}</div>
-              <div class="flex items-center gap-2">
-                <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.webhookUrl }}</code>
-                <button (click)="copy(d.webhookUrl, d.id)"
-                        class="text-[11px] text-gw-green-dark hover:underline shrink-0">
-                  {{ copiedId() === d.id ? t('shelly.copied') : t('shelly.copyUrl') }}
-                </button>
-              </div>
-              <p class="text-[11px] text-gray-400 mt-1.5">{{ t('shelly.webhookUrlHint') }}</p>
-            </div>
           </div>
         }
 
@@ -95,7 +83,6 @@ export class ShellySetupComponent implements OnInit {
 
   devices = signal<ShellyDevice[]>([]);
   loading = signal(true);
-  copiedId = signal<string | null>(null);
 
   wizardOpen = signal(false);
 
@@ -152,13 +139,6 @@ export class ShellySetupComponent implements OnInit {
     this.shelly.remove(d.id).subscribe({
       next: () => this.reload(),
       error: err => alert(err?.message ?? 'Failed to remove'),
-    });
-  }
-
-  copy(url: string, id: string) {
-    navigator.clipboard.writeText(url).then(() => {
-      this.copiedId.set(id);
-      setTimeout(() => this.copiedId.set(null), 1500);
     });
   }
 
