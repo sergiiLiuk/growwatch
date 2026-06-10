@@ -416,6 +416,17 @@ import { ReminderService } from '../../core/services/reminder.service';
               </div>
               <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
             </button>
+            <button (click)="openShellySetup()"
+                    class="w-full bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
+              <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
+                <app-icon name="wifi" class="w-4 h-4 text-gw-green-dark" />
+              </div>
+              <div class="flex-1 text-left">
+                <div class="text-[14px] font-medium text-gray-800">{{ t('shelly.settingsLinkTitle') }}</div>
+                <div class="text-[11px] text-gray-400 mt-0.5">{{ t('shelly.settingsLinkSubtitle') }}</div>
+              </div>
+              <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
+            </button>
           </div>
         </div>
       }
@@ -757,6 +768,7 @@ export class SettingsComponent implements OnInit {
   }
 
   openSensorSetup() { this.router.navigate(['/settings/sensor-setup']); }
+  openShellySetup() { this.router.navigate(['/settings/shelly-setup']); }
   openDevices() { this.router.navigate(['/settings/devices']); }
   logout() { this.auth.logout(); }
 
