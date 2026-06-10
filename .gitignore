@@ -5,3 +5,6 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+
+# Claude Code local settings (per-machine, not for commit)
+.claude/
