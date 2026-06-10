@@ -43,38 +43,23 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
           }
           @case (2) {
             <div class="space-y-4">
-              <div class="text-4xl">📶</div>
+              <div class="text-4xl">🏷️</div>
               <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step2Title') }}</h1>
               <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step2Body') }}</p>
+              <input type="text"
+                     [ngModel]="draftName()"
+                     (ngModelChange)="draftName.set($event)"
+                     [placeholder]="t('shelly.wizard.step2NamePlaceholder')"
+                     class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green transition-colors" />
             </div>
           }
           @case (3) {
             <div class="space-y-4">
-              <div class="text-4xl">🌐</div>
-              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step3Title') }}</h1>
-              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step3Body') }}</p>
-            </div>
-          }
-          @case (4) {
-            <div class="space-y-4">
-              <div class="text-4xl">🏷️</div>
-              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step4Title') }}</h1>
-              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step4Body') }}</p>
-              <input type="text"
-                     [ngModel]="draftName()"
-                     (ngModelChange)="draftName.set($event)"
-                     [placeholder]="t('shelly.wizard.step4NamePlaceholder')"
-                     class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green transition-colors" />
-            </div>
-          }
-          @case (5) {
-            <div class="space-y-4">
               <div class="text-4xl">🔗</div>
-              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step5Title') }}</h1>
-              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step5Body') }}</p>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step3Title') }}</h1>
               @if (device(); as d) {
                 <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
-                  <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.step5UrlLabel') }}</div>
+                  <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.urlLabel') }}</div>
                   <div class="flex items-center gap-2">
                     <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.webhookUrl }}</code>
                     <button (click)="copy()"
@@ -84,7 +69,33 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
                   </div>
                 </div>
               }
-              <p class="text-[13px] text-gray-500 leading-relaxed">{{ t('shelly.wizard.step5Instructions') }}</p>
+              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step3Body') }}</p>
+            </div>
+          }
+          @case (4) {
+            <div class="space-y-4">
+              <div class="text-4xl">⚙️</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step4Title') }}</h1>
+              @if (device(); as d) {
+                <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
+                  <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.urlLabel') }}</div>
+                  <div class="flex items-center gap-2">
+                    <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.webhookUrl }}</code>
+                    <button (click)="copy()"
+                            class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
+                      {{ copied() ? t('shelly.copied') : t('shelly.copyUrl') }}
+                    </button>
+                  </div>
+                </div>
+              }
+              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step4Body') }}</p>
+            </div>
+          }
+          @case (5) {
+            <div class="space-y-4">
+              <div class="text-4xl">📶</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step5Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step5Body') }}</p>
             </div>
           }
           @case (6) {
@@ -153,7 +164,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
       if (existing && !this.resumed) {
         this.resumed = true;
         this.device.set(existing);
-        this.currentStep.set(5);
+        this.currentStep.set(3);
       }
     });
   }
@@ -162,7 +173,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
 
   canAdvance = computed<boolean>(() => {
     const step = this.currentStep();
-    if (step === 4) return this.draftName().trim().length > 0;
+    if (step === 2) return this.draftName().trim().length > 0;
     if (step === 6) return this.detected();
     return true;
   });
@@ -180,7 +191,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
 
   advance() {
     const step = this.currentStep();
-    if (step === 4) {
+    if (step === 2) {
       this.createDevice();
       return;
     }
@@ -203,7 +214,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
       next: d => {
         this.device.set(d);
         this.busy.set(false);
-        this.currentStep.set(5);
+        this.currentStep.set(3);
       },
       error: err => {
         this.busy.set(false);
