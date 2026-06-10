@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import { PLANT_LIGHT_RANGES, PlantType } from './lightUtils';
 
 const PLANT_TYPE_VALUES = Object.keys(PLANT_LIGHT_RANGES) as PlantType[];
@@ -469,3 +469,33 @@ const dailyBriefingSchema = new Schema<IDailyBriefing>(
 );
 
 export const DailyBriefing = mongoose.model<IDailyBriefing>('DailyBriefing', dailyBriefingSchema);
+
+// ── Shelly H&T Gen3 device ─────────────────────────────────────────────────────────────
+
+export interface IShellyDevice extends Document {
+    userId: string;
+    deviceId: string;          // Shelly serial, e.g. "shellyhtg3-AABBCCDDEEFF"
+    name: string;
+    webhookToken: string;      // 64-hex random, used as webhook query param
+    lastSeenAt?: Date;
+    lastBatteryPercent?: number;
+    createdAt: Date;
+}
+
+const shellyDeviceSchema = new Schema<IShellyDevice>(
+    {
+        userId: { type: String, required: true, index: true },
+        deviceId: { type: String, required: true },
+        name: { type: String, required: true },
+        webhookToken: { type: String, required: true, unique: true, index: true },
+        lastSeenAt: { type: Date },
+        lastBatteryPercent: { type: Number, min: 0, max: 100 },
+        createdAt: { type: Date, default: Date.now },
+    },
+    { collection: 'shelly_devices' }
+);
+
+shellyDeviceSchema.index({ userId: 1, deviceId: 1 }, { unique: true });
+
+export const ShellyDevice: Model<IShellyDevice> =
+    mongoose.models.ShellyDevice || mongoose.model<IShellyDevice>('ShellyDevice', shellyDeviceSchema);
