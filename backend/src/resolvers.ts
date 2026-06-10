@@ -460,6 +460,10 @@ function generateShellyToken(): string {
     return crypto.randomBytes(32).toString('hex');
 }
 
+function generateShellyDeviceId(): string {
+    return `gw-${crypto.randomBytes(4).toString('hex')}`;
+}
+
 function buildShellyWebhookUrl(token: string, deviceId: string): string {
     // Shelly Gen3 URL Action placeholder syntax: ${ev.tC}, ${ev.rh}, ${devicepower:0.battery.percent}
     // Verified against a live device during manual testing (Task 8 Step 4).
@@ -1289,19 +1293,14 @@ export const resolvers = {
             const result = await Device.findOneAndDelete({ _id: id, userId: ctx.user.userId });
             return result !== null;
         },
-        addShellyDevice: async (_: any, args: { deviceId: string; name: string }, ctx: Ctx) => {
+        addShellyDevice: async (_: any, args: { name: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
-            const deviceId = args.deviceId.trim();
             const name = args.name.trim().slice(0, 60);
-            if (!deviceId) throw new Error('Device ID is required');
             if (!name) throw new Error('Name is required');
-
-            const existing = await ShellyDevice.findOne({ userId: ctx.user.userId, deviceId });
-            if (existing) throw new Error('This device is already paired');
 
             const created = await ShellyDevice.create({
                 userId: ctx.user.userId,
-                deviceId,
+                deviceId: generateShellyDeviceId(),
                 name,
                 webhookToken: generateShellyToken(),
             });

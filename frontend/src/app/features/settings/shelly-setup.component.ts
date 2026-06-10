@@ -81,13 +81,6 @@ import dayjs from 'dayjs';
         <div class="bg-white shadow-gw-sm rounded-xl p-4 mt-4">
           <div class="flex flex-col gap-3">
             <div>
-              <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('shelly.deviceIdLabel') }}</label>
-              <input type="text" [(ngModel)]="draftDeviceId"
-                     [placeholder]="t('shelly.deviceIdPlaceholder')"
-                     class="w-full shadow-gw-sm rounded-lg px-3 py-2 text-[13px] font-mono outline-none focus:border-gw-green transition-colors" />
-              <p class="text-[11px] text-gray-400 mt-1">{{ t('shelly.deviceIdHint') }}</p>
-            </div>
-            <div>
               <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('shelly.nameLabel') }}</label>
               <input type="text" [(ngModel)]="draftName"
                      [placeholder]="t('shelly.namePlaceholder')"
@@ -119,7 +112,6 @@ export class ShellySetupComponent implements OnInit {
   loading = signal(true);
 
   addingNew = signal(false);
-  draftDeviceId = '';
   draftName = '';
   saving = signal(false);
   copiedId = signal<string | null>(null);
@@ -139,7 +131,6 @@ export class ShellySetupComponent implements OnInit {
   back() { this.router.navigate(['/settings']); }
 
   startAdd() {
-    this.draftDeviceId = '';
     this.draftName = '';
     this.addingNew.set(true);
   }
@@ -147,13 +138,13 @@ export class ShellySetupComponent implements OnInit {
   cancelAdd() { this.addingNew.set(false); }
 
   canSave(): boolean {
-    return this.draftDeviceId.trim().length > 0 && this.draftName.trim().length > 0;
+    return this.draftName.trim().length > 0;
   }
 
   saveNew() {
     if (!this.canSave() || this.saving()) return;
     this.saving.set(true);
-    this.shelly.add(this.draftDeviceId.trim(), this.draftName.trim()).subscribe({
+    this.shelly.add(this.draftName.trim()).subscribe({
       next: () => { this.saving.set(false); this.addingNew.set(false); this.reload(); },
       error: err => {
         this.saving.set(false);

@@ -34,15 +34,15 @@ export class ShellyService {
     );
   }
 
-  add(deviceId: string, name: string): Observable<ShellyDevice> {
+  add(name: string): Observable<ShellyDevice> {
     return defer(() =>
       this.apolloClient.mutate<{ addShellyDevice: ShellyDevice }>({
         mutation: gql`
-          mutation AddShellyDevice($deviceId: String!, $name: String!) {
-            addShellyDevice(deviceId: $deviceId, name: $name) { ${SHELLY_FIELDS} }
+          mutation AddShellyDevice($name: String!) {
+            addShellyDevice(name: $name) { ${SHELLY_FIELDS} }
           }
         `,
-        variables: { deviceId, name },
+        variables: { name },
       }).then(result => result.data!.addShellyDevice)
     );
   }

@@ -311,7 +311,7 @@ export const typeDefs = gql`
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!
     removeDevice(id: String!): Boolean!
-    addShellyDevice(deviceId: String!, name: String!): ShellyDevice!
+    addShellyDevice(name: String!): ShellyDevice!
     renameShellyDevice(id: String!, name: String!): ShellyDevice!
     rotateShellyToken(id: String!): ShellyDevice!
     removeShellyDevice(id: String!): Boolean!
