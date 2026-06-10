@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, inject, input, output, signal } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ShellyService, ShellyDevice } from '../../core/services/shelly.service';
@@ -143,12 +143,19 @@ export class ShellyPairingWizardComponent implements OnDestroy {
   // Step 4 input
   draftName = signal('');
 
+  private resumed = false;
+
   constructor() {
-    const existing = this.existingDevice();
-    if (existing) {
-      this.device.set(existing);
-      this.currentStep.set(5);
-    }
+    // Signal inputs aren't bound during constructor — read them in an effect so we
+    // see the value the parent passes in.
+    effect(() => {
+      const existing = this.existingDevice();
+      if (existing && !this.resumed) {
+        this.resumed = true;
+        this.device.set(existing);
+        this.currentStep.set(5);
+      }
+    });
   }
 
   canGoBack = computed(() => this.currentStep() > 1 && this.currentStep() < 6);
