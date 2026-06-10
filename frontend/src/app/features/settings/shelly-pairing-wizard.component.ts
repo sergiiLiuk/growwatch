@@ -87,7 +87,27 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
               <p class="text-[13px] text-gray-500 leading-relaxed">{{ t('shelly.wizard.step5Instructions') }}</p>
             </div>
           }
-          @case (6) { <div data-step="6"></div> }
+          @case (6) {
+            <div class="space-y-4">
+              @if (!detected()) {
+                <div class="text-4xl">⏳</div>
+                <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step6Title') }}</h1>
+                <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step6BodyWaiting') }}</p>
+                <p class="text-[13px] text-gray-400 leading-relaxed">{{ t('shelly.wizard.step6BodyButtonHint') }}</p>
+              } @else {
+                <div class="text-4xl">✅</div>
+                <h1 class="text-[20px] font-medium text-gw-green-dark">{{ t('shelly.wizard.step6BodySuccess') }}</h1>
+                @if (device(); as d) {
+                  <div class="bg-gw-green-light rounded-xl p-4 space-y-1">
+                    <div class="text-[11px] text-gw-green-dark/70 uppercase tracking-wide">{{ d.name }}</div>
+                    @if (d.lastBatteryPercent != null) {
+                      <div class="text-[14px] text-gw-green-dark">{{ t('shelly.battery', { n: d.lastBatteryPercent }) }}</div>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          }
         }
       </div>
 
@@ -116,6 +136,8 @@ export class ShellyPairingWizardComponent implements OnDestroy {
   device = signal<ShellyDevice | null>(null);
   busy = signal(false);
   copied = signal(false);
+  private pollHandle: ReturnType<typeof setInterval> | null = null;
+  detected = signal(false);
   stepDots: StepNum[] = [1, 2, 3, 4, 5, 6];
 
   // Step 4 input
@@ -134,7 +156,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
   canAdvance = computed<boolean>(() => {
     const step = this.currentStep();
     if (step === 4) return this.draftName().trim().length > 0;
-    if (step === 6) return false; // Step 6 advances itself once the reading is detected (Task 6)
+    if (step === 6) return this.detected();
     return true;
   });
 
@@ -159,6 +181,11 @@ export class ShellyPairingWizardComponent implements OnDestroy {
       this.completed.emit();
       return;
     }
+    if (step === 5) {
+      this.currentStep.set(6);
+      this.startPolling();
+      return;
+    }
     if (step < 6) this.currentStep.update(s => (s + 1) as StepNum);
   }
 
@@ -179,6 +206,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
   }
 
   requestClose() {
+    this.stopPolling();
     if (this.currentStep() === 1) {
       this.closed.emit();
       return;
@@ -188,6 +216,37 @@ export class ShellyPairingWizardComponent implements OnDestroy {
       this.transloco.translate('shelly.wizard.closeConfirmBody')
     );
     if (ok) this.closed.emit();
+  }
+
+  private startPolling() {
+    this.stopPolling();
+    this.poll(); // immediate first hit
+    this.pollHandle = setInterval(() => this.poll(), 5000);
+  }
+
+  private stopPolling() {
+    if (this.pollHandle !== null) {
+      clearInterval(this.pollHandle);
+      this.pollHandle = null;
+    }
+  }
+
+  private poll() {
+    const currentId = this.device()?.id;
+    if (!currentId) return;
+    this.shelly.list().subscribe({
+      next: list => {
+        const fresh = list.find(d => d.id === currentId);
+        if (fresh) {
+          this.device.set(fresh);
+          if (fresh.lastSeenAt && !this.detected()) {
+            this.detected.set(true);
+            this.stopPolling();
+          }
+        }
+      },
+      error: () => { /* keep polling on transient errors */ },
+    });
   }
 
   copy() {
@@ -200,6 +259,6 @@ export class ShellyPairingWizardComponent implements OnDestroy {
   }
 
   ngOnDestroy() {
-    // Step 6 will install polling later — cleanup happens in Task 6.
+    this.stopPolling();
   }
 }
