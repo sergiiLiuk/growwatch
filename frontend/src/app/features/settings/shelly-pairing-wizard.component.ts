@@ -34,9 +34,27 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
       <!-- Body -->
       <div class="flex-1 overflow-y-auto px-5 py-6 max-w-lg w-full mx-auto">
         @switch (currentStep()) {
-          @case (1) { <div data-step="1"></div> }
-          @case (2) { <div data-step="2"></div> }
-          @case (3) { <div data-step="3"></div> }
+          @case (1) {
+            <div class="space-y-4">
+              <div class="text-4xl">🔌</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step1Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step1Body') }}</p>
+            </div>
+          }
+          @case (2) {
+            <div class="space-y-4">
+              <div class="text-4xl">📶</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step2Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step2Body') }}</p>
+            </div>
+          }
+          @case (3) {
+            <div class="space-y-4">
+              <div class="text-4xl">🌐</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step3Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step3Body') }}</p>
+            </div>
+          }
           @case (4) { <div data-step="4"></div> }
           @case (5) { <div data-step="5"></div> }
           @case (6) { <div data-step="6"></div> }
