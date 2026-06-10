@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken, SmartTip, AiUsage } from './models';
+import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken, SmartTip, AiUsage, ShellyDevice, IShellyDevice } from './models';
 import type { EmailLocale } from './services/emailSender';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
@@ -447,6 +447,50 @@ export async function cascadeDeleteUser(userId: string): Promise<void> {
     await User.deleteOne({ _id: userId });
 }
 
+// ── Shelly H&T Gen3 helpers ──────────────────────────────────────────────────
+
+const SHELLY_BACKEND_BASE = process.env.SHELLY_BACKEND_BASE_URL ?? 'https://growwatch.dk';
+
+function generateShellyToken(): string {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+function buildShellyWebhookUrl(token: string, deviceId: string): string {
+    // Shelly Gen3 URL Action placeholder syntax: ${ev.tC}, ${ev.rh}, ${devicepower:0.battery.percent}
+    // Verified against a live device during manual testing (Task 8 Step 4).
+    const params = [
+        `token=${encodeURIComponent(token)}`,
+        `deviceId=${encodeURIComponent(deviceId)}`,
+        `t=\${ev.tC}`,
+        `h=\${ev.rh}`,
+        `bat=\${devicepower:0.battery.percent}`,
+    ];
+    return `${SHELLY_BACKEND_BASE}/api/shelly/webhook?${params.join('&')}`;
+}
+
+function shellyToGraphQL(d: IShellyDevice) {
+    return {
+        id: String(d._id),
+        deviceId: d.deviceId,
+        name: d.name,
+        webhookUrl: buildShellyWebhookUrl(d.webhookToken, d.deviceId),
+        lastSeenAt: d.lastSeenAt ? d.lastSeenAt.toISOString() : null,
+        lastBatteryPercent: d.lastBatteryPercent ?? null,
+        createdAt: d.createdAt.toISOString(),
+    };
+}
+
+export async function findShellyByToken(token: string): Promise<IShellyDevice | null> {
+    if (!token || typeof token !== 'string') return null;
+    return ShellyDevice.findOne({ webhookToken: token });
+}
+
+export async function touchShelly(id: any, batteryPercent: number | null): Promise<void> {
+    const update: any = { lastSeenAt: new Date() };
+    if (batteryPercent !== null) update.lastBatteryPercent = batteryPercent;
+    await ShellyDevice.updateOne({ _id: id }, { $set: update });
+}
+
 /**
  * Build a portable JSON snapshot of everything we hold for a user (GDPR Art. 20).
  * Excludes auth secrets (passwordHash), short-lived tokens, push keys, and
@@ -676,6 +720,11 @@ export const resolvers = {
             if (!ctx.user) return [];
             const docs = await Device.find({ userId: ctx.user.userId }).sort({ createdAt: 1 }).lean();
             return docs.map(mapDevice);
+        },
+        myShellyDevices: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const devices = await ShellyDevice.find({ userId: ctx.user.userId }).sort({ createdAt: 1 });
+            return devices.map(shellyToGraphQL);
         },
         myUserSettings: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -1234,6 +1283,51 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             const result = await Device.findOneAndDelete({ _id: id, userId: ctx.user.userId });
             return result !== null;
+        },
+        addShellyDevice: async (_: any, args: { deviceId: string; name: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const deviceId = args.deviceId.trim();
+            const name = args.name.trim().slice(0, 60);
+            if (!deviceId) throw new Error('Device ID is required');
+            if (!name) throw new Error('Name is required');
+
+            const existing = await ShellyDevice.findOne({ userId: ctx.user.userId, deviceId });
+            if (existing) throw new Error('This device is already paired');
+
+            const created = await ShellyDevice.create({
+                userId: ctx.user.userId,
+                deviceId,
+                name,
+                webhookToken: generateShellyToken(),
+            });
+            return shellyToGraphQL(created);
+        },
+        renameShellyDevice: async (_: any, args: { id: string; name: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const name = args.name.trim().slice(0, 60);
+            if (!name) throw new Error('Name is required');
+            const updated = await ShellyDevice.findOneAndUpdate(
+                { _id: args.id, userId: ctx.user.userId },
+                { $set: { name } },
+                { new: true }
+            );
+            if (!updated) throw new Error('Device not found');
+            return shellyToGraphQL(updated);
+        },
+        rotateShellyToken: async (_: any, args: { id: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const updated = await ShellyDevice.findOneAndUpdate(
+                { _id: args.id, userId: ctx.user.userId },
+                { $set: { webhookToken: generateShellyToken() } },
+                { new: true }
+            );
+            if (!updated) throw new Error('Device not found');
+            return shellyToGraphQL(updated);
+        },
+        removeShellyDevice: async (_: any, args: { id: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const result = await ShellyDevice.deleteOne({ _id: args.id, userId: ctx.user.userId });
+            return result.deletedCount > 0;
         },
         updateUserSettings: async (
             _: any,
