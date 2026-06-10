@@ -5,7 +5,7 @@ import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { createServer } from 'http';
 import { typeDefs } from './schema';
-import { resolvers, handleSensorData, startHourlyAggregation, saveHourlyData, initPlantCache, setSuperuserId, setLlmProvider } from './resolvers';
+import { resolvers, handleSensorData, findShellyByToken, touchShelly, startHourlyAggregation, saveHourlyData, initPlantCache, setSuperuserId, setLlmProvider } from './resolvers';
 import { StubLlmProvider } from './services/smartTip';
 import { ClaudeLlmProvider } from './services/claudeLlmProvider';
 import { startSmartTipScheduler } from './services/smartTipScheduler';
@@ -189,6 +189,51 @@ async function startServer() {
         } catch (error) {
             console.error('❌ Error processing sensor data:', error);
             res.status(500).json({ error: 'Internal server error' });
+        }
+    });
+
+    // ─── Shelly H&T Gen3 webhook ──
+    // Query params: token, deviceId, t, h, bat (bat optional)
+    // 204 on success, 401 on unknown token, 400 on missing/bad numeric params.
+    app.post('/api/shelly/webhook', async (req: Request, res: Response) => {
+        try {
+            const token = String(req.query.token ?? '');
+            const deviceId = String(req.query.deviceId ?? '');
+            const tRaw = req.query.t;
+            const hRaw = req.query.h;
+            const batRaw = req.query.bat;
+
+            const device = await findShellyByToken(token);
+            if (!device) return res.status(401).end();
+
+            const temperature = Number(tRaw);
+            const humidity = Number(hRaw);
+            if (!isFinite(temperature) || !isFinite(humidity)) {
+                return res.status(400).json({ error: 'Missing or non-numeric t / h' });
+            }
+
+            const battery = batRaw !== undefined && batRaw !== '' && isFinite(Number(batRaw))
+                ? Math.round(Number(batRaw))
+                : null;
+            await touchShelly(device._id, battery);
+
+            const result = await handleSensorData({
+                deviceId: deviceId || device.deviceId,
+                temperature,
+                humidity,
+                userId: device.userId,
+            });
+
+            if (!result) {
+                console.warn(`🚫 Shelly handleSensorData rejected reading for user=${device.userId}`);
+                return res.status(500).end();
+            }
+
+            console.log(`📥 Shelly: temp=${temperature}°C hum=${humidity}% bat=${battery ?? '—'}% device=${device.deviceId}`);
+            res.status(204).end();
+        } catch (error) {
+            console.error('❌ Error processing Shelly webhook:', error);
+            res.status(500).end();
         }
     });
 

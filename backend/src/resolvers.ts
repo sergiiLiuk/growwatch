@@ -166,7 +166,12 @@ async function resolveDeviceOwner(
 
 // Function to handle incoming sensor data from ESP32
 export async function handleSensorData(data: any): Promise<SensorData | null> {
-    const owner = await resolveDeviceOwner(data.deviceId);
+    let owner: { userId: string; deviceId?: string } | null;
+    if (data.userId) {
+        owner = { userId: data.userId, deviceId: data.deviceId };
+    } else {
+        owner = await resolveDeviceOwner(data.deviceId);
+    }
     if (!owner) {
         console.warn(`🚫 Rejected sensor data — unknown device${data.deviceId ? ` ${data.deviceId}` : ''} and no claim/fallback`);
         return null;
