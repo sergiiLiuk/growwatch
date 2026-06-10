@@ -79,12 +79,11 @@ import dayjs from 'dayjs';
           </div>
         }
 
-        @if (devices().length === 0 || unfinishedDevice()) {
-          <button (click)="openWizard()"
-                  class="w-full mt-4 px-4 py-3 rounded-xl bg-gw-green text-white text-[14px] font-medium">
-            {{ unfinishedDevice() ? t('shelly.wizard.continue') : t('shelly.addDevice') }}
-          </button>
-        }
+        <button (click)="openWizard()"
+                [disabled]="devices().length > 0 && !unfinishedDevice()"
+                class="w-full mt-4 px-4 py-3 rounded-xl bg-gw-green text-white text-[14px] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          {{ unfinishedDevice() ? t('shelly.wizard.continue') : t('shelly.addDevice') }}
+        </button>
       </div>
     }
   `,
