@@ -1,106 +1,92 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ShellyService, ShellyDevice } from '../../core/services/shelly.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
+import { ShellyPairingWizardComponent } from './shelly-pairing-wizard.component';
 import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-shelly-setup',
-  imports: [FormsModule, TranslocoDirective, IconComponent],
+  imports: [FormsModule, TranslocoDirective, IconComponent, ShellyPairingWizardComponent],
   template: `
-    <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
+    @if (wizardOpen()) {
+      <app-shelly-pairing-wizard
+        [existingDevice]="unfinishedDevice()"
+        (closed)="onWizardClosed()"
+        (completed)="onWizardCompleted()" />
+    } @else {
+      <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
-      <button (click)="back()"
-              class="flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-600 transition-colors mb-6">
-        ‹ {{ t('nav.settings') }}
-      </button>
+        <button (click)="back()"
+                class="flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-600 transition-colors mb-6">
+          ‹ {{ t('nav.settings') }}
+        </button>
 
-      <div class="mb-6">
-        <h1 class="text-[18px] font-medium text-gray-800">{{ t('shelly.title') }}</h1>
-        <p class="text-[11px] text-gray-400 mt-0.5">{{ t('shelly.subtitle') }}</p>
-      </div>
-
-      @if (devices().length === 0 && !loading()) {
-        <div class="bg-white shadow-gw-sm rounded-xl p-6 text-center">
-          <div class="text-[14px] text-gray-600">{{ t('shelly.noDevices') }}</div>
-          <div class="text-[11px] text-gray-400 mt-1">{{ t('shelly.noDevicesHint') }}</div>
+        <div class="mb-6">
+          <h1 class="text-[18px] font-medium text-gray-800">{{ t('shelly.title') }}</h1>
+          <p class="text-[11px] text-gray-400 mt-0.5">{{ t('shelly.subtitle') }}</p>
         </div>
-      }
 
-      @for (d of devices(); track d.id) {
-        <div class="bg-white shadow-gw-sm rounded-xl p-4 mb-3">
-          <div class="flex items-start gap-3">
-            <div class="flex-1 min-w-0">
-              <div class="text-[14px] font-medium text-gray-800 truncate">{{ d.name }}</div>
-              <div class="text-[11px] text-gray-400 mt-0.5 font-mono truncate">{{ d.deviceId }}</div>
-              <div class="text-[11px] text-gray-400 mt-1">
-                {{ lastSeenLabel(d) }}
-                @if (d.lastBatteryPercent != null) {
-                  <span class="ml-2">· {{ t('shelly.battery', { n: d.lastBatteryPercent }) }}</span>
-                }
+        @if (devices().length === 0 && !loading()) {
+          <div class="bg-white shadow-gw-sm rounded-xl p-6 text-center">
+            <div class="text-[14px] text-gray-600">{{ t('shelly.noDevices') }}</div>
+            <div class="text-[11px] text-gray-400 mt-1">{{ t('shelly.noDevicesHint') }}</div>
+          </div>
+        }
+
+        @for (d of devices(); track d.id) {
+          <div class="bg-white shadow-gw-sm rounded-xl p-4 mb-3">
+            <div class="flex items-start gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="text-[14px] font-medium text-gray-800 truncate">{{ d.name }}</div>
+                <div class="text-[11px] text-gray-400 mt-0.5 font-mono truncate">{{ d.deviceId }}</div>
+                <div class="text-[11px] text-gray-400 mt-1">
+                  {{ lastSeenLabel(d) }}
+                  @if (d.lastBatteryPercent != null) {
+                    <span class="ml-2">· {{ t('shelly.battery', { n: d.lastBatteryPercent }) }}</span>
+                  }
+                </div>
+              </div>
+              <div class="flex gap-1 shrink-0">
+                <button (click)="startRename(d)" [title]="t('shelly.nameLabel')"
+                        class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gw-green-light/60 hover:text-gw-green-dark transition-colors">
+                  <app-icon name="pencil" class="w-4 h-4" />
+                </button>
+                <button (click)="rotate(d)" [title]="t('shelly.rotateToken')"
+                        class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gw-amber-light hover:text-gw-amber transition-colors">
+                  <app-icon name="refresh" class="w-4 h-4" />
+                </button>
+                <button (click)="remove(d)" [title]="t('shelly.remove')"
+                        class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                  <app-icon name="trash" class="w-4 h-4" />
+                </button>
               </div>
             </div>
-            <div class="flex gap-1 shrink-0">
-              <button (click)="startRename(d)" [title]="t('shelly.nameLabel')"
-                      class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gw-green-light/60 hover:text-gw-green-dark transition-colors">
-                <app-icon name="pencil" class="w-4 h-4" />
-              </button>
-              <button (click)="rotate(d)" [title]="t('shelly.rotateToken')"
-                      class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gw-amber-light hover:text-gw-amber transition-colors">
-                <app-icon name="refresh" class="w-4 h-4" />
-              </button>
-              <button (click)="remove(d)" [title]="t('shelly.remove')"
-                      class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
-                <app-icon name="trash" class="w-4 h-4" />
-              </button>
-            </div>
-          </div>
 
-          <div class="mt-3 pt-3 border-t border-gray-100">
-            <div class="text-[11px] text-gray-400 mb-1">{{ t('shelly.webhookUrlLabel') }}</div>
-            <div class="flex items-center gap-2">
-              <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.webhookUrl }}</code>
-              <button (click)="copy(d.webhookUrl, d.id)"
-                      class="text-[11px] text-gw-green-dark hover:underline shrink-0">
-                {{ copiedId() === d.id ? t('shelly.copied') : t('shelly.copyUrl') }}
-              </button>
+            <div class="mt-3 pt-3 border-t border-gray-100">
+              <div class="text-[11px] text-gray-400 mb-1">{{ t('shelly.webhookUrlLabel') }}</div>
+              <div class="flex items-center gap-2">
+                <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.webhookUrl }}</code>
+                <button (click)="copy(d.webhookUrl, d.id)"
+                        class="text-[11px] text-gw-green-dark hover:underline shrink-0">
+                  {{ copiedId() === d.id ? t('shelly.copied') : t('shelly.copyUrl') }}
+                </button>
+              </div>
+              <p class="text-[11px] text-gray-400 mt-1.5">{{ t('shelly.webhookUrlHint') }}</p>
             </div>
-            <p class="text-[11px] text-gray-400 mt-1.5">{{ t('shelly.webhookUrlHint') }}</p>
           </div>
-        </div>
-      }
+        }
 
-      @if (!addingNew() && devices().length === 0) {
-        <button (click)="startAdd()"
-                class="w-full mt-4 px-4 py-3 rounded-xl bg-gw-green text-white text-[14px] font-medium">
-          {{ t('shelly.addDevice') }}
-        </button>
-      } @else if (addingNew()) {
-        <div class="bg-white shadow-gw-sm rounded-xl p-4 mt-4">
-          <div class="flex flex-col gap-3">
-            <div>
-              <label class="block text-[11px] text-gray-400 mb-1.5">{{ t('shelly.nameLabel') }}</label>
-              <input type="text" [(ngModel)]="draftName"
-                     [placeholder]="t('shelly.namePlaceholder')"
-                     class="w-full shadow-gw-sm rounded-lg px-3 py-2 text-[13px] outline-none focus:border-gw-green transition-colors" />
-            </div>
-            <div class="flex gap-2">
-              <button (click)="saveNew()"
-                      [disabled]="!canSave() || saving()"
-                      class="flex-1 bg-gw-green text-white text-[13px] py-2.5 rounded-xl font-medium disabled:opacity-40 transition-colors">
-                {{ t('shelly.save') }}
-              </button>
-              <button (click)="cancelAdd()"
-                      class="px-4 text-[13px] text-gray-400 hover:text-gray-600 transition-colors">
-                {{ t('shelly.cancel') }}
-              </button>
-            </div>
-          </div>
-        </div>
-      }
-    </div>
+        @if (devices().length === 0 || unfinishedDevice()) {
+          <button (click)="openWizard()"
+                  class="w-full mt-4 px-4 py-3 rounded-xl bg-gw-green text-white text-[14px] font-medium">
+            {{ unfinishedDevice() ? t('shelly.wizard.continue') : t('shelly.addDevice') }}
+          </button>
+        }
+      </div>
+    }
   `,
 })
 export class ShellySetupComponent implements OnInit {
@@ -110,11 +96,14 @@ export class ShellySetupComponent implements OnInit {
 
   devices = signal<ShellyDevice[]>([]);
   loading = signal(true);
-
-  addingNew = signal(false);
-  draftName = '';
-  saving = signal(false);
   copiedId = signal<string | null>(null);
+
+  wizardOpen = signal(false);
+
+  unfinishedDevice = computed<ShellyDevice | null>(() => {
+    const d = this.devices()[0];
+    return d && !d.lastSeenAt ? d : null;
+  });
 
   ngOnInit() {
     this.reload();
@@ -130,27 +119,16 @@ export class ShellySetupComponent implements OnInit {
 
   back() { this.router.navigate(['/settings']); }
 
-  startAdd() {
-    this.draftName = '';
-    this.addingNew.set(true);
+  openWizard() { this.wizardOpen.set(true); }
+
+  onWizardClosed() {
+    this.wizardOpen.set(false);
+    this.reload();
   }
 
-  cancelAdd() { this.addingNew.set(false); }
-
-  canSave(): boolean {
-    return this.draftName.trim().length > 0;
-  }
-
-  saveNew() {
-    if (!this.canSave() || this.saving()) return;
-    this.saving.set(true);
-    this.shelly.add(this.draftName.trim()).subscribe({
-      next: () => { this.saving.set(false); this.addingNew.set(false); this.reload(); },
-      error: err => {
-        this.saving.set(false);
-        alert(err?.message ?? 'Failed to add device');
-      },
-    });
+  onWizardCompleted() {
+    this.wizardOpen.set(false);
+    this.reload();
   }
 
   startRename(d: ShellyDevice) {
