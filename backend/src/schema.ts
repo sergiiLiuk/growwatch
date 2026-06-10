@@ -152,6 +152,16 @@ export const typeDefs = gql`
     createdAt: String!
   }
 
+  type ShellyDevice {
+    id: String!
+    deviceId: String!
+    name: String!
+    webhookUrl: String!
+    lastSeenAt: String
+    lastBatteryPercent: Int
+    createdAt: String!
+  }
+
   type UserLocation {
     lat: Float!
     lng: Float!
@@ -253,6 +263,7 @@ export const typeDefs = gql`
     plantEvents(from: String!, to: String!): [PlantEvent!]!
     vapidPublicKey: String
     myDevices: [Device!]!
+    myShellyDevices: [ShellyDevice!]!
     myUserSettings: UserSettings!
     allUsers: [User!]!
     me: AuthPayload!
@@ -300,6 +311,10 @@ export const typeDefs = gql`
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!
     removeDevice(id: String!): Boolean!
+    addShellyDevice(deviceId: String!, name: String!): ShellyDevice!
+    renameShellyDevice(id: String!, name: String!): ShellyDevice!
+    rotateShellyToken(id: String!): ShellyDevice!
+    removeShellyDevice(id: String!): Boolean!
     updateUserSettings(
       name: String
       tempMin: Float
