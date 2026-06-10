@@ -72,12 +72,12 @@ import dayjs from 'dayjs';
         </div>
       }
 
-      @if (!addingNew()) {
+      @if (!addingNew() && devices().length === 0) {
         <button (click)="startAdd()"
                 class="w-full mt-4 px-4 py-3 rounded-xl bg-gw-green text-white text-[14px] font-medium">
           {{ t('shelly.addDevice') }}
         </button>
-      } @else {
+      } @else if (addingNew()) {
         <div class="bg-white shadow-gw-sm rounded-xl p-4 mt-4">
           <div class="flex flex-col gap-3">
             <div>

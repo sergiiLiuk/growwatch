@@ -1298,6 +1298,9 @@ export const resolvers = {
             const name = args.name.trim().slice(0, 60);
             if (!name) throw new Error('Name is required');
 
+            const existing = await ShellyDevice.findOne({ userId: ctx.user.userId });
+            if (existing) throw new Error('You can only pair one Shelly device per account');
+
             const created = await ShellyDevice.create({
                 userId: ctx.user.userId,
                 deviceId: generateShellyDeviceId(),
