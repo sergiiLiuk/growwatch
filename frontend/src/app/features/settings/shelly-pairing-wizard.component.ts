@@ -67,7 +67,26 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
                      class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green transition-colors" />
             </div>
           }
-          @case (5) { <div data-step="5"></div> }
+          @case (5) {
+            <div class="space-y-4">
+              <div class="text-4xl">🔗</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step5Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step5Body') }}</p>
+              @if (device(); as d) {
+                <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
+                  <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.step5UrlLabel') }}</div>
+                  <div class="flex items-center gap-2">
+                    <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.webhookUrl }}</code>
+                    <button (click)="copy()"
+                            class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
+                      {{ copied() ? t('shelly.copied') : t('shelly.copyUrl') }}
+                    </button>
+                  </div>
+                </div>
+              }
+              <p class="text-[13px] text-gray-500 leading-relaxed">{{ t('shelly.wizard.step5Instructions') }}</p>
+            </div>
+          }
           @case (6) { <div data-step="6"></div> }
         }
       </div>
@@ -96,6 +115,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
   currentStep = signal<StepNum>(1);
   device = signal<ShellyDevice | null>(null);
   busy = signal(false);
+  copied = signal(false);
   stepDots: StepNum[] = [1, 2, 3, 4, 5, 6];
 
   // Step 4 input
@@ -168,6 +188,15 @@ export class ShellyPairingWizardComponent implements OnDestroy {
       this.transloco.translate('shelly.wizard.closeConfirmBody')
     );
     if (ok) this.closed.emit();
+  }
+
+  copy() {
+    const url = this.device()?.webhookUrl;
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(() => {
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 1500);
+    });
   }
 
   ngOnDestroy() {
