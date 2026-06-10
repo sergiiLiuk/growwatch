@@ -9,7 +9,7 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
   selector: 'app-shelly-pairing-wizard',
   imports: [FormsModule, TranslocoDirective],
   template: `
-    <div class="fixed inset-0 z-50 bg-white flex flex-col" *transloco="let t">
+    <div class="fixed inset-0 z-[60] bg-white flex flex-col" *transloco="let t">
 
       <!-- Top bar -->
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
