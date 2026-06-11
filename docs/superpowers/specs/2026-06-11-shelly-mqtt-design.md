@@ -1,188 +1,167 @@
-# Shelly Integration via MQTT — Design
+# Shelly Integration via MQTT (HiveMQ Cloud) — Design
 
 ## Context
 
-Phase 1 (shipped) integrated Shelly H&T Gen3 via outbound webhooks: GrowWatch generates a per-device URL with placeholder substitution; the user pastes it into Shelly's Settings → Actions and configures two webhooks (one per channel). In practice the Shelly Gen3 web UI exposes too many similar-sounding menus (Webhooks vs Outbound WebSockets vs Actions vs URL Actions) and forces non-technical users to make multiple HTTP/method/trigger choices. We hit this wall in real testing.
+Phase 1 (shipped) integrated Shelly H&T Gen3 via outbound webhooks: GrowWatch generates a per-device URL with placeholder substitution; the user pastes it into Shelly's Settings → Actions and configures two webhooks (one per channel). In real testing the Shelly Gen3 Actions page proved too opaque for non-technical users — multiple similar-sounding menus, multiple required fields per webhook, two actions to create.
 
-This spec replaces the webhook integration with **MQTT**. Shelly Gen3 exposes a single MQTT panel — broker URL, username, password, prefix, two toggles — and once configured, publishes all telemetry automatically. No per-channel actions, no per-event triggers.
+This spec replaces the webhook integration with **MQTT**, using **HiveMQ Cloud Free Tier** as the broker. Shelly Gen3 exposes a single MQTT panel — broker URL, username, password, prefix, two toggles — and once configured, publishes all telemetry automatically. No per-channel actions, no per-event triggers.
 
 ## Goal
 
-Pair a Shelly H&T Gen3 to GrowWatch by entering one MQTT config on the Shelly's web UI. Telemetry flows into the existing `SensorData` pipeline. The webhook integration is removed cleanly.
+Pair a Shelly H&T Gen3 to GrowWatch by entering one MQTT config form on the Shelly's web UI. Telemetry flows into the existing `SensorData` pipeline. The webhook integration is removed cleanly.
 
 ## Out of scope
 
-- Two-way control (sending commands to the Shelly via MQTT). Pure telemetry inbound.
-- Shelly Cloud OAuth.
-- Migration of existing webhook devices — there's one paired device in production and it can be re-paired by hand.
-- Multi-tenant broker scaling considerations. Single-user-scale broker only.
-- BLE / native phone provisioning.
-- Phase 2 UI cleanup (light/pressure/CO2 strip) and Phase 3 ESP32 decommission — separate specs.
+- Self-hosting any MQTT infrastructure (Sergii doesn't run Docker; HiveMQ Cloud handles operations).
+- Per-device MQTT credentials (free tier doesn't expose a programmatic credential API; we use a shared publisher credential with topic-based isolation — see Security below).
+- Two-way control of the Shelly via MQTT (telemetry inbound only).
+- Migration of any existing webhook devices — one device in production, re-paired manually.
+- Phase 2 UI cleanup and Phase 3 ESP32 decommission (separate specs).
 
 ## Architecture
 
-### Infrastructure — new Railway service `mqtt`
+### Broker — HiveMQ Cloud Free Tier
 
-- Container: `eclipse-mosquitto:2`
-- Persistent volume mounted at `/mosquitto/data` for `passwd` and `acl` files
-- Two ports exposed:
-  - `1883` — internal, plain TCP, for backend ↔ broker on Railway's internal network only
-  - `8883` — public, MQTT over TLS, for Shelly devices to connect from the internet
-- Public hostname: `mqtt.growwatch.dk` via Railway's TCP proxy + DNS A/CNAME
-- TLS cert v1: self-signed with `cert.pem` and `key.pem` baked into the image (Shelly Gen3 supports an "Allow invalid TLS certificate" checkbox). Follow-up: Let's Encrypt via DNS-01 challenge sidecar.
-- `mosquitto.conf` (v1 shape):
+- One-time operator setup: sign up for HiveMQ Cloud Free, create a cluster (~2 minutes). HiveMQ assigns a cluster host like `xxxxxxxxxx.s2.eu.hivemq.cloud`.
+- Real TLS cert (Let's Encrypt via HiveMQ) on port `8883`. No "Allow invalid TLS certificate" toggle needed on the Shelly.
+- Free tier limits (100 connections / 10 GB/month) are far above this project's scale.
 
-```
-listener 1883
-allow_anonymous false
-password_file /mosquitto/data/passwd
-acl_file /mosquitto/data/acl
+### MQTT credentials — two static users, manually provisioned
 
-listener 8883
-require_certificate false
-cafile /mosquitto/cert/cert.pem
-certfile /mosquitto/cert/cert.pem
-keyfile /mosquitto/cert/key.pem
-```
+Two HiveMQ users created once in the dashboard, never touched again:
 
-### Auth — password file managed by backend
+1. **`gw-server`** — backend's admin client.
+   - Subscribe permission on `gw/#`.
+   - No publish permission needed.
+   - Credentials stored as Railway env vars on the backend service.
+2. **`shelly-publisher`** — the credential every Shelly uses.
+   - Publish permission on `gw/+/status/+:0` and `gw/+/online`.
+   - **No subscribe permission** (this is the security boundary — see below).
+   - Credentials shown to users in the pairing wizard.
 
-- Backend writes to `passwd` and `acl` files on the shared Railway volume.
-- File format:
-  - `passwd` — one `username:hashedPassword` per line (use `mosquitto_passwd -b` format, bcrypt by default in v2)
-  - `acl` — per-user topic permissions:
-    ```
-    user gw-<deviceId>
-    topic readwrite gw/<deviceId>/#
+The same `shelly-publisher` credential is shown to every user. The per-user / per-device boundary is the **topic prefix** `gw/<deviceId>` where `deviceId` is a 32-byte random hex string generated by GrowWatch.
 
-    user gw-server
-    topic readwrite gw/#
-    ```
-- **Hot reload**: backend writes the new file, then calls `mosquitto_ctrl` over MQTT control channel OR posts a "reload" request to a small internal HTTP endpoint baked into the broker container. **Decision:** ship v1 with **broker restart on auth change**. ~2-second outage per pairing event is acceptable at this scale; sophisticated reload is a follow-up.
-- One admin account `gw-server` provisioned once (in the broker container's initial seed) with subscribe access to `gw/#`. Password stored in Railway env var `MQTT_SERVER_PASSWORD`.
+### Why a shared publisher credential is acceptable
+
+The MQTT credentials act as a "broker access token" — they let a client connect to the broker and publish into the `gw/` namespace. They do *not* grant access to read other users' data because we strip subscribe permission from the publisher role. The actual per-user authorization happens via the topic name — only someone who knows the specific `deviceId` can publish into that user's namespace.
+
+Threat model:
+- **Attacker discovers `shelly-publisher` creds** → can publish to `gw/<random-or-guessed-deviceId>/...`. They can't read any data, can't disrupt other users' devices, can only inject fake readings if they correctly guess a 32-byte random deviceId (effectively infeasible).
+- **Attacker discovers a specific user's deviceId** (e.g. by reading the user's clipboard or browser history) → can inject fake readings to that user. We rotate the deviceId via the existing rotate flow.
+- **Attacker discovers `gw-server` admin creds** → can read all users' readings. Mitigation: env vars only, never logged, never sent client-side.
+
+This is the same threat model as the webhook integration (the webhook URL contained a per-device token that anyone with the URL could use to inject readings; we never enforced subscribe-equivalents because webhooks only flow one way).
 
 ### Topic structure
 
-Each `ShellyDevice` is configured with `Custom MQTT prefix = gw/<deviceId>` in the Shelly's Settings → MQTT page. Shelly Gen3 then publishes:
+Shelly Gen3 publishes:
 
 - `gw/<deviceId>/status/temperature:0` → JSON `{"id":0,"tC":<float>,"tF":<float>}`
 - `gw/<deviceId>/status/humidity:0` → JSON `{"id":0,"rh":<float>}`
 - `gw/<deviceId>/status/devicepower:0` → JSON `{"id":0,"battery":{"V":<float>,"percent":<int>},"external":...}`
-- `gw/<deviceId>/online` → `true`/`false` (retained last-will)
+- `gw/<deviceId>/online` → `true` / `false` (LWT retained)
 
-Backend subscribes to wildcard `gw/+/status/+:0` and `gw/+/online`.
+Backend subscribes to `gw/+/status/+:0` and `gw/+/online`.
 
 ### Backend MQTT consumer
 
-New file: `backend/src/mqttConsumer.ts`. Started from `backend/src/index.ts` after MongoDB connect, before HTTP server listens.
+New file: `backend/src/mqttConsumer.ts`. Started from `backend/src/index.ts` after MongoDB connect, before HTTP listen.
 
-- Connects to broker at `process.env.MQTT_INTERNAL_URL ?? 'mqtt://mqtt.railway.internal:1883'` with username `gw-server` and password `process.env.MQTT_SERVER_PASSWORD`.
-- Subscribes:
+- Connects to `process.env.MQTT_BROKER_URL` (e.g. `mqtts://xxxxxxxxxx.s2.eu.hivemq.cloud:8883`) as `gw-server` using `process.env.MQTT_SERVER_PASSWORD`.
+- Subscribes to:
   - `gw/+/status/temperature:0`
   - `gw/+/status/humidity:0`
   - `gw/+/status/devicepower:0`
   - `gw/+/online`
-- Per-device **debounce buffer**: `Map<deviceId, { temperature?: number; humidity?: number; battery?: number; flushTimer?: NodeJS.Timeout }>`. Each incoming message updates the buffer and resets a 2-second timer. On flush:
-  1. Look up `ShellyDevice` by `deviceId` (cached for 60s to avoid hot-path DB hits).
-  2. Call `handleSensorData({ temperature, humidity, deviceId, userId })`.
-  3. Update `ShellyDevice.lastSeenAt` and `lastBatteryPercent` if set.
-  4. Clear the buffer entry.
-- Connection lifecycle: auto-reconnect with exponential backoff. Log every reconnect.
-- Boot log: `[boot] MQTT consumer: connected to mqtt://… as gw-server`.
-
-### Auth file writer (backend helper)
-
-New file: `backend/src/mqttAuth.ts`, exports:
-
-```ts
-export async function addMqttUser(deviceId: string, plainPassword: string): Promise<void>
-export async function removeMqttUser(deviceId: string): Promise<void>
-```
-
-Both call into the broker container via a thin HTTP shim (a separate sidecar) OR — simpler — write directly to the shared Railway volume mounted at the same path on the backend, then trigger broker restart via a Railway API call.
-
-**Decision:** v1 — backend SSHes / RPCs into the broker container is overkill. Use a different approach: the broker container exposes a tiny **internal-only HTTP endpoint** (Node script bundled into the image) at port `9000` that accepts `POST /reload-auth` and rewrites `passwd`/`acl` based on a JSON body, then signals mosquitto via `SIGHUP`. Backend calls this endpoint. Source of truth for credentials is in MongoDB (`ShellyDevice` collection); the sidecar is purely a "render this file and SIGHUP" service.
-
-This keeps the broker decoupled from MongoDB and keeps the backend in charge.
+- Per-device **debounce buffer**: `Map<deviceId, { temperature?, humidity?, battery?, flushTimer? }>`. Each message updates the buffer and resets a 2-second timer. On flush:
+  1. Look up `ShellyDevice` by `deviceId` (60s cache).
+  2. Update `lastSeenAt` and `lastBatteryPercent`.
+  3. Call `handleSensorData({ temperature, humidity, deviceId, userId })`.
+- Auto-reconnect with exponential backoff. Boot log: `[mqtt] connected to mqtts://… as gw-server`.
 
 ### `ShellyDevice` model changes
 
-Rename + add fields:
+Rename `webhookToken` → no replacement needed. The model drops `webhookToken` entirely:
 
 ```ts
 // Removed:
 webhookToken: string
-
-// Added:
-mqttUsername: string    // gw-<deviceId>
-mqttPassword: string    // 32-byte random, hex-encoded; stored plaintext for use by sidecar
 ```
 
-`mqttPassword` is stored plaintext because the sidecar needs to know it to write the bcrypt hash to `passwd` (it doesn't have a way to recover plaintext from the stored hash to re-render the file when adding other users). Alternative: store only the bcrypt hash and append on each change. The "append on each change" model needs the sidecar to read existing entries and only modify the changed one — more code. Accept storing plaintext for v1; risk is low (broker creds are scoped per-device, exposure on DB compromise is no worse than session tokens).
+No new field added at the device level. The `shelly-publisher` credentials are server-wide env vars, not per-device. The per-device identity is the `deviceId` (existing field) which becomes the MQTT topic prefix.
 
 ### GraphQL changes
 
 - `ShellyDevice` type:
   - Remove `webhookUrl: String!`
   - Add `mqttBrokerUrl: String!`, `mqttUsername: String!`, `mqttPassword: String!`, `mqttPrefix: String!`
-- `addShellyDevice` mutation: unchanged signature, but the resolver generates `mqttPassword` instead of `webhookToken` and triggers the sidecar.
-- `rotateShellyToken` → renamed `rotateShellyMqttPassword` (function preserved: generate new password, update Mongo, call sidecar).
+  - All four are derived from env vars + the per-device `deviceId` — see resolver section below.
+- Remove `rotateShellyToken` mutation entirely. Rotating the credentials would mean rotating the shared `shelly-publisher` password (affects every device) and that's an operator action via HiveMQ dashboard, not a per-device GraphQL mutation. Simpler to just remove the mutation; if a user needs to "rotate" they can remove + re-pair (which generates a new `deviceId` and therefore a new effective auth boundary).
+
+### Resolver mapping
+
+`shellyToGraphQL` becomes:
+
+```ts
+function shellyToGraphQL(d: IShellyDevice) {
+    return {
+        id: String(d._id),
+        deviceId: d.deviceId,
+        name: d.name,
+        mqttBrokerUrl: process.env.MQTT_PUBLIC_URL ?? 'mqtts://example.hivemq.cloud:8883',
+        mqttUsername: process.env.MQTT_PUBLISHER_USERNAME ?? 'shelly-publisher',
+        mqttPassword: process.env.MQTT_PUBLISHER_PASSWORD ?? '',
+        mqttPrefix: `gw/${d.deviceId}`,
+        lastSeenAt: d.lastSeenAt ? d.lastSeenAt.toISOString() : null,
+        lastBatteryPercent: d.lastBatteryPercent ?? null,
+        createdAt: d.createdAt.toISOString(),
+    };
+}
+```
+
+The publisher username + password are read from env vars at request time. No DB writes for credentials.
 
 ### Pairing wizard — step 4 rewrite
 
-Same 6 steps, but step 4's body becomes:
+Same 6-step shape as the existing wizard. Step 4's body becomes four copyable values (broker URL, username, password, prefix) with explicit instructions for the Shelly's MQTT panel. No "Allow invalid TLS certificate" toggle.
 
-> While connected to the Shelly's hotspot, in a new browser tab:
->
-> 1. Go to `http://192.168.33.1`
-> 2. Settings → Wi-Fi → Wi-Fi 1 → enter your home Wi-Fi name and password → Save.
-> 3. Settings → MQTT.
-> 4. Enable MQTT: **on**
-> 5. Server: paste the **broker URL** below
-> 6. Client ID: leave blank
-> 7. MQTT user: paste the **username** below
-> 8. MQTT password: paste the **password** below
-> 9. Custom MQTT prefix: paste the **prefix** below
-> 10. Generic status update over MQTT: **on**
-> 11. RPC status notifications over MQTT: **on**
-> 12. Save.
-> 13. Come back here and tap Next.
+### What gets deleted
 
-The wizard shows 4 copyable rows in step 4 (broker URL, username, password, prefix). The URL card UI from steps 3 and 4 is reused, just with multiple labelled values instead of one URL.
-
-### What gets deleted (clean cut)
-
-| Path | What |
+| File | What |
 |---|---|
 | `backend/src/index.ts` | `POST /api/shelly/webhook` route registration |
-| `backend/src/resolvers.ts` | `findShellyByToken`, `touchShelly`, `buildShellyWebhookUrl`, `generateShellyToken`, `webhookToken` field in `shellyToGraphQL` |
+| `backend/src/resolvers.ts` | `findShellyByToken`, `touchShelly`, `buildShellyWebhookUrl`, `generateShellyToken`, `rotateShellyToken` resolver, `webhookToken` field in `shellyToGraphQL` |
 | `backend/src/models.ts` | `webhookToken` field on `IShellyDevice` and schema |
-| `backend/src/schema.ts` | `webhookUrl` on `ShellyDevice` type |
-| `frontend/src/app/core/services/shelly.service.ts` | `webhookUrl` from `ShellyDevice` interface and from GraphQL fragment |
-| `frontend/public/i18n/{en,da}.json` | `shelly.copyUrl`, `shelly.copied`, `shelly.webhookUrlLabel`, `shelly.webhookUrlHint` (only if unused after wizard rewrite — they're still used in the wizard, so probably keep) |
+| `backend/src/schema.ts` | `webhookUrl` field, `rotateShellyToken` mutation |
+| `frontend/src/app/core/services/shelly.service.ts` | `webhookUrl` from interface and GraphQL fragment, `rotateToken` method (since the mutation is gone) |
+| `frontend/src/app/features/settings/shelly-setup.component.ts` | rotate button + handler in the device card |
 
-`removeShellyDevice` resolver gains a call to `removeMqttUser` so cleanup propagates to broker.
+## Operator setup (one-time, ~15 min)
 
-## Migration / cutover
-
-- Production has one paired but never-seen device. Plan does not migrate it — operator deletes it manually post-deploy and re-pairs via the new flow.
-- Backend deploy order:
-  1. Deploy broker service to Railway (`mqtt` + sidecar). Verify TLS connectivity from an external `mqttx` client.
-  2. Deploy backend with MQTT consumer. Verify boot log shows consumer connected.
-  3. Deploy frontend with new wizard. Existing device card will fail GraphQL (no `webhookUrl`); user manually deletes via the device card's 🗑 button.
-  4. Re-pair via new wizard.
-
-## Risks
-
-- **Railway TCP proxy on port 8883** — needs verification. Railway supports TCP proxies but requires service config. If unsupported, fallback to running broker on default 1883 and accepting plaintext for v1 — acceptable for personal-scale with non-sensitive sensor data, but documented.
-- **Self-signed cert UX** — Shelly Gen3's "Allow invalid TLS certificate" toggle exists in the firmware. Wizard tells user to enable it. If your firmware version lacks the toggle, fallback to plaintext 1883.
-- **Sidecar approach for auth file management** — adds a small Node service in the broker image, plus an internal HTTP call from backend. Not standard but standard alternatives (mosquitto-go-auth, Dynamic Security plugin) are heavier. Sidecar is right-sized.
-- **Shelly's MQTT message schema** — based on Shelly Gen3 docs. Verify on real device on first connect; consumer logs the raw payload of the first message per topic to help diagnose schema differences.
+1. Sign up at https://www.hivemq.com/cloud/ for the Free Serverless tier.
+2. Create a cluster (any region close to Railway's EU region).
+3. In the cluster's "Access Management" section, create two users:
+   - `gw-server` — Subscribe-only on `gw/#`.
+   - `shelly-publisher` — Publish-only on `gw/+/status/+` and `gw/+/online`.
+4. Copy the cluster host (e.g. `xxxxxxxxxx.s2.eu.hivemq.cloud`), the `gw-server` password, and the `shelly-publisher` password.
+5. Add to Railway backend service env:
+   - `MQTT_BROKER_URL` = `mqtts://xxxxxxxxxx.s2.eu.hivemq.cloud:8883` (used by backend's mqtt client)
+   - `MQTT_PUBLIC_URL` = same value (shown to users; same broker)
+   - `MQTT_SERVER_PASSWORD` = the `gw-server` password
+   - `MQTT_PUBLISHER_USERNAME` = `shelly-publisher`
+   - `MQTT_PUBLISHER_PASSWORD` = the `shelly-publisher` password
 
 ## Success criteria
 
-- A user can complete the wizard's new step 4 (single MQTT form) without touching Shelly's Actions / Webhooks pages.
-- After the Shelly publishes its first temperature reading, GrowWatch's home page shows it within ≤3 seconds.
-- After `removeShellyDevice` is called, the Shelly's connection is rejected by the broker (verified by checking broker logs).
+- User completes the wizard's new step 4 (single MQTT form) without touching Shelly's Actions / Webhooks pages.
+- Shelly publishes its first reading; GrowWatch's home page shows it within ≤3 seconds.
+- After removing a device in GrowWatch, the device's Shelly can still publish (the credential is shared), but the readings go nowhere (no `ShellyDevice` row → `lookupDevice` returns null → dropped). Documented behavior.
 - No `POST /api/shelly/webhook` endpoint exists in the deployed backend.
-- Settings page card shows `lastSeenAt` and `lastBatteryPercent` updates on every report.
+- Settings card shows `lastSeenAt` and `lastBatteryPercent` updates on every report.
+
+## Risks
+
+- **Shared publisher credential is a real secret** — if leaked publicly (e.g. screenshot of the wizard posted online), an attacker could attempt to inject fake readings into random topic prefixes. Mitigation: deviceId space is 2^256, blind injection effectively impossible. If a specific user's deviceId leaks, they rotate via remove + re-pair.
+- **HiveMQ Cloud Free Tier policy changes** — if Hive discontinues the free tier or changes limits, we'd need to migrate. Switching brokers means rotating the cluster URL in two Railway env vars; minimal code change.
+- **Shelly's exact MQTT message schema** — verified against Gen3 docs; first deploy logs raw payloads on the first message per topic for diagnosis.
+- **MQTT Cloud serverless cold starts** — some serverless brokers go idle when no traffic. HiveMQ Cloud is reportedly always-on for free tier but if reading latency spikes after long idle, consider sending a heartbeat from backend to keep the connection warm.
