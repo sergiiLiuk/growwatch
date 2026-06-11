@@ -476,7 +476,6 @@ export interface IShellyDevice extends Document {
     userId: string;
     deviceId: string;          // Shelly serial, e.g. "shellyhtg3-AABBCCDDEEFF"
     name: string;
-    webhookToken: string;      // 64-hex random, used as webhook query param
     lastSeenAt?: Date;
     lastBatteryPercent?: number;
     createdAt: Date;
@@ -487,13 +486,14 @@ const shellyDeviceSchema = new Schema<IShellyDevice>(
         userId: { type: String, required: true, index: true },
         deviceId: { type: String, required: true },
         name: { type: String, required: true },
-        webhookToken: { type: String, required: true, unique: true, index: true },
         lastSeenAt: { type: Date },
         lastBatteryPercent: { type: Number, min: 0, max: 100 },
         createdAt: { type: Date, default: Date.now },
     },
     { collection: 'shelly_devices' }
 );
+
+shellyDeviceSchema.index({ deviceId: 1 }, { unique: true });
 
 shellyDeviceSchema.index({ userId: 1, deviceId: 1 }, { unique: true });
 

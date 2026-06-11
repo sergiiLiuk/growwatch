@@ -156,7 +156,10 @@ export const typeDefs = gql`
     id: String!
     deviceId: String!
     name: String!
-    webhookUrl: String!
+    mqttBrokerUrl: String!
+    mqttUsername: String!
+    mqttPassword: String!
+    mqttPrefix: String!
     lastSeenAt: String
     lastBatteryPercent: Int
     createdAt: String!
@@ -313,7 +316,6 @@ export const typeDefs = gql`
     removeDevice(id: String!): Boolean!
     addShellyDevice(name: String!): ShellyDevice!
     renameShellyDevice(id: String!, name: String!): ShellyDevice!
-    rotateShellyToken(id: String!): ShellyDevice!
     removeShellyDevice(id: String!): Boolean!
     updateUserSettings(
       name: String

@@ -454,27 +454,8 @@ export async function cascadeDeleteUser(userId: string): Promise<void> {
 
 // ── Shelly H&T Gen3 helpers ──────────────────────────────────────────────────
 
-const SHELLY_BACKEND_BASE = process.env.SHELLY_BACKEND_BASE_URL ?? 'https://growwatch.dk';
-
-function generateShellyToken(): string {
-    return crypto.randomBytes(32).toString('hex');
-}
-
 function generateShellyDeviceId(): string {
     return `gw-${crypto.randomBytes(4).toString('hex')}`;
-}
-
-function buildShellyWebhookUrl(token: string, deviceId: string): string {
-    // Shelly Gen3 URL Action placeholder syntax: ${ev.tC}, ${ev.rh}, ${devicepower:0.battery.percent}
-    // Verified against a live device during manual testing (Task 8 Step 4).
-    const params = [
-        `token=${encodeURIComponent(token)}`,
-        `deviceId=${encodeURIComponent(deviceId)}`,
-        `t=\${ev.tC}`,
-        `h=\${ev.rh}`,
-        `bat=\${devicepower:0.battery.percent}`,
-    ];
-    return `${SHELLY_BACKEND_BASE}/api/shelly/webhook?${params.join('&')}`;
 }
 
 function shellyToGraphQL(d: IShellyDevice) {
@@ -482,22 +463,14 @@ function shellyToGraphQL(d: IShellyDevice) {
         id: String(d._id),
         deviceId: d.deviceId,
         name: d.name,
-        webhookUrl: buildShellyWebhookUrl(d.webhookToken, d.deviceId),
+        mqttBrokerUrl: process.env.MQTT_PUBLIC_URL ?? 'mqtts://example.hivemq.cloud:8883',
+        mqttUsername: process.env.MQTT_PUBLISHER_USERNAME ?? 'shelly-publisher',
+        mqttPassword: process.env.MQTT_PUBLISHER_PASSWORD ?? '',
+        mqttPrefix: `gw/${d.deviceId}`,
         lastSeenAt: d.lastSeenAt ? d.lastSeenAt.toISOString() : null,
         lastBatteryPercent: d.lastBatteryPercent ?? null,
         createdAt: d.createdAt.toISOString(),
     };
-}
-
-export async function findShellyByToken(token: string): Promise<IShellyDevice | null> {
-    if (!token || typeof token !== 'string') return null;
-    return ShellyDevice.findOne({ webhookToken: token });
-}
-
-export async function touchShelly(id: any, batteryPercent: number | null): Promise<void> {
-    const update: any = { lastSeenAt: new Date() };
-    if (batteryPercent !== null) update.lastBatteryPercent = batteryPercent;
-    await ShellyDevice.updateOne({ _id: id }, { $set: update });
 }
 
 /**
@@ -1305,7 +1278,6 @@ export const resolvers = {
                 userId: ctx.user.userId,
                 deviceId: generateShellyDeviceId(),
                 name,
-                webhookToken: generateShellyToken(),
             });
             return shellyToGraphQL(created);
         },
@@ -1316,16 +1288,6 @@ export const resolvers = {
             const updated = await ShellyDevice.findOneAndUpdate(
                 { _id: args.id, userId: ctx.user.userId },
                 { $set: { name } },
-                { new: true }
-            );
-            if (!updated) throw new Error('Device not found');
-            return shellyToGraphQL(updated);
-        },
-        rotateShellyToken: async (_: any, args: { id: string }, ctx: Ctx) => {
-            if (!ctx.user) throw new Error('Unauthorized');
-            const updated = await ShellyDevice.findOneAndUpdate(
-                { _id: args.id, userId: ctx.user.userId },
-                { $set: { webhookToken: generateShellyToken() } },
                 { new: true }
             );
             if (!updated) throw new Error('Device not found');
