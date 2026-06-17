@@ -4,18 +4,17 @@ import { Router } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ShellyService, ShellyDevice } from '../../core/services/shelly.service';
 import { IconComponent } from '../../shared/components/atoms/icon.component';
-import { ShellyPairingWizardComponent } from './shelly-pairing-wizard.component';
+import { ShellyConnectComponent } from './shelly-connect.component';
 import dayjs from 'dayjs';
 
 @Component({
   selector: 'app-shelly-setup',
-  imports: [FormsModule, TranslocoDirective, IconComponent, ShellyPairingWizardComponent],
+  imports: [FormsModule, TranslocoDirective, IconComponent, ShellyConnectComponent],
   template: `
-    @if (wizardOpen()) {
-      <app-shelly-pairing-wizard
-        [existingDevice]="unfinishedDevice()"
-        (closed)="onWizardClosed()"
-        (completed)="onWizardCompleted()" />
+    @if (connectOpen()) {
+      <app-shelly-connect
+        (closed)="onConnectClosed()"
+        (completed)="onConnectCompleted()" />
     } @else {
       <div class="max-w-lg mx-auto px-4 py-6" *transloco="let t">
 
@@ -28,6 +27,12 @@ import dayjs from 'dayjs';
           <h1 class="text-[18px] font-medium text-gray-800">{{ t('shelly.title') }}</h1>
           <p class="text-[11px] text-gray-400 mt-0.5">{{ t('shelly.subtitle') }}</p>
         </div>
+
+        @if (reconnectNeeded()) {
+          <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-[13px] text-amber-800">
+            {{ t('shelly.reconnectNeeded') }}
+          </div>
+        }
 
         @if (devices().length === 0 && !loading()) {
           <div class="bg-white shadow-gw-sm rounded-xl p-6 text-center">
@@ -63,11 +68,18 @@ import dayjs from 'dayjs';
           </div>
         }
 
-        <button (click)="openWizard()"
-                [disabled]="devices().length > 0 && !unfinishedDevice()"
+        <button (click)="openConnect()"
+                [disabled]="devices().length > 0 && !reconnectNeeded()"
                 class="w-full mt-4 px-4 py-3 rounded-xl bg-gw-green text-white text-[14px] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          {{ unfinishedDevice() ? t('shelly.wizard.continue') : t('shelly.addDevice') }}
+          {{ t('shelly.addDevice') }}
         </button>
+
+        @if (accountConnected()) {
+          <button (click)="disconnectAccount()"
+                  class="w-full mt-3 px-4 py-3 rounded-xl border border-red-200 text-red-600 text-[14px] font-medium hover:bg-red-50 transition-colors">
+            {{ t('shelly.disconnect') }}
+          </button>
+        }
       </div>
     }
   `,
@@ -79,13 +91,9 @@ export class ShellySetupComponent implements OnInit {
 
   devices = signal<ShellyDevice[]>([]);
   loading = signal(true);
-
-  wizardOpen = signal(false);
-
-  unfinishedDevice = computed<ShellyDevice | null>(() => {
-    const d = this.devices()[0];
-    return d && !d.lastSeenAt ? d : null;
-  });
+  connectOpen = signal(false);
+  accountConnected = signal(false);
+  reconnectNeeded = signal(false);
 
   ngOnInit() {
     this.reload();
@@ -97,19 +105,26 @@ export class ShellySetupComponent implements OnInit {
       next: list => { this.devices.set(list); this.loading.set(false); },
       error: err => { console.error('Failed to load Shelly devices:', err); this.loading.set(false); },
     });
+    this.shelly.account().subscribe({
+      next: info => {
+        this.accountConnected.set(info.connected);
+        this.reconnectNeeded.set(info.status === 'auth_error');
+      },
+      error: () => { /* non-fatal */ },
+    });
   }
 
   back() { this.router.navigate(['/settings']); }
 
-  openWizard() { this.wizardOpen.set(true); }
+  openConnect() { this.connectOpen.set(true); }
 
-  onWizardClosed() {
-    this.wizardOpen.set(false);
+  onConnectClosed() {
+    this.connectOpen.set(false);
     this.reload();
   }
 
-  onWizardCompleted() {
-    this.wizardOpen.set(false);
+  onConnectCompleted() {
+    this.connectOpen.set(false);
     this.reload();
   }
 
@@ -127,6 +142,14 @@ export class ShellySetupComponent implements OnInit {
     this.shelly.remove(d.id).subscribe({
       next: () => this.reload(),
       error: err => alert(err?.message ?? 'Failed to remove'),
+    });
+  }
+
+  disconnectAccount() {
+    if (!confirm(this.transloco.translate('shelly.disconnectConfirm'))) return;
+    this.shelly.disconnectAccount().subscribe({
+      next: () => this.reload(),
+      error: err => alert(err?.message ?? 'Failed to disconnect'),
     });
   }
 
