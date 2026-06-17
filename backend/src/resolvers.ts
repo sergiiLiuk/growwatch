@@ -57,6 +57,19 @@ let hourAccum: HourlyAccumulator = { light: [], temperature: [], humidity: [], p
 
 function avg(arr: number[]): number { return arr.reduce((a, b) => a + b, 0) / arr.length; }
 
+// Number of readings accumulated this hour, across all sensor channels. A reading
+// may carry any subset of channels — e.g. a Shelly H&T reports temperature/humidity
+// but no light — so we can't key "did we get any data?" off the light array alone.
+function accumReadingCount(): number {
+    return Math.max(
+        hourAccum.light.length,
+        hourAccum.temperature.length,
+        hourAccum.humidity.length,
+        hourAccum.pressure.length,
+        hourAccum.co2.length,
+    );
+}
+
 // Cached plant type for lightStatus calculations — updated on every plant mutation
 let primaryPlantType: PlantType = 'TOMATO';
 
@@ -67,7 +80,8 @@ async function refreshPrimaryPlant() {
 
 // Build the upsert document for the current hour from the accumulator. No reset.
 async function upsertCurrentHour(userId: string | null, deviceId?: string) {
-    if (hourAccum.light.length === 0) return;
+    const readingCount = accumReadingCount();
+    if (readingCount === 0) return;
     if (!userId) return;
 
     const now = new Date();
@@ -76,13 +90,16 @@ async function upsertCurrentHour(userId: string | null, deviceId?: string) {
     const update: any = {
         hour: hourStart,
         userId,
-        lightLevel: hourAccum.light[hourAccum.light.length - 1],
-        minLight: Math.min(...hourAccum.light),
-        maxLight: Math.max(...hourAccum.light),
-        avgLight: avg(hourAccum.light),
-        readingCount: hourAccum.light.length,
+        readingCount,
     };
     if (deviceId) update.deviceId = deviceId;
+
+    if (hourAccum.light.length > 0) {
+        update.lightLevel = hourAccum.light[hourAccum.light.length - 1];
+        update.minLight = Math.min(...hourAccum.light);
+        update.maxLight = Math.max(...hourAccum.light);
+        update.avgLight = avg(hourAccum.light);
+    }
 
     if (hourAccum.temperature.length > 0) {
         update.avgTemperature = avg(hourAccum.temperature);
@@ -111,7 +128,7 @@ async function upsertCurrentHour(userId: string | null, deviceId?: string) {
 
 // Triggered at the top of each hour (resets the accumulator after saving)
 export async function saveHourlyData(userId?: string | null, deviceId?: string) {
-    if (hourAccum.light.length === 0) {
+    if (accumReadingCount() === 0) {
         console.log('⚠️ No readings to save');
         return;
     }
@@ -197,7 +214,7 @@ export async function handleSensorData(data: any): Promise<SensorData | null> {
     };
 
     pushReading(sensorData);
-    hourAccum.light.push(data.lightLevel);
+    if (typeof data.lightLevel === 'number' && isFinite(data.lightLevel)) hourAccum.light.push(data.lightLevel);
     // Use the sanitized values so out-of-range readings can't pollute hourly aggregates.
     if (sensorData.temperature != null) hourAccum.temperature.push(sensorData.temperature);
     if (sensorData.humidity    != null) hourAccum.humidity.push(sensorData.humidity);
