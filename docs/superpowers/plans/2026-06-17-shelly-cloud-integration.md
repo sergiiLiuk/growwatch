@@ -201,7 +201,13 @@ git commit -m "shelly: add ShellyAccount model and lastReportedAt field"
 **Files:**
 - Create: `backend/src/shellyCloud.ts`
 
-> **Confirmed shapes (from Task 1):** _(append Task 1 findings here; the code below assumes `status.temperature:0.tC`, `status.humidity:0.rh`, `status.devicepower:0.battery.percent`, and a numeric `_updated`/epoch timestamp. Adjust the field reads in `mapStatus` and the two endpoint URLs to match.)_
+> **Partial confirmation (from official docs, 2026-06-17 — not a live account):**
+> - The v2 `POST /v2/devices/api/get` response is an **array** of device states, each `{ id, type, code, gen, online: 0|1, status: {...}, settings: {...} }`. `getDevicesStatus`/`mapStatus` already parse this envelope (array → per-device `id` + `status`). ✅
+> - **Still UNCONFIRMED (require a live H&T account — Task 1 Steps 2–3):**
+>   1. The H&T status field paths. Assumed `status['temperature:0'].tC`, `status['humidity:0'].rh`, `status['devicepower:0'].battery.percent` (mirrors the Shelly local/MQTT status the old consumer parsed). Docs only show a relay example.
+>   2. The last-update **timestamp** field + unit. Assumed numeric `_updated` (epoch seconds). This drives dedup — if wrong, readings won't ingest.
+>   3. The **device-list** endpoint for discovery. `listDevices` uses the deprecated `/device/all_status`; the docs don't document a v2 "list all" call. Confirm this returns the account's devices with id/name/online.
+> Adjust `mapStatus` field reads and the two endpoint URLs in `shellyCloud.ts` to match Task 1's live findings.
 
 - [ ] **Step 1: Write the client**
 
