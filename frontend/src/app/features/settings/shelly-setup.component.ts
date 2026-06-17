@@ -54,10 +54,6 @@ import dayjs from 'dayjs';
                         class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gw-green-light/60 hover:text-gw-green-dark transition-colors">
                   <app-icon name="pencil" class="w-4 h-4" />
                 </button>
-                <button (click)="rotate(d)" [title]="t('shelly.rotateToken')"
-                        class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gw-amber-light hover:text-gw-amber transition-colors">
-                  <app-icon name="refresh" class="w-4 h-4" />
-                </button>
                 <button (click)="remove(d)" [title]="t('shelly.remove')"
                         class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
                   <app-icon name="trash" class="w-4 h-4" />
@@ -123,14 +119,6 @@ export class ShellySetupComponent implements OnInit {
     this.shelly.rename(d.id, name.trim()).subscribe({
       next: () => this.reload(),
       error: err => alert(err?.message ?? 'Failed to rename'),
-    });
-  }
-
-  rotate(d: ShellyDevice) {
-    if (!confirm(this.transloco.translate('shelly.rotateTokenConfirm'))) return;
-    this.shelly.rotateToken(d.id).subscribe({
-      next: () => this.reload(),
-      error: err => alert(err?.message ?? 'Failed to rotate token'),
     });
   }
 

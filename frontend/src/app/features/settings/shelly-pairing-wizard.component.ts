@@ -55,20 +55,8 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
           }
           @case (3) {
             <div class="space-y-4">
-              <div class="text-4xl">🔗</div>
+              <div class="text-4xl">📶</div>
               <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step3Title') }}</h1>
-              @if (device(); as d) {
-                <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
-                  <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.urlLabel') }}</div>
-                  <div class="flex items-center gap-2">
-                    <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.webhookUrl }}</code>
-                    <button (click)="copy()"
-                            class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
-                      {{ copied() ? t('shelly.copied') : t('shelly.copyUrl') }}
-                    </button>
-                  </div>
-                </div>
-              }
               <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step3Body') }}</p>
             </div>
           }
@@ -77,14 +65,46 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
               <div class="text-4xl">⚙️</div>
               <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step4Title') }}</h1>
               @if (device(); as d) {
-                <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
-                  <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.urlLabel') }}</div>
-                  <div class="flex items-center gap-2">
-                    <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.webhookUrl }}</code>
-                    <button (click)="copy()"
-                            class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
-                      {{ copied() ? t('shelly.copied') : t('shelly.copyUrl') }}
-                    </button>
+                <div class="space-y-2">
+                  <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
+                    <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.brokerUrlLabel') }}</div>
+                    <div class="flex items-center gap-2">
+                      <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.mqttBrokerUrl }}</code>
+                      <button (click)="copyValue(d.mqttBrokerUrl, 'broker')"
+                              class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
+                        {{ copiedField() === 'broker' ? t('shelly.copied') : t('shelly.copyUrl') }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
+                    <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.usernameLabel') }}</div>
+                    <div class="flex items-center gap-2">
+                      <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.mqttUsername }}</code>
+                      <button (click)="copyValue(d.mqttUsername, 'user')"
+                              class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
+                        {{ copiedField() === 'user' ? t('shelly.copied') : t('shelly.copyUrl') }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
+                    <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.passwordLabel') }}</div>
+                    <div class="flex items-center gap-2">
+                      <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.mqttPassword }}</code>
+                      <button (click)="copyValue(d.mqttPassword, 'pass')"
+                              class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
+                        {{ copiedField() === 'pass' ? t('shelly.copied') : t('shelly.copyUrl') }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
+                    <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.prefixLabel') }}</div>
+                    <div class="flex items-center gap-2">
+                      <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.mqttPrefix }}</code>
+                      <button (click)="copyValue(d.mqttPrefix, 'prefix')"
+                              class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
+                        {{ copiedField() === 'prefix' ? t('shelly.copied') : t('shelly.copyUrl') }}
+                      </button>
+                    </div>
                   </div>
                 </div>
               }
@@ -146,7 +166,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
   currentStep = signal<StepNum>(1);
   device = signal<ShellyDevice | null>(null);
   busy = signal(false);
-  copied = signal(false);
+  copiedField = signal<string | null>(null);
   private pollHandle: ReturnType<typeof setInterval> | null = null;
   detected = signal(false);
   stepDots: StepNum[] = [1, 2, 3, 4, 5, 6];
@@ -267,12 +287,11 @@ export class ShellyPairingWizardComponent implements OnDestroy {
     });
   }
 
-  copy() {
-    const url = this.device()?.webhookUrl;
-    if (!url) return;
-    navigator.clipboard.writeText(url).then(() => {
-      this.copied.set(true);
-      setTimeout(() => this.copied.set(false), 1500);
+  copyValue(value: string, field: string) {
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      this.copiedField.set(field);
+      setTimeout(() => this.copiedField.set(null), 1500);
     });
   }
 

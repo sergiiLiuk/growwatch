@@ -7,13 +7,16 @@ export interface ShellyDevice {
   id: string;
   deviceId: string;
   name: string;
-  webhookUrl: string;
+  mqttBrokerUrl: string;
+  mqttUsername: string;
+  mqttPassword: string;
+  mqttPrefix: string;
   lastSeenAt: string | null;
   lastBatteryPercent: number | null;
   createdAt: string;
 }
 
-const SHELLY_FIELDS = `id deviceId name webhookUrl lastSeenAt lastBatteryPercent createdAt`;
+const SHELLY_FIELDS = `id deviceId name mqttBrokerUrl mqttUsername mqttPassword mqttPrefix lastSeenAt lastBatteryPercent createdAt`;
 
 @Injectable({ providedIn: 'root' })
 export class ShellyService {
@@ -57,19 +60,6 @@ export class ShellyService {
         `,
         variables: { id, name },
       }).then(result => result.data!.renameShellyDevice)
-    );
-  }
-
-  rotateToken(id: string): Observable<ShellyDevice> {
-    return defer(() =>
-      this.apolloClient.mutate<{ rotateShellyToken: ShellyDevice }>({
-        mutation: gql`
-          mutation RotateShellyToken($id: String!) {
-            rotateShellyToken(id: $id) { ${SHELLY_FIELDS} }
-          }
-        `,
-        variables: { id },
-      }).then(result => result.data!.rotateShellyToken)
     );
   }
 
