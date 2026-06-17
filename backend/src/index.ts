@@ -6,7 +6,7 @@ import { useServer } from 'graphql-ws/lib/use/ws';
 import { createServer } from 'http';
 import { typeDefs } from './schema';
 import { resolvers, handleSensorData, startHourlyAggregation, saveHourlyData, initPlantCache, setSuperuserId, setLlmProvider } from './resolvers';
-import { startMqttConsumer } from './mqttConsumer';
+import { startShellyCloudPoller } from './shellyCloudPoller';
 import { StubLlmProvider } from './services/smartTip';
 import { ClaudeLlmProvider } from './services/claudeLlmProvider';
 import { startSmartTipScheduler } from './services/smartTipScheduler';
@@ -328,7 +328,7 @@ async function startServer() {
     apolloServer.applyMiddleware({ app: app as any, path: '/graphql', cors: { origin: true, credentials: true } });
 
     // ─── Start ────────────────────────────────────────────────────────────────
-    startMqttConsumer();
+    startShellyCloudPoller();
     httpServer.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running on port ${PORT}`);
         console.log(`📊 GraphQL:  http://localhost:${PORT}/graphql`);
