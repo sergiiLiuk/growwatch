@@ -3,7 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ShellyService, ShellyDevice } from '../../core/services/shelly.service';
 
-type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
+type StepNum = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+const TOTAL_STEPS = 9;
 
 @Component({
   selector: 'app-shelly-pairing-wizard',
@@ -17,13 +19,8 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
                 class="text-[13px] text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed hover:text-gray-700 transition-colors">
           ‹ {{ t('shelly.wizard.back') }}
         </button>
-        <div class="flex items-center gap-1.5">
-          @for (n of stepDots; track n) {
-            <span class="w-2 h-2 rounded-full"
-                  [class.bg-gw-green]="n === currentStep()"
-                  [class.bg-gw-green-light]="n < currentStep()"
-                  [class.bg-gray-200]="n > currentStep()"></span>
-          }
+        <div class="text-[12px] text-gray-400 font-medium">
+          {{ t('shelly.wizard.stepCounter', { n: currentStep(), total: total }) }}
         </div>
         <button (click)="requestClose()"
                 class="text-[13px] text-gray-500 hover:text-gray-700 transition-colors">
@@ -64,6 +61,17 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
             <div class="space-y-4">
               <div class="text-4xl">⚙️</div>
               <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step4Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step4Body') }}</p>
+              <div class="border-2 border-dashed border-gray-200 rounded-xl h-32 flex items-center justify-center text-[12px] text-gray-300">
+                {{ t('shelly.wizard.screenshotSlot') }}
+              </div>
+            </div>
+          }
+          @case (5) {
+            <div class="space-y-4">
+              <div class="text-4xl">📋</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step5Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step5Body') }}</p>
               @if (device(); as d) {
                 <div class="space-y-2">
                   <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
@@ -96,38 +104,62 @@ type StepNum = 1 | 2 | 3 | 4 | 5 | 6;
                       </button>
                     </div>
                   </div>
-                  <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
-                    <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.prefixLabel') }}</div>
-                    <div class="flex items-center gap-2">
-                      <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.mqttPrefix }}</code>
-                      <button (click)="copyValue(d.mqttPrefix, 'prefix')"
-                              class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
-                        {{ copiedField() === 'prefix' ? t('shelly.copied') : t('shelly.copyUrl') }}
-                      </button>
-                    </div>
-                  </div>
                 </div>
               }
-              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step4Body') }}</p>
-            </div>
-          }
-          @case (5) {
-            <div class="space-y-4">
-              <div class="text-4xl">📶</div>
-              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step5Title') }}</h1>
-              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step5Body') }}</p>
+              <div class="border-2 border-dashed border-gray-200 rounded-xl h-32 flex items-center justify-center text-[12px] text-gray-300">
+                {{ t('shelly.wizard.screenshotSlot') }}
+              </div>
             </div>
           }
           @case (6) {
             <div class="space-y-4">
+              <div class="text-4xl">🔑</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step6Title') }}</h1>
+              @if (device(); as d) {
+                <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
+                  <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.prefixLabel') }}</div>
+                  <div class="flex items-center gap-2">
+                    <code class="flex-1 text-[11px] bg-gray-50 rounded-lg px-2 py-1.5 truncate font-mono">{{ d.mqttPrefix }}</code>
+                    <button (click)="copyValue(d.mqttPrefix, 'prefix')"
+                            class="text-[12px] text-gw-green-dark hover:underline shrink-0 font-medium">
+                      {{ copiedField() === 'prefix' ? t('shelly.copied') : t('shelly.copyUrl') }}
+                    </button>
+                  </div>
+                </div>
+              }
+              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step6Body') }}</p>
+              <div class="border-2 border-dashed border-gray-200 rounded-xl h-32 flex items-center justify-center text-[12px] text-gray-300">
+                {{ t('shelly.wizard.screenshotSlot') }}
+              </div>
+            </div>
+          }
+          @case (7) {
+            <div class="space-y-4">
+              <div class="text-4xl">📶</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step7Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step7Body') }}</p>
+              <div class="border-2 border-dashed border-gray-200 rounded-xl h-32 flex items-center justify-center text-[12px] text-gray-300">
+                {{ t('shelly.wizard.screenshotSlot') }}
+              </div>
+            </div>
+          }
+          @case (8) {
+            <div class="space-y-4">
+              <div class="text-4xl">🔁</div>
+              <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step8Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step8Body') }}</p>
+            </div>
+          }
+          @case (9) {
+            <div class="space-y-4">
               @if (!detected()) {
                 <div class="text-4xl">⏳</div>
-                <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step6Title') }}</h1>
-                <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step6BodyWaiting') }}</p>
-                <p class="text-[13px] text-gray-400 leading-relaxed">{{ t('shelly.wizard.step6BodyButtonHint') }}</p>
+                <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step9Title') }}</h1>
+                <p class="text-[14px] text-gray-600 leading-relaxed">{{ t('shelly.wizard.step9BodyWaiting') }}</p>
+                <p class="text-[13px] text-gray-400 leading-relaxed">{{ t('shelly.wizard.step9BodyButtonHint') }}</p>
               } @else {
                 <div class="text-4xl">✅</div>
-                <h1 class="text-[20px] font-medium text-gw-green-dark">{{ t('shelly.wizard.step6BodySuccess') }}</h1>
+                <h1 class="text-[20px] font-medium text-gw-green-dark">{{ t('shelly.wizard.step9BodySuccess') }}</h1>
                 @if (device(); as d) {
                   <div class="bg-gw-green-light rounded-xl p-4 space-y-1">
                     <div class="text-[11px] text-gw-green-dark/70 uppercase tracking-wide">{{ d.name }}</div>
@@ -163,22 +195,23 @@ export class ShellyPairingWizardComponent implements OnDestroy {
   closed = output<void>();
   completed = output<void>();
 
+  total = TOTAL_STEPS;
   currentStep = signal<StepNum>(1);
   device = signal<ShellyDevice | null>(null);
   busy = signal(false);
   copiedField = signal<string | null>(null);
   private pollHandle: ReturnType<typeof setInterval> | null = null;
   detected = signal(false);
-  stepDots: StepNum[] = [1, 2, 3, 4, 5, 6];
 
-  // Step 4 input
+  // Step 2 input
   draftName = signal('');
 
   private resumed = false;
 
   constructor() {
     // Signal inputs aren't bound during constructor — read them in an effect so we
-    // see the value the parent passes in.
+    // see the value the parent passes in. Resume at step 3 (join the hotspot) so the
+    // user re-establishes the Shelly Wi-Fi before re-entering the config screens.
     effect(() => {
       const existing = this.existingDevice();
       if (existing && !this.resumed) {
@@ -189,18 +222,18 @@ export class ShellyPairingWizardComponent implements OnDestroy {
     });
   }
 
-  canGoBack = computed(() => this.currentStep() > 1 && this.currentStep() < 6);
+  canGoBack = computed(() => this.currentStep() > 1 && this.currentStep() < 9);
 
   canAdvance = computed<boolean>(() => {
     const step = this.currentStep();
     if (step === 2) return this.draftName().trim().length > 0;
-    if (step === 6) return this.detected();
+    if (step === 9) return this.detected();
     return true;
   });
 
   ctaLabel = computed<string>(() => {
     const step = this.currentStep();
-    if (step === 6) return this.transloco.translate('shelly.wizard.done');
+    if (step === 9) return this.transloco.translate('shelly.wizard.done');
     return this.transloco.translate('shelly.wizard.next');
   });
 
@@ -215,16 +248,16 @@ export class ShellyPairingWizardComponent implements OnDestroy {
       this.createDevice();
       return;
     }
-    if (step === 6) {
+    if (step === 9) {
       this.completed.emit();
       return;
     }
-    if (step === 5) {
-      this.currentStep.set(6);
+    if (step === 8) {
+      this.currentStep.set(9);
       this.startPolling();
       return;
     }
-    if (step < 6) this.currentStep.update(s => (s + 1) as StepNum);
+    if (step < 9) this.currentStep.update(s => (s + 1) as StepNum);
   }
 
   private createDevice() {
