@@ -121,7 +121,7 @@ async function upsertCurrentHour(userId: string | null, deviceId?: string) {
     // Upsert keyed by (userId, hour) — compound unique index in the schema
     await HourlySensorData.findOneAndUpdate(
         { hour: hourStart, userId },
-        update,
+        { $set: update },
         { upsert: true, new: true }
     );
 }
@@ -467,6 +467,8 @@ export async function cascadeDeleteUser(userId: string): Promise<void> {
         AiUsage.deleteMany({ userId }),
         HourlySensorData.deleteMany({ userId }),
         UserSettings.deleteMany({ userId }),
+        ShellyDevice.deleteMany({ userId }),
+        ShellyAccount.deleteMany({ userId }),
     ]);
     await User.deleteOne({ _id: userId });
 }

@@ -1,6 +1,6 @@
 import { ShellyAccount, ShellyDevice, IShellyDevice } from './models';
 import { decryptSecret } from './crypto';
-import { listDevices, getDevicesStatus, mapStatus, ShellyCloudStatus, ShellyCloudDevice, ShellyAuthError } from './shellyCloud';
+import { listDevices, getDevicesStatus, ShellyCloudStatus, ShellyCloudDevice, ShellyAuthError } from './shellyCloud';
 import { handleSensorData } from './resolvers';
 
 export { listDevices, getDevicesStatus, ShellyCloudDevice, ShellyAuthError };
@@ -54,6 +54,9 @@ async function tick(): Promise<void> {
 let timer: NodeJS.Timeout | null = null;
 export function startShellyCloudPoller() {
     if (timer) return;
+    if (!process.env.SHELLY_ENC_KEY) {
+        console.warn('[shelly-cloud] SHELLY_ENC_KEY is not set — stored auth keys cannot be decrypted; poller will error each tick until it is configured');
+    }
     console.log('[shelly-cloud] poller started (every 5 min)');
     tick().catch(e => console.error('[shelly-cloud] initial tick failed:', e));
     timer = setInterval(() => { tick().catch(e => console.error('[shelly-cloud] tick failed:', e)); }, POLL_MS);
