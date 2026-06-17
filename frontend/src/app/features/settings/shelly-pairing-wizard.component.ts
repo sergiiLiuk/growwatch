@@ -115,6 +115,7 @@ const TOTAL_STEPS = 9;
             <div class="space-y-4">
               <div class="text-4xl">🔑</div>
               <h1 class="text-[20px] font-medium text-gray-800">{{ t('shelly.wizard.step6Title') }}</h1>
+              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step6Body') }}</p>
               @if (device(); as d) {
                 <div class="bg-gw-surface shadow-gw-sm rounded-xl p-3">
                   <div class="text-[11px] text-gray-400 mb-1.5">{{ t('shelly.wizard.prefixLabel') }}</div>
@@ -127,7 +128,6 @@ const TOTAL_STEPS = 9;
                   </div>
                 </div>
               }
-              <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.wizard.step6Body') }}</p>
               <div class="border-2 border-dashed border-gray-200 rounded-xl h-32 flex items-center justify-center text-[12px] text-gray-300">
                 {{ t('shelly.wizard.screenshotSlot') }}
               </div>
@@ -222,7 +222,13 @@ export class ShellyPairingWizardComponent implements OnDestroy {
     });
   }
 
-  canGoBack = computed(() => this.currentStep() > 1 && this.currentStep() < 9);
+  canGoBack = computed(() => {
+    const step = this.currentStep();
+    // Allow stepping back from the detection screen while it hasn't succeeded yet,
+    // so a user whose phone is still on the Shelly hotspot isn't stuck.
+    if (step === 9) return !this.detected();
+    return step > 1 && step < 9;
+  });
 
   canAdvance = computed<boolean>(() => {
     const step = this.currentStep();
@@ -239,6 +245,7 @@ export class ShellyPairingWizardComponent implements OnDestroy {
 
   goBack() {
     if (!this.canGoBack()) return;
+    this.stopPolling(); // clear the detection poll if leaving step 9
     this.currentStep.update(s => (s - 1) as StepNum);
   }
 
