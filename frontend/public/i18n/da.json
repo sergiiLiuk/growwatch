@@ -609,8 +609,7 @@
       "pickDevice": "Vælg den sensor du vil overvåge:",
       "online": "online",
       "offline": "offline",
-      "noneFound": "Ingen enheder fundet på denne konto. Sørg for at din Shelly er sat op i Shelly-appen først.",
-      "connectMissing": "Forbind din Shelly-konto for at begynde at modtage målinger."
+      "noneFound": "Ingen enheder fundet på denne konto. Sørg for at din Shelly er sat op i Shelly-appen først."
     },
     "disconnect": "Frakobl Shelly-konto",
     "disconnectConfirm": "Frakobl din Shelly-konto? Din enhed og tidligere målinger bevares, men nye målinger stopper.",

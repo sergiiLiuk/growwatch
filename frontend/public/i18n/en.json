@@ -609,8 +609,7 @@
       "pickDevice": "Pick the sensor you want to monitor:",
       "online": "online",
       "offline": "offline",
-      "noneFound": "No devices found on this account. Make sure your Shelly is set up in the Shelly app first.",
-      "connectMissing": "Connect your Shelly account to start streaming readings."
+      "noneFound": "No devices found on this account. Make sure your Shelly is set up in the Shelly app first."
     },
     "disconnect": "Disconnect Shelly account",
     "disconnectConfirm": "Disconnect your Shelly account? Your device and past readings stay, but new readings will stop.",

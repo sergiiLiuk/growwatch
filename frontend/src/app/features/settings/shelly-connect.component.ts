@@ -18,13 +18,13 @@ import { ShellyService, ShellyCloudDevice } from '../../core/services/shelly.ser
           <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.connect.intro') }}</p>
           <div class="space-y-3">
             <div>
-              <label class="text-[12px] text-gray-500">{{ t('shelly.connect.authKeyLabel') }}</label>
-              <input type="text" [ngModel]="authKey()" (ngModelChange)="authKey.set($event)"
+              <label for="shellyAuthKey" class="text-[12px] text-gray-500">{{ t('shelly.connect.authKeyLabel') }}</label>
+              <input id="shellyAuthKey" type="text" [ngModel]="authKey()" (ngModelChange)="authKey.set($event)"
                      class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green" />
             </div>
             <div>
-              <label class="text-[12px] text-gray-500">{{ t('shelly.connect.serverLabel') }}</label>
-              <input type="text" [ngModel]="serverHost()" (ngModelChange)="serverHost.set($event)"
+              <label for="shellyServerHost" class="text-[12px] text-gray-500">{{ t('shelly.connect.serverLabel') }}</label>
+              <input id="shellyServerHost" type="text" [ngModel]="serverHost()" (ngModelChange)="serverHost.set($event)"
                      placeholder="shelly-XX-eu.shelly.cloud"
                      class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green" />
             </div>

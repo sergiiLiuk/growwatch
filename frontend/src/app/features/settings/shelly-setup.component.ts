@@ -69,7 +69,7 @@ import dayjs from 'dayjs';
         }
 
         <button (click)="openConnect()"
-                [disabled]="devices().length > 0 && !reconnectNeeded()"
+                [disabled]="devices().length > 0 && accountConnected() && !reconnectNeeded()"
                 class="w-full mt-4 px-4 py-3 rounded-xl bg-gw-green text-white text-[14px] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
           {{ t('shelly.addDevice') }}
         </button>
