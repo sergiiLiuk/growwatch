@@ -1,7 +1,7 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ShellyService, ShellyCloudDevice } from '../../core/services/shelly.service';
+import { ShellyService } from '../../core/services/shelly.service';
 
 @Component({
   selector: 'app-shelly-connect',
@@ -14,38 +14,40 @@ import { ShellyService, ShellyCloudDevice } from '../../core/services/shelly.ser
       </div>
 
       <div class="flex-1 overflow-y-auto px-5 py-6 max-w-lg w-full mx-auto space-y-5">
-        @if (devices() === null) {
-          <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.connect.intro') }}</p>
-          <div class="space-y-3">
-            <div>
-              <label for="shellyAuthKey" class="text-[12px] text-gray-500">{{ t('shelly.connect.authKeyLabel') }}</label>
-              <input id="shellyAuthKey" type="text" [ngModel]="authKey()" (ngModelChange)="authKey.set($event)"
-                     class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green" />
-            </div>
-            <div>
-              <label for="shellyServerHost" class="text-[12px] text-gray-500">{{ t('shelly.connect.serverLabel') }}</label>
-              <input id="shellyServerHost" type="text" [ngModel]="serverHost()" (ngModelChange)="serverHost.set($event)"
-                     placeholder="shelly-XX-eu.shelly.cloud"
-                     class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green" />
-            </div>
+        <p class="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{{ t('shelly.connect.intro') }}</p>
+
+        <div class="space-y-3">
+          <div>
+            <label for="shellyName" class="text-[12px] text-gray-500">{{ t('shelly.connect.nameLabel') }}</label>
+            <input id="shellyName" type="text" [ngModel]="name()" (ngModelChange)="name.set($event)"
+                   [placeholder]="t('shelly.connect.namePlaceholder')"
+                   class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green" />
           </div>
-          @if (error()) { <p class="text-[13px] text-red-500">{{ error() }}</p> }
-          <button (click)="connect()" [disabled]="!canConnect() || busy()"
-                  class="w-full bg-gw-green text-white text-[14px] py-3 rounded-xl font-medium disabled:opacity-40">
-            {{ busy() ? t('shelly.connect.connecting') : t('shelly.connect.connectCta') }}
-          </button>
-        } @else {
-          <p class="text-[14px] text-gray-600">{{ t('shelly.connect.pickDevice') }}</p>
-          @for (d of devices(); track d.id) {
-            <button (click)="link(d)" [disabled]="busy()"
-                    class="w-full text-left bg-gw-surface shadow-gw-sm rounded-xl p-3 hover:bg-gw-green-light/40 disabled:opacity-40">
-              <div class="text-[14px] text-gray-800">{{ d.name }}</div>
-              <div class="text-[11px] text-gray-400">{{ d.id }} · {{ d.online ? t('shelly.connect.online') : t('shelly.connect.offline') }}</div>
-            </button>
-          }
-          @if (devices()!.length === 0) { <p class="text-[13px] text-gray-400">{{ t('shelly.connect.noneFound') }}</p> }
-          @if (error()) { <p class="text-[13px] text-red-500">{{ error() }}</p> }
-        }
+          <div>
+            <label for="shellyAuthKey" class="text-[12px] text-gray-500">{{ t('shelly.connect.authKeyLabel') }}</label>
+            <input id="shellyAuthKey" type="text" [ngModel]="authKey()" (ngModelChange)="authKey.set($event)"
+                   class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green" />
+          </div>
+          <div>
+            <label for="shellyServerHost" class="text-[12px] text-gray-500">{{ t('shelly.connect.serverLabel') }}</label>
+            <input id="shellyServerHost" type="text" [ngModel]="serverHost()" (ngModelChange)="serverHost.set($event)"
+                   placeholder="shelly-XX-eu.shelly.cloud"
+                   class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green" />
+          </div>
+          <div>
+            <label for="shellyDeviceId" class="text-[12px] text-gray-500">{{ t('shelly.connect.deviceIdLabel') }}</label>
+            <input id="shellyDeviceId" type="text" [ngModel]="deviceId()" (ngModelChange)="deviceId.set($event)"
+                   class="w-full shadow-gw-sm rounded-xl px-3.5 py-3 text-[14px] outline-none focus:border-gw-green" />
+            <p class="text-[11px] text-gray-400 mt-1">{{ t('shelly.connect.deviceIdHint') }}</p>
+          </div>
+        </div>
+
+        @if (error()) { <p class="text-[13px] text-red-500">{{ error() }}</p> }
+
+        <button (click)="connect()" [disabled]="!canConnect() || busy()"
+                class="w-full bg-gw-green text-white text-[14px] py-3 rounded-xl font-medium disabled:opacity-40">
+          {{ busy() ? t('shelly.connect.connecting') : t('shelly.connect.connectCta') }}
+        </button>
       </div>
     </div>
   `,
@@ -56,29 +58,27 @@ export class ShellyConnectComponent {
   closed = output<void>();
   completed = output<void>();
 
+  name = signal('');
   authKey = signal('');
   serverHost = signal('');
-  devices = signal<ShellyCloudDevice[] | null>(null);
+  deviceId = signal('');
   busy = signal(false);
   error = signal<string | null>(null);
 
-  canConnect() { return this.authKey().trim().length > 0 && this.serverHost().trim().length > 0; }
+  canConnect() {
+    return this.name().trim().length > 0
+      && this.authKey().trim().length > 0
+      && this.serverHost().trim().length > 0
+      && this.deviceId().trim().length > 0;
+  }
 
   connect() {
     if (!this.canConnect() || this.busy()) return;
-    this.busy.set(true); this.error.set(null);
-    this.shelly.connectAccount(this.authKey().trim(), this.serverHost().trim()).subscribe({
-      next: list => { this.devices.set(list); this.busy.set(false); },
-      error: err => { this.error.set(err?.message ?? 'Failed to connect'); this.busy.set(false); },
-    });
-  }
-
-  link(d: ShellyCloudDevice) {
-    if (this.busy()) return;
-    this.busy.set(true); this.error.set(null);
-    this.shelly.linkDevice(d.id, d.name).subscribe({
+    this.busy.set(true);
+    this.error.set(null);
+    this.shelly.connectAccount(this.authKey().trim(), this.serverHost().trim(), this.deviceId().trim(), this.name().trim()).subscribe({
       next: () => { this.busy.set(false); this.completed.emit(); },
-      error: err => { this.error.set(err?.message ?? 'Failed to link'); this.busy.set(false); },
+      error: err => { this.error.set(err?.message ?? 'Failed to connect'); this.busy.set(false); },
     });
   }
 }

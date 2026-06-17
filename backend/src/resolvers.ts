@@ -4,7 +4,7 @@ import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
 import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken, SmartTip, AiUsage, ShellyDevice, IShellyDevice, ShellyAccount } from './models';
 import { encryptSecret } from './crypto';
-import { listDevices } from './shellyCloud';
+import { getDevicesStatus } from './shellyCloud';
 import type { EmailLocale } from './services/emailSender';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
@@ -1284,33 +1284,33 @@ export const resolvers = {
             const result = await Device.findOneAndDelete({ _id: id, userId: ctx.user.userId });
             return result !== null;
         },
-        connectShellyAccount: async (_: any, args: { authKey: string; serverHost: string }, ctx: Ctx) => {
+        connectShellyAccount: async (_: any, args: { authKey: string; serverHost: string; deviceId: string; name: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             const authKey = args.authKey.trim();
             const serverHost = args.serverHost.trim();
-            if (!authKey || !serverHost) throw new Error('Auth key and server host are required');
-            let devices;
+            const deviceId = args.deviceId.trim();
+            const name = args.name.trim().slice(0, 60);
+            if (!authKey || !serverHost || !deviceId || !name) {
+                throw new Error('Auth key, server host, device ID and name are required');
+            }
+            // The auth-key cloud API has no "list devices" call, so we validate the
+            // connection by fetching the named device's status via the v2 endpoint.
+            let statuses;
             try {
-                devices = await listDevices(serverHost, authKey);
+                statuses = await getDevicesStatus(serverHost, authKey, [deviceId]);
             } catch {
-                throw new Error("Couldn't reach Shelly Cloud with that key — double-check the key and server host");
+                throw new Error("Couldn't reach Shelly Cloud — double-check the auth key and server host");
+            }
+            if (statuses.length === 0) {
+                throw new Error("That device ID wasn't found on this Shelly account — double-check the device ID");
             }
             await ShellyAccount.findOneAndUpdate(
                 { userId: ctx.user.userId },
                 { $set: { authKeyEnc: encryptSecret(authKey), serverHost, status: 'ok' } },
                 { upsert: true },
             );
-            return devices;
-        },
-        linkShellyDevice: async (_: any, args: { deviceId: string; name: string }, ctx: Ctx) => {
-            if (!ctx.user) throw new Error('Unauthorized');
-            const deviceId = args.deviceId.trim();
-            const name = args.name.trim().slice(0, 60);
-            if (!deviceId || !name) throw new Error('Device and name are required');
-            const account = await ShellyAccount.findOne({ userId: ctx.user.userId });
-            if (!account) throw new Error('Connect your Shelly account first');
-            const existing = await ShellyDevice.findOne({ userId: ctx.user.userId });
-            if (existing) throw new Error('You can only monitor one Shelly device per account');
+            // One device per account: replace any previously linked device.
+            await ShellyDevice.deleteMany({ userId: ctx.user.userId });
             const created = await ShellyDevice.create({ userId: ctx.user.userId, deviceId, name });
             return shellyToGraphQL(created);
         },

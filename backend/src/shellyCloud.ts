@@ -1,9 +1,3 @@
-export interface ShellyCloudDevice {
-    id: string;
-    name: string;
-    online: boolean;
-}
-
 export interface ShellyCloudStatus {
     id: string;
     temperature?: number;
@@ -40,21 +34,10 @@ export function mapStatus(id: string, raw: any): ShellyCloudStatus {
     };
 }
 
-// Discovery: list all devices on the account (used at connect time).
-export async function listDevices(host: string, authKey: string): Promise<ShellyCloudDevice[]> {
-    const res = await fetch(`${baseUrl(host)}/device/all_status?auth_key=${encodeURIComponent(authKey)}`);
-    if (res.status === 401) throw new ShellyAuthError();
-    if (!res.ok) throw new Error(`Shelly Cloud list failed: ${res.status}`);
-    const json: any = await res.json();
-    const devices = json?.data?.devices_status ?? {};
-    return Object.keys(devices).map(id => ({
-        id,
-        name: devices[id]?.name ?? id,
-        online: devices[id]?.cloud?.connected ?? devices[id]?.online ?? false,
-    }));
-}
+// Fetch status for up to 10 device ids via the supported v2 endpoint. Used both
+// to validate a device at connect time and to poll readings. The auth-key cloud
+// API has no "list all devices" call, so devices are addressed by id.
 
-// Polling: fetch status for up to 10 device ids via the supported v2 endpoint.
 export async function getDevicesStatus(host: string, authKey: string, ids: string[]): Promise<ShellyCloudStatus[]> {
     if (ids.length === 0) return [];
     const res = await fetch(`${baseUrl(host)}/v2/devices/api/get?auth_key=${encodeURIComponent(authKey)}`, {

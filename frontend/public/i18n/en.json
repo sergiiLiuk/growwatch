@@ -601,15 +601,15 @@
     "removeConfirm": "Remove this Shelly device? Past readings remain in your history.",
     "connect": {
       "title": "Connect your Shelly",
-      "intro": "First, set up your Shelly H&T in the Shelly Smart Control app (insert the battery and follow the app — it handles Wi-Fi for you).\n\nThen, in the Shelly app, open User Settings → Authorization cloud key and copy the two values below.",
+      "intro": "First, set up your Shelly H&T in the Shelly Smart Control app (insert the battery and follow the app — it handles Wi-Fi for you).\n\nThen, in the Shelly app, open User Settings → Authorization cloud key to find the auth key and server host, and open your device's settings to find its Device ID.",
+      "nameLabel": "Name this sensor",
+      "namePlaceholder": "Greenhouse",
       "authKeyLabel": "Authorization cloud key",
       "serverLabel": "Server host",
+      "deviceIdLabel": "Device ID",
+      "deviceIdHint": "Find it in the Shelly app under your device → Settings → Device information.",
       "connectCta": "Connect",
-      "connecting": "Connecting…",
-      "pickDevice": "Pick the sensor you want to monitor:",
-      "online": "online",
-      "offline": "offline",
-      "noneFound": "No devices found on this account. Make sure your Shelly is set up in the Shelly app first."
+      "connecting": "Connecting…"
     },
     "disconnect": "Disconnect Shelly account",
     "disconnectConfirm": "Disconnect your Shelly account? Your device and past readings stay, but new readings will stop.",

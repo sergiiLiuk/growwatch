@@ -12,12 +12,6 @@ export interface ShellyDevice {
   createdAt: string;
 }
 
-export interface ShellyCloudDevice {
-  id: string;
-  name: string;
-  online: boolean;
-}
-
 export interface ShellyAccountInfo {
   connected: boolean;
   status: string;
@@ -53,29 +47,16 @@ export class ShellyService {
     );
   }
 
-  connectAccount(authKey: string, serverHost: string): Observable<ShellyCloudDevice[]> {
+  connectAccount(authKey: string, serverHost: string, deviceId: string, name: string): Observable<ShellyDevice> {
     return defer(() =>
-      this.apolloClient.mutate<{ connectShellyAccount: ShellyCloudDevice[] }>({
+      this.apolloClient.mutate<{ connectShellyAccount: ShellyDevice }>({
         mutation: gql`
-          mutation ConnectShelly($authKey: String!, $serverHost: String!) {
-            connectShellyAccount(authKey: $authKey, serverHost: $serverHost) { id name online }
+          mutation ConnectShelly($authKey: String!, $serverHost: String!, $deviceId: String!, $name: String!) {
+            connectShellyAccount(authKey: $authKey, serverHost: $serverHost, deviceId: $deviceId, name: $name) { ${SHELLY_FIELDS} }
           }
         `,
-        variables: { authKey, serverHost },
+        variables: { authKey, serverHost, deviceId, name },
       }).then(r => r.data!.connectShellyAccount)
-    );
-  }
-
-  linkDevice(deviceId: string, name: string): Observable<ShellyDevice> {
-    return defer(() =>
-      this.apolloClient.mutate<{ linkShellyDevice: ShellyDevice }>({
-        mutation: gql`
-          mutation LinkShelly($deviceId: String!, $name: String!) {
-            linkShellyDevice(deviceId: $deviceId, name: $name) { ${SHELLY_FIELDS} }
-          }
-        `,
-        variables: { deviceId, name },
-      }).then(r => r.data!.linkShellyDevice)
     );
   }
 

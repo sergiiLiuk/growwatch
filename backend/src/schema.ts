@@ -166,12 +166,6 @@ export const typeDefs = gql`
     status: String!
   }
 
-  type ShellyCloudDevice {
-    id: String!
-    name: String!
-    online: Boolean!
-  }
-
   type UserLocation {
     lat: Float!
     lng: Float!
@@ -322,8 +316,7 @@ export const typeDefs = gql`
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!
     removeDevice(id: String!): Boolean!
-    connectShellyAccount(authKey: String!, serverHost: String!): [ShellyCloudDevice!]!
-    linkShellyDevice(deviceId: String!, name: String!): ShellyDevice!
+    connectShellyAccount(authKey: String!, serverHost: String!, deviceId: String!, name: String!): ShellyDevice!
     disconnectShellyAccount: Boolean!
     renameShellyDevice(id: String!, name: String!): ShellyDevice!
     removeShellyDevice(id: String!): Boolean!

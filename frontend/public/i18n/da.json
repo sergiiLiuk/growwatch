@@ -601,15 +601,15 @@
     "removeConfirm": "Fjern denne Shelly-enhed? Tidligere målinger forbliver i din historik.",
     "connect": {
       "title": "Forbind din Shelly",
-      "intro": "Opsæt først din Shelly H&T i Shelly Smart Control-appen (sæt batteriet i og følg appen — den klarer Wi-Fi for dig).\n\nÅbn derefter User Settings → Authorization cloud key i Shelly-appen og kopiér de to værdier nedenfor.",
+      "intro": "Opsæt først din Shelly H&T i Shelly Smart Control-appen (sæt batteriet i og følg appen — den klarer Wi-Fi for dig).\n\nÅbn derefter User Settings → Authorization cloud key i Shelly-appen for at finde auth-nøglen og serveradressen, og åbn din enheds indstillinger for at finde dens Device ID.",
+      "nameLabel": "Navngiv denne sensor",
+      "namePlaceholder": "Drivhus",
       "authKeyLabel": "Authorization cloud key",
       "serverLabel": "Serveradresse",
+      "deviceIdLabel": "Device ID",
+      "deviceIdHint": "Find det i Shelly-appen under din enhed → Settings → Device information.",
       "connectCta": "Forbind",
-      "connecting": "Forbinder…",
-      "pickDevice": "Vælg den sensor du vil overvåge:",
-      "online": "online",
-      "offline": "offline",
-      "noneFound": "Ingen enheder fundet på denne konto. Sørg for at din Shelly er sat op i Shelly-appen først."
+      "connecting": "Forbinder…"
     },
     "disconnect": "Frakobl Shelly-konto",
     "disconnectConfirm": "Frakobl din Shelly-konto? Din enhed og tidligere målinger bevares, men nye målinger stopper.",

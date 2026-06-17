@@ -1,9 +1,9 @@
 import { ShellyAccount, ShellyDevice, IShellyDevice } from './models';
 import { decryptSecret } from './crypto';
-import { listDevices, getDevicesStatus, ShellyCloudStatus, ShellyCloudDevice, ShellyAuthError } from './shellyCloud';
+import { getDevicesStatus, ShellyCloudStatus, ShellyAuthError } from './shellyCloud';
 import { handleSensorData } from './resolvers';
 
-export { listDevices, getDevicesStatus, ShellyCloudDevice, ShellyAuthError };
+export { getDevicesStatus, ShellyAuthError };
 
 const POLL_MS = 5 * 60 * 1000;
 
