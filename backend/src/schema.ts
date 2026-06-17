@@ -156,13 +156,20 @@ export const typeDefs = gql`
     id: String!
     deviceId: String!
     name: String!
-    mqttBrokerUrl: String!
-    mqttUsername: String!
-    mqttPassword: String!
-    mqttPrefix: String!
     lastSeenAt: String
     lastBatteryPercent: Int
     createdAt: String!
+  }
+
+  type ShellyAccountInfo {
+    connected: Boolean!
+    status: String!
+  }
+
+  type ShellyCloudDevice {
+    id: String!
+    name: String!
+    online: Boolean!
   }
 
   type UserLocation {
@@ -267,6 +274,7 @@ export const typeDefs = gql`
     vapidPublicKey: String
     myDevices: [Device!]!
     myShellyDevices: [ShellyDevice!]!
+    shellyAccount: ShellyAccountInfo!
     myUserSettings: UserSettings!
     allUsers: [User!]!
     me: AuthPayload!
@@ -314,7 +322,9 @@ export const typeDefs = gql`
     cancelDeviceClaim: Boolean!
     renameDevice(id: String!, name: String!): Device!
     removeDevice(id: String!): Boolean!
-    addShellyDevice(name: String!): ShellyDevice!
+    connectShellyAccount(authKey: String!, serverHost: String!): [ShellyCloudDevice!]!
+    linkShellyDevice(deviceId: String!, name: String!): ShellyDevice!
+    disconnectShellyAccount: Boolean!
     renameShellyDevice(id: String!, name: String!): ShellyDevice!
     removeShellyDevice(id: String!): Boolean!
     updateUserSettings(

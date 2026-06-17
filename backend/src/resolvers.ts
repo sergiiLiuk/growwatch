@@ -2,7 +2,9 @@ import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken, SmartTip, AiUsage, ShellyDevice, IShellyDevice } from './models';
+import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken, SmartTip, AiUsage, ShellyDevice, IShellyDevice, ShellyAccount } from './models';
+import { encryptSecret } from './crypto';
+import { listDevices } from './shellyCloud';
 import type { EmailLocale } from './services/emailSender';
 import { SmartTipService, StubLlmProvider, LlmProvider } from './services/smartTip';
 import { getLightStatus, PlantType } from './lightUtils';
@@ -454,19 +456,11 @@ export async function cascadeDeleteUser(userId: string): Promise<void> {
 
 // ── Shelly H&T Gen3 helpers ──────────────────────────────────────────────────
 
-function generateShellyDeviceId(): string {
-    return `gw-${crypto.randomBytes(4).toString('hex')}`;
-}
-
 function shellyToGraphQL(d: IShellyDevice) {
     return {
         id: String(d._id),
         deviceId: d.deviceId,
         name: d.name,
-        mqttBrokerUrl: process.env.MQTT_PUBLIC_URL ?? 'mqtts://example.hivemq.cloud:8883',
-        mqttUsername: process.env.MQTT_PUBLISHER_USERNAME ?? 'shelly-publisher',
-        mqttPassword: process.env.MQTT_PUBLISHER_PASSWORD ?? '',
-        mqttPrefix: `gw/${d.deviceId}`,
         lastSeenAt: d.lastSeenAt ? d.lastSeenAt.toISOString() : null,
         lastBatteryPercent: d.lastBatteryPercent ?? null,
         createdAt: d.createdAt.toISOString(),
@@ -707,6 +701,11 @@ export const resolvers = {
             if (!ctx.user) throw new Error('Unauthorized');
             const devices = await ShellyDevice.find({ userId: ctx.user.userId }).sort({ createdAt: 1 });
             return devices.map(shellyToGraphQL);
+        },
+        shellyAccount: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const acc = await ShellyAccount.findOne({ userId: ctx.user.userId });
+            return { connected: !!acc, status: acc?.status ?? 'none' };
         },
         myUserSettings: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -1266,20 +1265,41 @@ export const resolvers = {
             const result = await Device.findOneAndDelete({ _id: id, userId: ctx.user.userId });
             return result !== null;
         },
-        addShellyDevice: async (_: any, args: { name: string }, ctx: Ctx) => {
+        connectShellyAccount: async (_: any, args: { authKey: string; serverHost: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
+            const authKey = args.authKey.trim();
+            const serverHost = args.serverHost.trim();
+            if (!authKey || !serverHost) throw new Error('Auth key and server host are required');
+            let devices;
+            try {
+                devices = await listDevices(serverHost, authKey);
+            } catch {
+                throw new Error("Couldn't reach Shelly Cloud with that key — double-check the key and server host");
+            }
+            await ShellyAccount.findOneAndUpdate(
+                { userId: ctx.user.userId },
+                { $set: { authKeyEnc: encryptSecret(authKey), serverHost, status: 'ok' } },
+                { upsert: true },
+            );
+            return devices;
+        },
+        linkShellyDevice: async (_: any, args: { deviceId: string; name: string }, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            const deviceId = args.deviceId.trim();
             const name = args.name.trim().slice(0, 60);
-            if (!name) throw new Error('Name is required');
-
+            if (!deviceId || !name) throw new Error('Device and name are required');
+            const account = await ShellyAccount.findOne({ userId: ctx.user.userId });
+            if (!account) throw new Error('Connect your Shelly account first');
             const existing = await ShellyDevice.findOne({ userId: ctx.user.userId });
-            if (existing) throw new Error('You can only pair one Shelly device per account');
-
-            const created = await ShellyDevice.create({
-                userId: ctx.user.userId,
-                deviceId: generateShellyDeviceId(),
-                name,
-            });
+            if (existing) throw new Error('You can only monitor one Shelly device per account');
+            const created = await ShellyDevice.create({ userId: ctx.user.userId, deviceId, name });
             return shellyToGraphQL(created);
+        },
+        disconnectShellyAccount: async (_: any, __: any, ctx: Ctx) => {
+            if (!ctx.user) throw new Error('Unauthorized');
+            await ShellyDevice.deleteMany({ userId: ctx.user.userId });
+            const res = await ShellyAccount.deleteOne({ userId: ctx.user.userId });
+            return res.deletedCount > 0;
         },
         renameShellyDevice: async (_: any, args: { id: string; name: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
