@@ -477,6 +477,7 @@ export interface IShellyDevice extends Document {
     deviceId: string;          // Shelly serial, e.g. "shellyhtg3-AABBCCDDEEFF"
     name: string;
     lastSeenAt?: Date;
+    lastReportedAt?: Date;
     lastBatteryPercent?: number;
     createdAt: Date;
 }
@@ -487,6 +488,7 @@ const shellyDeviceSchema = new Schema<IShellyDevice>(
         deviceId: { type: String, required: true },
         name: { type: String, required: true },
         lastSeenAt: { type: Date },
+        lastReportedAt: { type: Date },
         lastBatteryPercent: { type: Number, min: 0, max: 100 },
         createdAt: { type: Date, default: Date.now },
     },
@@ -499,3 +501,28 @@ shellyDeviceSchema.index({ userId: 1, deviceId: 1 }, { unique: true });
 
 export const ShellyDevice: Model<IShellyDevice> =
     mongoose.models.ShellyDevice || mongoose.model<IShellyDevice>('ShellyDevice', shellyDeviceSchema);
+
+// ── Shelly Cloud account (one per user) ──────────────────────────────────────
+export type ShellyAccountStatus = 'ok' | 'auth_error';
+
+export interface IShellyAccount extends Document {
+    userId: string;
+    authKeyEnc: string;     // encrypted with crypto.ts; never returned via GraphQL
+    serverHost: string;     // e.g. "shelly-XX-eu.shelly.cloud"
+    status: ShellyAccountStatus;
+    createdAt: Date;
+}
+
+const shellyAccountSchema = new Schema<IShellyAccount>(
+    {
+        userId: { type: String, required: true, unique: true, index: true },
+        authKeyEnc: { type: String, required: true },
+        serverHost: { type: String, required: true },
+        status: { type: String, enum: ['ok', 'auth_error'], default: 'ok' },
+        createdAt: { type: Date, default: Date.now },
+    },
+    { collection: 'shelly_accounts' }
+);
+
+export const ShellyAccount: Model<IShellyAccount> =
+    mongoose.models.ShellyAccount || mongoose.model<IShellyAccount>('ShellyAccount', shellyAccountSchema);
