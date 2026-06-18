@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
-import { pubsub, SENSOR_DATA_CHANNEL, deviceClaimedChannel } from './pubsub';
+import { pubsub, SENSOR_DATA_CHANNEL } from './pubsub';
 import { SensorData } from './types';
-import { HourlySensorData, Plant, User, Device, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken, SmartTip, AiUsage, ShellyDevice, IShellyDevice, ShellyAccount } from './models';
+import { HourlySensorData, Plant, User, UserSettings, PlantAction, PlantActionType, DailyBriefing, PlantReminder, PushSubscription, ReminderActionType, PasswordResetToken, EmailVerificationToken, SmartTip, AiUsage, ShellyDevice, IShellyDevice, ShellyAccount } from './models';
 import { encryptSecret } from './crypto';
 import { getDevicesStatus } from './shellyCloud';
 import type { EmailLocale } from './services/emailSender';
@@ -19,32 +19,6 @@ let lastSavedHour: number = -1;
 let superuserId: string | null = null;
 export function setSuperuserId(id: string) { superuserId = id; }
 
-// ── Device claim window (in-memory) ─────────────────────────────────────────
-// userId → expiresAt (ms epoch). Cleared on bind or expiry.
-const CLAIM_WINDOW_MS = 10 * 60 * 1000;
-const pendingClaims = new Map<string, number>();
-
-function openClaim(userId: string): number {
-    const expiresAt = Date.now() + CLAIM_WINDOW_MS;
-    pendingClaims.set(userId, expiresAt);
-    return expiresAt;
-}
-
-function cancelClaim(userId: string): boolean {
-    return pendingClaims.delete(userId);
-}
-
-function purgeExpiredClaims() {
-    const now = Date.now();
-    for (const [uid, exp] of pendingClaims) {
-        if (exp <= now) pendingClaims.delete(uid);
-    }
-}
-
-function activeClaimants(): string[] {
-    purgeExpiredClaims();
-    return [...pendingClaims.keys()];
-}
 
 interface HourlyAccumulator {
     light: number[];
@@ -140,61 +114,14 @@ export async function saveHourlyData(userId?: string | null, deviceId?: string) 
     }
 }
 
-// Resolve which user this incoming sensor data belongs to.
-// Returns { userId, deviceId } or null when the device is unknown and there is no fallback.
-async function resolveDeviceOwner(
-    mac: string | undefined
-): Promise<{ userId: string; deviceId: string } | null> {
-    if (mac) {
-        const existing = await Device.findOne({ mac });
-        if (existing) {
-            existing.lastSeenAt = new Date();
-            await existing.save();
-            return { userId: existing.userId, deviceId: existing._id.toString() };
-        }
-
-        // Unknown device — try to bind to an open claim window
-        const claimants = activeClaimants();
-        if (claimants.length === 1) {
-            const userId = claimants[0];
-            const defaultName = `Device ${mac.slice(-5)}`;
-            const created = await Device.create({
-                mac,
-                userId,
-                name: defaultName,
-                lastSeenAt: new Date(),
-            });
-            pendingClaims.delete(userId);
-
-            // Notify the waiting UI
-            pubsub.publish(deviceClaimedChannel(userId), {
-                deviceClaimed: mapDevice(created),
-            });
-
-            console.log(`🔗 Claimed device ${mac} → user ${userId}`);
-            return { userId, deviceId: created._id.toString() };
-        }
-
-        if (claimants.length > 1) {
-            console.warn(`⚠️ Multiple claim windows open (${claimants.length}); ignoring unknown device ${mac}`);
-        }
-    }
-
-    return null;
-}
-
-// Function to handle incoming sensor data from ESP32
+// Handle an incoming sensor reading. The caller (the Shelly Cloud poller) supplies
+// the owning userId; readings without a userId are rejected.
 export async function handleSensorData(data: any): Promise<SensorData | null> {
-    let owner: { userId: string; deviceId?: string } | null;
-    if (data.userId) {
-        owner = { userId: data.userId, deviceId: data.deviceId };
-    } else {
-        owner = await resolveDeviceOwner(data.deviceId);
-    }
-    if (!owner) {
-        console.warn(`🚫 Rejected sensor data — unknown device${data.deviceId ? ` ${data.deviceId}` : ''} and no claim/fallback`);
+    if (!data.userId) {
+        console.warn('🚫 Rejected sensor data — no userId');
         return null;
     }
+    const owner: { userId: string; deviceId?: string } = { userId: data.userId, deviceId: data.deviceId };
 
     // Drop physically implausible readings — sensor disconnects on the BME688
     // sometimes surface as -65 / +85 sentinels that wreck min/max aggregates.
@@ -284,15 +211,6 @@ function dateAsString(value: any): string {
     return String(value ?? '');
 }
 
-function mapDevice(doc: any) {
-    return {
-        id: doc._id.toString(),
-        mac: doc.mac,
-        name: doc.name,
-        lastSeenAt: doc.lastSeenAt ? doc.lastSeenAt.toISOString() : null,
-        createdAt: doc.createdAt ? doc.createdAt.toISOString() : new Date().toISOString(),
-    };
-}
 
 function mapPlant(doc: any) {
     return {
@@ -461,7 +379,6 @@ export async function cascadeDeleteUser(userId: string): Promise<void> {
         PushSubscription.deleteMany({ userId }),
         PasswordResetToken.deleteMany({ userId }),
         EmailVerificationToken.deleteMany({ userId }),
-        Device.deleteMany({ userId }),
         DailyBriefing.deleteMany({ userId }),
         SmartTip.deleteMany({ userId }),
         AiUsage.deleteMany({ userId }),
@@ -492,13 +409,12 @@ function shellyToGraphQL(d: IShellyDevice) {
  * internal AI billing rows — none qualify as the user's own personal data.
  */
 export async function exportUserData(userId: string): Promise<Record<string, unknown>> {
-    const [user, settings, plants, plantActions, reminders, devices, dailyBriefings, smartTips, hourlySensorData] = await Promise.all([
+    const [user, settings, plants, plantActions, reminders, dailyBriefings, smartTips, hourlySensorData] = await Promise.all([
         User.findById(userId).select('-passwordHash -__v').lean(),
         UserSettings.findOne({ userId }).select('-__v').lean(),
         Plant.find({ userId }).select('-__v').lean(),
         PlantAction.find({ userId }).select('-__v').lean(),
         PlantReminder.find({ userId }).select('-__v').lean(),
-        Device.find({ userId }).select('-__v').lean(),
         DailyBriefing.find({ userId }).select('-__v').lean(),
         SmartTip.find({ userId }).select('-__v').lean(),
         HourlySensorData.find({ userId }).select('-__v').lean(),
@@ -511,7 +427,6 @@ export async function exportUserData(userId: string): Promise<Record<string, unk
         plants,
         plantActions,
         reminders,
-        devices,
         dailyBriefings,
         smartTips,
         hourlySensorData,
@@ -711,11 +626,6 @@ export const resolvers = {
             return events.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
         },
         vapidPublicKey: () => process.env.VAPID_PUBLIC_KEY ?? null,
-        myDevices: async (_: any, __: any, ctx: Ctx) => {
-            if (!ctx.user) return [];
-            const docs = await Device.find({ userId: ctx.user.userId }).sort({ createdAt: 1 }).lean();
-            return docs.map(mapDevice);
-        },
         myShellyDevices: async (_: any, __: any, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
             const devices = await ShellyDevice.find({ userId: ctx.user.userId }).sort({ createdAt: 1 });
@@ -755,12 +665,7 @@ export const resolvers = {
             if (ctx.user.role !== 'superuser') throw new Error('Forbidden: superuser only');
 
             const users = await User.find({}).sort({ createdAt: 1 }).lean();
-            // Counts per user via aggregation (cheap for small user counts; revisit if it scales)
-            const [deviceCounts, plantCounts] = await Promise.all([
-                Device.aggregate([{ $group: { _id: '$userId', n: { $sum: 1 } } }]),
-                Plant.aggregate([{ $group: { _id: '$userId', n: { $sum: 1 } } }]),
-            ]);
-            const devicesByUser = new Map(deviceCounts.map((d: any) => [d._id, d.n]));
+            const plantCounts = await Plant.aggregate([{ $group: { _id: '$userId', n: { $sum: 1 } } }]);
             const plantsByUser = new Map(plantCounts.map((p: any) => [p._id, p.n]));
 
             return users.map((u: any) => ({
@@ -769,7 +674,6 @@ export const resolvers = {
                 role: u.role,
                 subscriptionTier: u.subscriptionTier ?? 'free',
                 createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
-                deviceCount: devicesByUser.get(u._id.toString()) ?? 0,
                 plantCount: plantsByUser.get(u._id.toString()) ?? 0,
             }));
         },
@@ -1088,7 +992,6 @@ export const resolvers = {
                 role: u.role,
                 subscriptionTier: u.subscriptionTier ?? 'free',
                 createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
-                deviceCount: 0,
                 plantCount: 0,
             };
         },
@@ -1117,7 +1020,6 @@ export const resolvers = {
                 role: doc.role,
                 subscriptionTier: doc.subscriptionTier ?? 'free',
                 createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : new Date().toISOString(),
-                deviceCount: 0,
                 plantCount: 0,
             };
         },
@@ -1164,7 +1066,6 @@ export const resolvers = {
                 role: u.role,
                 subscriptionTier: u.subscriptionTier ?? 'free',
                 createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt ?? ''),
-                deviceCount: 0,
                 plantCount: 0,
             };
         },
@@ -1259,30 +1160,6 @@ export const resolvers = {
             // everything. Same helper as the self-serve deletion.
             await cascadeDeleteUser(userId);
             return true;
-        },
-        openDeviceClaim: (_: any, __: any, ctx: Ctx) => {
-            if (!ctx.user) throw new Error('Unauthorized');
-            const expiresAt = openClaim(ctx.user.userId);
-            return new Date(expiresAt).toISOString();
-        },
-        cancelDeviceClaim: (_: any, __: any, ctx: Ctx) => {
-            if (!ctx.user) throw new Error('Unauthorized');
-            return cancelClaim(ctx.user.userId);
-        },
-        renameDevice: async (_: any, { id, name }: { id: string; name: string }, ctx: Ctx) => {
-            if (!ctx.user) throw new Error('Unauthorized');
-            const doc = await Device.findOneAndUpdate(
-                { _id: id, userId: ctx.user.userId },
-                { name },
-                { new: true }
-            );
-            if (!doc) throw new Error('Device not found');
-            return mapDevice(doc);
-        },
-        removeDevice: async (_: any, { id }: { id: string }, ctx: Ctx) => {
-            if (!ctx.user) throw new Error('Unauthorized');
-            const result = await Device.findOneAndDelete({ _id: id, userId: ctx.user.userId });
-            return result !== null;
         },
         connectShellyAccount: async (_: any, args: { authKey: string; serverHost: string; deviceId: string; name: string }, ctx: Ctx) => {
             if (!ctx.user) throw new Error('Unauthorized');
@@ -1434,10 +1311,6 @@ export const resolvers = {
     Subscription: {
         sensorDataUpdated: {
             subscribe: () => pubsub.asyncIterator([SENSOR_DATA_CHANNEL]),
-        },
-        deviceClaimed: {
-            subscribe: (_: any, { userId }: { userId: string }) =>
-                pubsub.asyncIterator([deviceClaimedChannel(userId)]),
         },
     },
 };
