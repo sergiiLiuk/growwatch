@@ -262,28 +262,6 @@ export const HourlySensorData = mongoose.model<IHourlySensorData>(
     hourlySensorDataSchema
 );
 
-// ── Device ──────────────────────────────────────────────────────────────────
-
-export interface IDevice extends Document {
-    mac: string;
-    userId: string;
-    name: string;
-    lastSeenAt?: Date;
-    createdAt: Date;
-}
-
-const deviceSchema = new Schema<IDevice>(
-    {
-        mac: { type: String, required: true, unique: true, index: true },
-        userId: { type: String, required: true, index: true },
-        name: { type: String, required: true },
-        lastSeenAt: { type: Date },
-    },
-    { timestamps: true }
-);
-
-export const Device = mongoose.model<IDevice>('Device', deviceSchema);
-
 // ── UserSettings ────────────────────────────────────────────────────────────
 // One row per user. Holds per-user UI/alert thresholds that don't belong on the
 // User record (which is auth-only). Created lazily on first write.
