@@ -86,19 +86,9 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
       },
       {
-        path: 'settings/sensor-setup',
-        canActivate: [tierGuard('pro')],
-        loadComponent: () => import('./features/settings/sensor-setup.component').then(m => m.SensorSetupComponent),
-      },
-      {
         path: 'settings/shelly-setup',
         canActivate: [tierGuard('pro')],
         loadComponent: () => import('./features/settings/shelly-setup.component').then(m => m.ShellySetupComponent),
-      },
-      {
-        path: 'settings/devices',
-        canActivate: [tierGuard('pro')],
-        loadComponent: () => import('./features/settings/devices.component').then(m => m.DevicesComponent),
       },
       {
         path: 'admin',
