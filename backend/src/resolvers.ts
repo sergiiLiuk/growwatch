@@ -15,10 +15,9 @@ import { sendPasswordResetEmail, sendEmailVerificationEmail } from './services/e
 let lastSavedHour: number = -1;
 
 // Set by index.ts after superuser is seeded. Used as the default user when the hourly
-// timer flushes the accumulator at hour boundaries (no fallback for device attribution).
+// timer flushes the accumulator at hour boundaries.
 let superuserId: string | null = null;
 export function setSuperuserId(id: string) { superuserId = id; }
-
 
 interface HourlyAccumulator {
     light: number[];
@@ -210,7 +209,6 @@ function dateAsString(value: any): string {
     if (value && typeof value === 'object' && '$date' in value) return String((value as any).$date);
     return String(value ?? '');
 }
-
 
 function mapPlant(doc: any) {
     return {

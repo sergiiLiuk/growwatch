@@ -8,12 +8,3 @@ export interface SensorData {
     pressure?: number;
     deviceId?: string;
 }
-
-export interface ESP32Message {
-    lightLevel: number;
-    temperature?: number;
-    humidity?: number;
-    co2?: number;
-    pressure?: number;
-    deviceId?: string;
-}
