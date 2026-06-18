@@ -144,14 +144,6 @@ export const typeDefs = gql`
     generatedAt: String!
   }
 
-  type Device {
-    id: String!
-    mac: String!
-    name: String!
-    lastSeenAt: String
-    createdAt: String!
-  }
-
   type ShellyDevice {
     id: String!
     deviceId: String!
@@ -250,7 +242,6 @@ export const typeDefs = gql`
     role: String!
     subscriptionTier: String!
     createdAt: String!
-    deviceCount: Int!
     plantCount: Int!
   }
 
@@ -266,7 +257,6 @@ export const typeDefs = gql`
     plantReminders(plantId: String): [PlantReminder!]!
     plantEvents(from: String!, to: String!): [PlantEvent!]!
     vapidPublicKey: String
-    myDevices: [Device!]!
     myShellyDevices: [ShellyDevice!]!
     shellyAccount: ShellyAccountInfo!
     myUserSettings: UserSettings!
@@ -312,10 +302,6 @@ export const typeDefs = gql`
     snoozeReminder(id: String!, hours: Int): PlantReminder!
     subscribeToPush(subscription: PushSubscriptionInput!): Boolean!
     unsubscribeFromPush(endpoint: String!): Boolean!
-    openDeviceClaim: String!
-    cancelDeviceClaim: Boolean!
-    renameDevice(id: String!, name: String!): Device!
-    removeDevice(id: String!): Boolean!
     connectShellyAccount(authKey: String!, serverHost: String!, deviceId: String!, name: String!): ShellyDevice!
     disconnectShellyAccount: Boolean!
     renameShellyDevice(id: String!, name: String!): ShellyDevice!
@@ -342,6 +328,5 @@ export const typeDefs = gql`
 
   type Subscription {
     sensorDataUpdated: SensorData!
-    deviceClaimed(userId: String!): Device!
   }
 `;
