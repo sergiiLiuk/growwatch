@@ -42,8 +42,9 @@ export interface LightStatusInfo {
 export interface SensorData {
   id: string;
   timestamp: string;
-  lightLevel: number;
-  lightStatus: LightStatusInfo;
+  // Light is an optional channel — H&T sensors report temperature/humidity only.
+  lightLevel?: number;
+  lightStatus?: LightStatusInfo;
   // Coming soon — optional until sensors are added
   temperature?: number;
   humidity?: number;
@@ -54,12 +55,13 @@ export interface SensorData {
 export interface HourlySensorData {
   id: string;
   hour: string;
-  lightLevel: number;
-  minLight: number;
-  maxLight: number;
-  avgLight: number;
+  // Light is an optional channel — H&T sensors report temperature/humidity only.
+  lightLevel?: number;
+  minLight?: number;
+  maxLight?: number;
+  avgLight?: number;
   readingCount: number;
-  lightStatus: LightStatusInfo;
+  lightStatus?: LightStatusInfo;
   // Coming soon — optional until sensors are added
   avgTemperature?: number;
   minTemperature?: number;

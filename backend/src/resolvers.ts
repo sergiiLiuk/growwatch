@@ -1295,7 +1295,11 @@ export const resolvers = {
     },
 
     SensorData: {
-        lightStatus: (parent: any) => getLightStatus(parent.lightLevel, primaryPlantType),
+        // Light is now an optional channel — H&T sensors report no light, so
+        // skip the status computation when there's no reading rather than
+        // feeding null into getLightStatus.
+        lightStatus: (parent: any) =>
+            parent.lightLevel == null ? null : getLightStatus(parent.lightLevel, primaryPlantType),
         timestamp: (parent: any) =>
             parent.timestamp instanceof Date
                 ? parent.timestamp.toISOString()
@@ -1303,7 +1307,8 @@ export const resolvers = {
     },
 
     HourlySensorData: {
-        lightStatus: (parent: any) => getLightStatus(parent.avgLight, primaryPlantType),
+        lightStatus: (parent: any) =>
+            parent.avgLight == null ? null : getLightStatus(parent.avgLight, primaryPlantType),
     },
 
     Subscription: {

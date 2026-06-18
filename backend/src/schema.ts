@@ -41,9 +41,9 @@ export const typeDefs = gql`
 
   type SensorData {
     id: String!
-    lightLevel: Float!
+    lightLevel: Float
     timestamp: String!
-    lightStatus: LightStatusInfo!
+    lightStatus: LightStatusInfo
     temperature: Float
     humidity: Float
     pressure: Float
@@ -54,12 +54,12 @@ export const typeDefs = gql`
   type HourlySensorData {
     id: String!
     hour: String!
-    lightLevel: Float!
-    minLight: Float!
-    maxLight: Float!
-    avgLight: Float!
+    lightLevel: Float
+    minLight: Float
+    maxLight: Float
+    avgLight: Float
     readingCount: Int!
-    lightStatus: LightStatusInfo!
+    lightStatus: LightStatusInfo
     avgTemperature: Float
     minTemperature: Float
     maxTemperature: Float

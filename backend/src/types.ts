@@ -1,6 +1,7 @@
 export interface SensorData {
     id: string;
-    lightLevel: number;
+    // Optional — H&T sensors report temperature/humidity but no light.
+    lightLevel?: number;
     timestamp: Date;
     temperature?: number;
     humidity?: number;
