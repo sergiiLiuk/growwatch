@@ -3,8 +3,6 @@ import { decryptSecret } from './crypto';
 import { getDevicesStatus, ShellyCloudStatus, ShellyAuthError } from './shellyCloud';
 import { handleSensorData } from './resolvers';
 
-export { getDevicesStatus, ShellyAuthError };
-
 const POLL_MS = 5 * 60 * 1000;
 
 // Pure: which statuses are newer than what we last ingested for each device.
