@@ -48,8 +48,6 @@ export async function getDevicesStatus(host: string, authKey: string, ids: strin
     if (res.status === 401) throw new ShellyAuthError();
     if (!res.ok) throw new Error(`Shelly Cloud status failed: ${res.status}`);
     const json: any = await res.json();
-    // TEMP DEBUG: capture the real v2 response shape to fix temperature/humidity field paths. Remove after.
-    console.log('[shelly-cloud] raw v2 response:', JSON.stringify(json));
     const arr: any[] = Array.isArray(json) ? json : (json?.devices ?? json?.data ?? []);
     return arr.map(d => mapStatus(d?.id ?? d?.device_id, d));
 }
