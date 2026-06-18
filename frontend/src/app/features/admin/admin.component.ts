@@ -54,18 +54,17 @@ interface UserFormState {
 
         <div class="bg-white shadow-gw-sm rounded-xl overflow-hidden">
           <!-- Header -->
-          <div class="hidden sm:grid grid-cols-[1.5fr_0.6fr_0.8fr_0.5fr_0.5fr_0.9fr_0.7fr] gap-3 p-3 border-b border-gray-100 text-[11px] font-medium uppercase tracking-wide text-gray-400">
+          <div class="hidden sm:grid grid-cols-[1.5fr_0.6fr_0.8fr_0.5fr_0.9fr_0.7fr] gap-3 p-3 border-b border-gray-100 text-[11px] font-medium uppercase tracking-wide text-gray-400">
             <div>{{ t('admin.emailHeader') }}</div>
             <div>{{ t('admin.roleHeader') }}</div>
             <div>{{ t('admin.tier') }}</div>
-            <div class="text-right">{{ t('admin.devicesHeader') }}</div>
             <div class="text-right">{{ t('admin.plantsHeader') }}</div>
             <div class="text-right">{{ t('admin.createdHeader') }}</div>
             <div class="text-right">{{ t('admin.actionsHeader') }}</div>
           </div>
 
           @for (u of users(); track u.id) {
-            <div class="sm:grid sm:grid-cols-[1.5fr_0.6fr_0.8fr_0.5fr_0.5fr_0.9fr_0.7fr] gap-3 p-4 border-b border-gray-100 last:border-b-0 flex flex-col sm:items-center">
+            <div class="sm:grid sm:grid-cols-[1.5fr_0.6fr_0.8fr_0.5fr_0.9fr_0.7fr] gap-3 p-4 border-b border-gray-100 last:border-b-0 flex flex-col sm:items-center">
               <div class="text-[13px] font-medium text-gray-800 break-all flex items-center gap-2">
                 {{ u.email }}
                 @if (u.role === 'superuser') {
@@ -95,9 +94,6 @@ interface UserFormState {
                     <option value="pro">{{ t('upgrade.pro') }}</option>
                   </select>
                 }
-              </div>
-              <div class="text-[12px] text-gray-700 sm:text-right">
-                <span class="sm:hidden text-gray-400">{{ t('admin.devicesHeader') }}: </span>{{ u.deviceCount }}
               </div>
               <div class="text-[12px] text-gray-700 sm:text-right">
                 <span class="sm:hidden text-gray-400">{{ t('admin.plantsHeader') }}: </span>{{ u.plantCount }}

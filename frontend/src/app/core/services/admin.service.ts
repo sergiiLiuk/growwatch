@@ -10,11 +10,10 @@ export interface AdminUser {
   role: string;
   subscriptionTier: SubscriptionTier;
   createdAt: string;
-  deviceCount: number;
   plantCount: number;
 }
 
-const USER_FIELDS = `id email role subscriptionTier createdAt deviceCount plantCount`;
+const USER_FIELDS = `id email role subscriptionTier createdAt plantCount`;
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {

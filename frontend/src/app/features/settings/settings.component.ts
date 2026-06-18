@@ -389,33 +389,11 @@ import { ReminderService } from '../../core/services/reminder.service';
       }
 
       @if (activeTab() === 'prefs') {
-      <!-- Sensor setup + devices — Pro only (sensors are a Pro-tier feature) -->
+      <!-- Shelly setup — Pro only (sensors are a Pro-tier feature) -->
       @if (tier.canSeeSensors()) {
         <div class="mt-5">
           <div class="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">{{ t('settings.setup') }}</div>
           <div class="space-y-2">
-            <button (click)="openDevices()"
-                    class="w-full bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
-              <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-                <app-icon name="device" class="w-4 h-4 text-gw-green-dark" />
-              </div>
-              <div class="flex-1 text-left">
-                <div class="text-[14px] font-medium text-gray-800">{{ t('settings.myDevices') }}</div>
-                <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.myDevicesDescription') }}</div>
-              </div>
-              <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
-            </button>
-            <button (click)="openSensorSetup()"
-                    class="w-full bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
-              <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
-                <app-icon name="wifi" class="w-4 h-4 text-gw-green-dark" />
-              </div>
-              <div class="flex-1 text-left">
-                <div class="text-[14px] font-medium text-gray-800">{{ t('settings.sensorSetupGuide') }}</div>
-                <div class="text-[11px] text-gray-400 mt-0.5">{{ t('settings.sensorSetupGuideDescription') }}</div>
-              </div>
-              <app-icon name="chevron-right" class="w-4 h-4 text-gray-300" />
-            </button>
             <button (click)="openShellySetup()"
                     class="w-full bg-white shadow-gw-sm rounded-xl p-4 flex items-center gap-3 hover:border-gray-300 transition-colors">
               <div class="w-8 h-8 rounded-full bg-gw-green-light flex items-center justify-center shrink-0">
@@ -767,9 +745,7 @@ export class SettingsComponent implements OnInit {
     if (raw) localStorage.removeItem(this.STORAGE_KEY);
   }
 
-  openSensorSetup() { this.router.navigate(['/settings/sensor-setup']); }
   openShellySetup() { this.router.navigate(['/settings/shelly-setup']); }
-  openDevices() { this.router.navigate(['/settings/devices']); }
   logout() { this.auth.logout(); }
 
 }
