@@ -5,14 +5,13 @@ import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { createServer } from 'http';
 import { typeDefs } from './schema';
-import { resolvers, handleSensorData, startHourlyAggregation, saveHourlyData, initPlantCache, setSuperuserId, setLlmProvider } from './resolvers';
+import { resolvers, startHourlyAggregation, initPlantCache, setSuperuserId, setLlmProvider } from './resolvers';
 import { startShellyCloudPoller } from './shellyCloudPoller';
 import { StubLlmProvider } from './services/smartTip';
 import { ClaudeLlmProvider } from './services/claudeLlmProvider';
 import { startSmartTipScheduler } from './services/smartTipScheduler';
 import { configurePush } from './services/pushSender';
 import { startReminderScheduler, maybeTickFromRequest } from './services/reminderScheduler';
-import { ESP32Message } from './types';
 import { connectDB } from './db';
 import { User, Plant, HourlySensorData, UserSettings } from './models';
 import { hashPassword, verifyToken, signToken } from './auth';
@@ -162,37 +161,6 @@ async function startServer() {
 
     app.use(express.json());
 
-    // ─── ESP32 endpoint ──
-    // Routing rules:
-    //   1) If payload includes `deviceId` (MAC) and a Device row matches → attribute to its user
-    //   2) Else if exactly one user has an open claim window → bind this MAC to them
-    //   3) Else reject with 401
-    app.post('/api/sensor-data', async (req: Request, res: Response) => {
-        try {
-            const data: ESP32Message = req.body;
-            const result = await handleSensorData(data);
-
-            if (!result) {
-                return res.status(401).json({
-                    error: 'Unknown device. Open a device claim from the GrowWatch app or contact admin.',
-                });
-            }
-
-            console.log(`📥 ESP32: light=${result.lightLevel}lux${
-                result.temperature !== undefined ? ` temp=${result.temperature}°C` : ''
-            }${
-                result.humidity !== undefined ? ` hum=${result.humidity}%` : ''
-            }${
-                result.deviceId ? ` device=${result.deviceId.slice(-6)}` : ''
-            }`);
-
-            res.json({ success: true, data: result });
-        } catch (error) {
-            console.error('❌ Error processing sensor data:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    });
-
     // ─── Health check ─────────────────────────────────────────────────────────
     app.get('/health', (_req: Request, res: Response) => {
         res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -290,17 +258,6 @@ async function startServer() {
         }
     });
 
-    // ─── Manual hourly save (testing only) ───────────────────────────────────
-    app.post('/api/save-hourly', async (_req: Request, res: Response) => {
-        try {
-            await saveHourlyData();
-            res.json({ success: true, message: 'Hourly data saved' });
-        } catch (error) {
-            console.error('❌ Error saving hourly data:', error);
-            res.status(500).json({ error: 'Failed to save hourly data' });
-        }
-    });
-
     // ─── GraphQL ──────────────────────────────────────────────────────────────
     const schema = makeExecutableSchema({ typeDefs, resolvers });
 
@@ -332,7 +289,6 @@ async function startServer() {
     httpServer.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running on port ${PORT}`);
         console.log(`📊 GraphQL:  http://localhost:${PORT}/graphql`);
-        console.log(`📨 ESP32:    POST http://localhost:${PORT}/api/sensor-data`);
         console.log(`❤️  Health:   http://localhost:${PORT}/health`);
     });
 }
