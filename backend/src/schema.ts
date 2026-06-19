@@ -186,6 +186,7 @@ export const typeDefs = gql`
     smartTipsEnabled: Boolean
     morningTipTime: String
     eveningTipTime: String
+    timezone: String
     location: UserLocation
   }
 
@@ -322,6 +323,7 @@ export const typeDefs = gql`
       smartTipsEnabled: Boolean
       morningTipTime: String
       eveningTipTime: String
+      timezone: String
       location: UserLocationInput
     ): UserSettings!
   }

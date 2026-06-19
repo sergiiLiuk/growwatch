@@ -284,6 +284,7 @@ export interface IUserSettings extends Document {
     smartTipsEnabled?: boolean;
     morningTipTime?: string;   // 'HH:MM'
     eveningTipTime?: string;   // 'HH:MM'
+    timezone?: string;         // IANA zone (e.g. 'Europe/Copenhagen'); morning/evening times resolve against it
     location?: { lat: number; lng: number; city?: string };
     lastSmartTipRun?: { morning?: Date; evening?: Date };
     lastManualRefreshAt?: Date;
@@ -309,6 +310,7 @@ const userSettingsSchema = new Schema<IUserSettings>(
         smartTipsEnabled: { type: Boolean },
         morningTipTime: { type: String },
         eveningTipTime: { type: String },
+        timezone: { type: String },
         location: {
             lat: { type: Number },
             lng: { type: Number },

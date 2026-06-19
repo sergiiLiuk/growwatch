@@ -53,6 +53,7 @@ export class UserSettingsService {
   smartTipsEnabled = signal<boolean | null>(null);
   morningTipTime = signal<string | null>(null);
   eveningTipTime = signal<string | null>(null);
+  timezone = signal<string | null>(null);
   location = signal<{ lat: number; lng: number; city?: string | null } | null>(null);
 
   effectiveTempMin = computed(() => this.tempMin() ?? this.DEFAULT_TEMP_MIN);
@@ -93,6 +94,7 @@ export class UserSettingsService {
         this.smartTipsEnabled.set(null);
         this.morningTipTime.set(null);
         this.eveningTipTime.set(null);
+        this.timezone.set(null);
         this.location.set(null);
         this.digestTime.set(null);
         this.digestEnabled.set(null);
@@ -129,6 +131,7 @@ export class UserSettingsService {
           smartTipsEnabled: boolean | null;
           morningTipTime: string | null;
           eveningTipTime: string | null;
+          timezone: string | null;
           location: { lat: number; lng: number; city: string | null } | null;
         };
       }>({
@@ -138,7 +141,7 @@ export class UserSettingsService {
               name tempMin tempMax humidityMin humidityMax
               frostThreshold heatThreshold windThreshold
               digestTime digestEnabled alertsEnabled locale
-              smartTipsEnabled morningTipTime eveningTipTime
+              smartTipsEnabled morningTipTime eveningTipTime timezone
               location { lat lng city }
             }
           }
@@ -162,10 +165,26 @@ export class UserSettingsService {
         this.smartTipsEnabled.set(s.smartTipsEnabled);
         this.morningTipTime.set(s.morningTipTime);
         this.eveningTipTime.set(s.eveningTipTime);
+        this.timezone.set(s.timezone);
         this.location.set(s.location);
+        this.syncBrowserTimezone(s.timezone);
       }
     } catch (err) {
       console.error('Failed to load user settings:', err);
+    }
+  }
+
+  /**
+   * Keep the stored timezone in step with the browser's current zone so the
+   * backend brief scheduler fires morning/evening tips at the user's real local
+   * time. Runs on every load; persists only when it actually changed (handles
+   * first-time setup, travel, and DST shifts) without spamming the API.
+   */
+  private syncBrowserTimezone(stored: string | null): void {
+    const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (browserTz && browserTz !== stored) {
+      this.timezone.set(browserTz);
+      this.persist({ timezone: browserTz });
     }
   }
 
@@ -226,6 +245,7 @@ export class UserSettingsService {
     smartTipsEnabled?: boolean | null;
     morningTipTime?: string | null;
     eveningTipTime?: string | null;
+    timezone?: string | null;
     location?: { lat: number; lng: number; city?: string | null } | null;
   }): Promise<void> {
     try {
@@ -246,6 +266,7 @@ export class UserSettingsService {
           smartTipsEnabled: boolean | null;
           morningTipTime: string | null;
           eveningTipTime: string | null;
+          timezone: string | null;
           location: { lat: number; lng: number; city: string | null } | null;
         };
       }>({
@@ -258,6 +279,7 @@ export class UserSettingsService {
             $digestTime: String, $digestEnabled: Boolean, $alertsEnabled: Boolean,
             $locale: String,
             $smartTipsEnabled: Boolean, $morningTipTime: String, $eveningTipTime: String,
+            $timezone: String,
             $location: UserLocationInput
           ) {
             updateUserSettings(
@@ -268,12 +290,13 @@ export class UserSettingsService {
               digestTime: $digestTime, digestEnabled: $digestEnabled, alertsEnabled: $alertsEnabled,
               locale: $locale,
               smartTipsEnabled: $smartTipsEnabled, morningTipTime: $morningTipTime, eveningTipTime: $eveningTipTime,
+              timezone: $timezone,
               location: $location
             ) {
               name tempMin tempMax humidityMin humidityMax
               frostThreshold heatThreshold windThreshold
               digestTime digestEnabled alertsEnabled locale
-              smartTipsEnabled morningTipTime eveningTipTime
+              smartTipsEnabled morningTipTime eveningTipTime timezone
               location { lat lng city }
             }
           }
@@ -298,6 +321,7 @@ export class UserSettingsService {
         this.smartTipsEnabled.set(s.smartTipsEnabled);
         this.morningTipTime.set(s.morningTipTime);
         this.eveningTipTime.set(s.eveningTipTime);
+        this.timezone.set(s.timezone);
         this.location.set(s.location);
       }
     } catch (err) {

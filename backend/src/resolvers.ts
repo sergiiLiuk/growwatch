@@ -653,6 +653,7 @@ export const resolvers = {
                 smartTipsEnabled: settings?.smartTipsEnabled ?? null,
                 morningTipTime: settings?.morningTipTime ?? null,
                 eveningTipTime: settings?.eveningTipTime ?? null,
+                timezone: settings?.timezone ?? null,
                 location: settings?.location
                     ? { lat: settings.location.lat, lng: settings.location.lng, city: settings.location.city ?? null }
                     : null,
@@ -1230,6 +1231,7 @@ export const resolvers = {
                 smartTipsEnabled?: boolean | null;
                 morningTipTime?: string | null;
                 eveningTipTime?: string | null;
+                timezone?: string | null;
                 location?: { lat: number; lng: number; city?: string | null } | null;
             },
             ctx: Ctx
@@ -1260,6 +1262,11 @@ export const resolvers = {
             apply('smartTipsEnabled', args.smartTipsEnabled, (v) => typeof v === 'boolean');
             apply('morningTipTime', args.morningTipTime, (v) => typeof v === 'string' && /^\d{2}:\d{2}$/.test(v));
             apply('eveningTipTime', args.eveningTipTime, (v) => typeof v === 'string' && /^\d{2}:\d{2}$/.test(v));
+            apply('timezone', args.timezone, (v) => {
+                if (typeof v !== 'string' || !v) return false;
+                // Reject anything Intl can't resolve so a bad value can't break the scheduler.
+                try { new Intl.DateTimeFormat('en-GB', { timeZone: v }); return true; } catch { return false; }
+            });
             apply('location', args.location, (v) => v && typeof v.lat === 'number' && typeof v.lng === 'number');
 
             const update: any = { $setOnInsert: { userId: ctx.user.userId } };
@@ -1287,6 +1294,7 @@ export const resolvers = {
                 smartTipsEnabled: settings?.smartTipsEnabled ?? null,
                 morningTipTime: settings?.morningTipTime ?? null,
                 eveningTipTime: settings?.eveningTipTime ?? null,
+                timezone: settings?.timezone ?? null,
                 location: settings?.location
                     ? { lat: settings.location.lat, lng: settings.location.lng, city: settings.location.city ?? null }
                     : null,
