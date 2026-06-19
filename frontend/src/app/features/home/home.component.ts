@@ -192,7 +192,15 @@ interface ActivityEvent {
       <!-- Sensors — Pro only -->
       @if (tier.canSeeSensors()) {
         <div class="mb-5">
-          <p class="font-caption font-semibold text-gw-subtle uppercase tracking-widest mb-3">{{ t('home.sensors') }}</p>
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <p class="font-caption font-semibold text-gw-subtle uppercase tracking-widest">{{ t('home.sensors') }}</p>
+            <div class="flex items-center gap-1.5 text-[11px] text-gw-subtle shrink-0">
+              <span class="inline-flex items-center gap-1"><span>🏠</span>{{ t('home.indoor') }}</span>
+              @if (sensorAgeLabel()) {
+                <span class="text-gw-subtle/70">· {{ sensorAgeLabel() }}</span>
+              }
+            </div>
+          </div>
           <div class="grid grid-cols-2 gap-3">
             <app-sensor-card
               [label]="t('home.temp')" [value]="tempValue()" unit="°C"
@@ -448,6 +456,20 @@ export class HomeComponent implements OnInit, OnDestroy {
     const h = this.latestData()?.humidity ?? this.hourlyData()[0]?.avgHumidity;
     if (h == null) return 'missing';
     return h < this.userSettings.effectiveHumidityMin() || h > this.userSettings.effectiveHumidityMax() ? 'warn' : 'ok';
+  });
+
+  /** "Updated N min ago" freshness for the indoor sensor cards. Ticks with `now`. */
+  sensorAgeLabel = computed(() => {
+    this.localeKey();
+    const ts = this.latestData()?.timestamp ?? this.hourlyData()[0]?.hour;
+    if (!ts) return '';
+    const ms = this.now() - new Date(ts).getTime();
+    const minutes = Math.floor(ms / 60_000);
+    if (minutes < 1) return this.transloco.translate('home.updatedJustNow');
+    if (minutes < 60) return this.transloco.translate('home.updatedMinutesAgo', { n: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return this.transloco.translate('home.updatedHoursAgo', { n: hours });
+    return this.transloco.translate('home.updatedDaysAgo', { n: Math.floor(hours / 24) });
   });
 
   // ── Sparklines ────────────────────────────────────────────────────────────────

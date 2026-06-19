@@ -426,6 +426,7 @@
     "updatedJustNow": "Opdateret lige nu",
     "updatedMinutesAgo": "Opdateret for {{ n }} min siden",
     "updatedHoursAgo": "Opdateret for {{ n }} t siden",
+    "updatedDaysAgo": "Opdateret for {{ n }} d siden",
     "allCaughtUp": "Du er fri i dag",
     "allCaughtUpBody": "Ingen vanding eller gødning til i dag.",
     "needsAttention": "Kræver opmærksomhed",
@@ -475,6 +476,7 @@
     "addYourFirstPlantBody": "Fortæl GrowWatch hvad du dyrker, så får du personlige lysråd, en humørring og beskeder skræddersyet til dine planters behov.",
     "addAPlant": "+ Tilføj en plante",
     "sensors": "Nøgletal",
+    "indoor": "Indendørs",
     "statusLabel": {
       "ok": "Optimal",
       "warn": "Kræver opmærksomhed",

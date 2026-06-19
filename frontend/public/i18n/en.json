@@ -426,6 +426,7 @@
     "updatedJustNow": "Updated just now",
     "updatedMinutesAgo": "Updated {{ n }} min ago",
     "updatedHoursAgo": "Updated {{ n }} h ago",
+    "updatedDaysAgo": "Updated {{ n }} d ago",
     "allCaughtUp": "You're all caught up",
     "allCaughtUpBody": "No watering or fertilizing due today.",
     "needsAttention": "Needs attention",
@@ -475,6 +476,7 @@
     "addYourFirstPlantBody": "Tell GrowWatch what you're growing and you'll get personalised light advice, a mood ring, and alerts tailored to your plant's needs.",
     "addAPlant": "+ Add a plant",
     "sensors": "Key metrics",
+    "indoor": "Indoor",
     "statusLabel": {
       "ok": "Optimal",
       "warn": "Needs attention",
