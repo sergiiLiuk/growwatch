@@ -431,6 +431,12 @@
     "allCaughtUpBody": "No watering or fertilizing due today.",
     "needsAttention": "Needs attention",
     "needsAttentionBody": "{{ n }} reminder(s) due today.",
+    "reminderWater": "Water",
+    "reminderFertilize": "Fertilize",
+    "reminderNote": "Note",
+    "reminderMore": "+{{ n }} more",
+    "reminderDueToday": "Due today",
+    "reminderOverdue": "{{ n }}d overdue",
     "youreAllSet": "You're all set!",
     "upgradeStrip": "Get daily care tips and 3-day weather alerts with Plus.",
     "seePlans": "See plans",
@@ -502,7 +508,9 @@
     "co2Rising": "CO₂ rising trend detected",
     "co2Normal": "CO₂ back to normal",
     "allInRange": "All sensors in range",
-    "monitoringStarted": "Monitoring started"
+    "monitoringStarted": "Monitoring started",
+    "tempOutOfRange": "Temperature out of range",
+    "tempBackInRange": "Temperature back in range"
   },
   "mood": {
     "waiting": "Waiting for data",

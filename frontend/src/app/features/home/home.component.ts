@@ -11,7 +11,7 @@ import { calculateStreak } from '../../core/utils/streak';
 import { WeatherService } from '../../core/services/weather.service';
 import { UserSettingsService } from '../../core/services/user-settings.service';
 import { PlantActionService, DailyBriefing } from '../../core/services/plant-action.service';
-import { ReminderService, PlantReminder } from '../../core/services/reminder.service';
+import { ReminderService, PlantReminder, ReminderActionType } from '../../core/services/reminder.service';
 import dayjs from 'dayjs';
 import { TierService } from '../../core/services/tier.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -141,11 +141,35 @@ interface ActivityEvent {
             <div class="font-h1" [class.text-gw-green-dark]="statusGood()" [class.text-gw-amber-dark]="!statusGood()">
               {{ statusGood() ? t('home.allCaughtUp') : t('home.needsAttention') }}
             </div>
-            <p class="font-body mt-1" [class.text-gw-green-dark]="statusGood()" [class.text-gw-amber-dark]="!statusGood()">
-              {{ statusGood() ? t('home.allCaughtUpBody') : t('home.needsAttentionBody', { n: dueCount() }) }}
-            </p>
+            @if (statusGood()) {
+              <p class="font-body mt-1 text-gw-green-dark">{{ t('home.allCaughtUpBody') }}</p>
+            } @else if (dueItemsShown().length > 0) {
+              <div class="mt-2 flex flex-col gap-1.5">
+                @for (item of dueItemsShown(); track item.id) {
+                  <a [routerLink]="['/plants', item.plantId]"
+                     class="group flex items-center gap-2 text-gw-amber-dark hover:opacity-80 transition-opacity">
+                    <span class="text-base leading-none shrink-0">{{ item.emoji }}</span>
+                    <span class="font-caption font-medium shrink-0">{{ item.actionLabel }}</span>
+                    <span class="font-caption opacity-60">·</span>
+                    <span class="font-caption truncate">{{ item.plantName }}</span>
+                    <span class="ml-auto flex items-center gap-1.5 shrink-0">
+                      <span class="font-caption text-[11px] px-1.5 py-0.5 rounded-md"
+                            [class.bg-gw-amber-dark]="item.overdueDays > 0"
+                            [class.text-white]="item.overdueDays > 0"
+                            [class.opacity-60]="item.overdueDays === 0">{{ item.dueLabel }}</span>
+                      <span class="opacity-50 group-hover:translate-x-0.5 transition-transform">→</span>
+                    </span>
+                  </a>
+                }
+                @if (dueItemsOverflow() > 0) {
+                  <span class="font-caption text-gw-amber-dark opacity-70">{{ t('home.reminderMore', { n: dueItemsOverflow() }) }}</span>
+                }
+              </div>
+            } @else {
+              <p class="font-body mt-1 text-gw-amber-dark">{{ t('home.needsAttentionBody', { n: dueCount() }) }}</p>
+            }
           </div>
-          <span class="hidden sm:block text-5xl leading-none opacity-80">🏡</span>
+          <span class="hidden sm:block text-5xl leading-none opacity-80 self-start">🏡</span>
         </div>
       } @else if (!plantsLoading()) {
         <div class="bg-white shadow-gw-sm rounded-2xl p-5 mb-5 flex items-start gap-4">
@@ -609,15 +633,55 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private dueReminders = signal<PlantReminder[]>([]);
 
-  dueCount = computed(() => {
+  private dueRemindersToday = computed(() => {
     const endOfToday = dayjs().endOf('day');
     return this.dueReminders().filter(r => {
       if (!r.enabled) return false;
       const snoozedUntil = r.snoozedUntil ? dayjs(r.snoozedUntil) : null;
       if (snoozedUntil && snoozedUntil.isAfter(endOfToday)) return false;
       return dayjs(r.nextDueAt).isBefore(endOfToday);
-    }).length;
+    });
   });
+
+  dueCount = computed(() => this.dueRemindersToday().length);
+
+  /** Resolved due reminders for the attention card: which plant + which action, linkable. */
+  dueItems = computed(() => {
+    this.localeKey();
+    const byId = new Map(this.plants().map(p => [p.id, p]));
+    const actionLabels: Record<ReminderActionType, string> = {
+      water: this.transloco.translate('home.reminderWater'),
+      fertilize: this.transloco.translate('home.reminderFertilize'),
+      note: this.transloco.translate('home.reminderNote'),
+    };
+    const actionEmoji: Record<ReminderActionType, string> = { water: '💧', fertilize: '🌱', note: '📝' };
+    const startOfToday = dayjs().startOf('day');
+    return this.dueRemindersToday()
+      .map(r => {
+        const plant = byId.get(r.plantId);
+        if (!plant) return null;
+        // Whole days the reminder has been overdue (0 = due today, not yet overdue).
+        const overdueDays = Math.max(0, startOfToday.diff(dayjs(r.nextDueAt).startOf('day'), 'day'));
+        return {
+          id: r.id,
+          plantId: r.plantId,
+          plantName: plant.name,
+          emoji: actionEmoji[r.actionType],
+          actionLabel: actionLabels[r.actionType],
+          overdueDays,
+          dueLabel: overdueDays > 0
+            ? this.transloco.translate('home.reminderOverdue', { n: overdueDays })
+            : this.transloco.translate('home.reminderDueToday'),
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      // Most overdue first.
+      .sort((a, b) => b.overdueDays - a.overdueDays);
+  });
+
+  /** First few due items shown as rows; the rest are summarized with a "+N more" line. */
+  dueItemsShown = computed(() => this.dueItems().slice(0, 3));
+  dueItemsOverflow = computed(() => Math.max(0, this.dueItems().length - 3));
 
   statusGood = computed(() => this.dueCount() === 0);
 

@@ -431,6 +431,12 @@
     "allCaughtUpBody": "Ingen vanding eller gødning til i dag.",
     "needsAttention": "Kræver opmærksomhed",
     "needsAttentionBody": "{{ n }} påmindelse(r) skal udføres i dag.",
+    "reminderWater": "Vand",
+    "reminderFertilize": "Gød",
+    "reminderNote": "Note",
+    "reminderMore": "+{{ n }} mere",
+    "reminderDueToday": "I dag",
+    "reminderOverdue": "{{ n }}d forsinket",
     "youreAllSet": "Du er klar!",
     "upgradeStrip": "Få daglige plejetips og 3-dages vejradvarsler med Plus.",
     "seePlans": "Se planer",
@@ -502,7 +508,9 @@
     "co2Rising": "Stigende CO₂-tendens registreret",
     "co2Normal": "CO₂ tilbage til normal",
     "allInRange": "Alle sensorer inden for området",
-    "monitoringStarted": "Overvågning startet"
+    "monitoringStarted": "Overvågning startet",
+    "tempOutOfRange": "Temperatur uden for området",
+    "tempBackInRange": "Temperatur tilbage i området"
   },
   "mood": {
     "waiting": "Venter på data",
