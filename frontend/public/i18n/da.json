@@ -483,6 +483,7 @@
     "addAPlant": "+ Tilføj en plante",
     "sensors": "Nøgletal",
     "indoor": "Indendørs",
+    "sensorStale": "Denne sensor har ikke rapporteret for nylig — den kan være offline, i dvale eller have lavt batteri. De viste værdier er den seneste kendte måling, ikke live.",
     "statusLabel": {
       "ok": "Optimal",
       "warn": "Kræver opmærksomhed",

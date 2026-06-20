@@ -218,10 +218,12 @@ interface ActivityEvent {
         <div class="mb-5">
           <div class="flex items-center justify-between gap-2 mb-3">
             <p class="font-caption font-semibold text-gw-subtle uppercase tracking-widest">{{ t('home.sensors') }}</p>
-            <div class="flex items-center gap-1.5 text-[11px] text-gw-subtle shrink-0">
-              <span class="inline-flex items-center gap-1"><span>🏠</span>{{ t('home.indoor') }}</span>
+            <div class="flex items-center gap-1.5 text-[11px] shrink-0"
+                 [class.text-gw-subtle]="!sensorIsStale()"
+                 [class.text-gw-amber-dark]="sensorIsStale()">
+              <span class="inline-flex items-center gap-1"><span>{{ sensorIsStale() ? '⚠️' : '🏠' }}</span>{{ t('home.indoor') }}</span>
               @if (sensorAgeLabel()) {
-                <span class="text-gw-subtle/70">· {{ sensorAgeLabel() }}</span>
+                <span class="opacity-70">· {{ sensorAgeLabel() }}</span>
               }
             </div>
           </div>
@@ -237,6 +239,12 @@ interface ActivityEvent {
               [statusLabel]="t('home.statusLabel.' + humidStatus())"
               tone="blue" link="/humidity" />
           </div>
+          @if (sensorIsStale()) {
+            <p class="mt-2 text-[11px] text-gw-amber-dark flex items-start gap-1.5 leading-snug">
+              <span class="shrink-0">⚠️</span>
+              <span>{{ t('home.sensorStale') }}</span>
+            </p>
+          }
         </div>
       }
 
@@ -494,6 +502,18 @@ export class HomeComponent implements OnInit, OnDestroy {
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return this.transloco.translate('home.updatedHoursAgo', { n: hours });
     return this.transloco.translate('home.updatedDaysAgo', { n: Math.floor(hours / 24) });
+  });
+
+  /**
+   * The indoor feed is considered stale when the newest reading is older than 2h.
+   * The Shelly Cloud poller runs every 5 min, so >2h means the device itself has
+   * stopped reporting to the cloud (offline / asleep / low battery) — the values
+   * shown are the last known reading, not live.
+   */
+  sensorIsStale = computed(() => {
+    const ts = this.latestData()?.timestamp ?? this.hourlyData()[0]?.hour;
+    if (!ts) return false;
+    return this.now() - new Date(ts).getTime() > 2 * 60 * 60 * 1000;
   });
 
   // ── Sparklines ────────────────────────────────────────────────────────────────

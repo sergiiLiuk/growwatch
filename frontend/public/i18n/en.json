@@ -483,6 +483,7 @@
     "addAPlant": "+ Add a plant",
     "sensors": "Key metrics",
     "indoor": "Indoor",
+    "sensorStale": "This sensor hasn't reported recently — it may be offline, asleep, or low on battery. The values shown are the last known reading, not live.",
     "statusLabel": {
       "ok": "Optimal",
       "warn": "Needs attention",
