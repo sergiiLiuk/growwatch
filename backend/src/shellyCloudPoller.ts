@@ -21,6 +21,13 @@ export function pickNewReadings(
 
 const iso = (d: Date | null | undefined): string => (d ? d.toISOString() : 'null');
 
+// Human-readable Wi-Fi signal hint so weak coverage is obvious at a glance.
+const rssiLabel = (rssi: number | undefined): string => {
+    if (rssi == null) return 'rssi=—';
+    const quality = rssi >= -67 ? 'good' : rssi >= -75 ? 'ok' : rssi >= -82 ? 'weak' : 'very weak';
+    return `rssi=${rssi}dBm (${quality})`;
+};
+
 async function pollAccount(userId: string, host: string, authKey: string): Promise<void> {
     const devices = await ShellyDevice.find({ userId });
     console.log(`[shelly-cloud] user=${userId}: ${devices.length} device(s) on host ${host}`);
@@ -29,7 +36,7 @@ async function pollAccount(userId: string, host: string, authKey: string): Promi
     const statuses = await getDevicesStatus(host, authKey, devices.map(d => d.deviceId));
     console.log(`[shelly-cloud] user=${userId}: cloud returned ${statuses.length} status(es)`);
     for (const s of statuses) {
-        console.log(`[shelly-cloud]   ${s.id}: temp=${s.temperature ?? '—'} hum=${s.humidity ?? '—'} batt=${s.batteryPercent ?? '—'} cloud _updated=${iso(s.reportedAt)}`);
+        console.log(`[shelly-cloud]   ${s.id}: temp=${s.temperature ?? '—'} hum=${s.humidity ?? '—'} batt=${s.batteryPercent ?? '—'} ${rssiLabel(s.rssi)} cloud _updated=${iso(s.reportedAt)}`);
     }
     const lastById = new Map(devices.map(d => [d.deviceId, d.lastReportedAt ?? null]));
 

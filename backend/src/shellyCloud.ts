@@ -3,6 +3,8 @@ export interface ShellyCloudStatus {
     temperature?: number;
     humidity?: number;
     batteryPercent?: number;
+    /** Wi-Fi signal strength in dBm from the device's last report (e.g. -75). Closer to 0 = stronger. */
+    rssi?: number;
     reportedAt: Date | null;
 }
 
@@ -21,6 +23,7 @@ export function mapStatus(id: string, raw: any): ShellyCloudStatus {
     const tC = status['temperature:0']?.tC;
     const rh = status['humidity:0']?.rh;
     const battery = status['devicepower:0']?.battery?.percent;
+    const rssi = status['wifi']?.rssi;
     const updated = status['_updated'] ?? raw?.['_updated'];
     let reportedAt: Date | null = null;
     if (typeof updated === 'number') reportedAt = new Date(updated * 1000);
@@ -30,6 +33,7 @@ export function mapStatus(id: string, raw: any): ShellyCloudStatus {
         temperature: typeof tC === 'number' ? tC : undefined,
         humidity: typeof rh === 'number' ? rh : undefined,
         batteryPercent: typeof battery === 'number' ? battery : undefined,
+        rssi: typeof rssi === 'number' ? rssi : undefined,
         reportedAt,
     };
 }
